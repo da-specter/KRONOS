@@ -1,0 +1,99 @@
+// Anima el llenado de la línea de tiempo de la Etapa Productiva (de 0% al progreso real)
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.timeline-track-fill').forEach(function (barra) {
+        const progreso = barra.getAttribute('data-progreso') || 0;
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                barra.style.width = 'calc((100% - 4px) * ' + progreso + ' / 100)';
+            });
+        });
+    });
+});
+
+// Muestra/oculta el desplegable de notificaciones al hacer clic en la campana
+function toggleNotificaciones() {
+    const panel = document.getElementById('panelNotificaciones');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function (evento) {
+    const panel = document.getElementById('panelNotificaciones');
+    const campana = document.querySelector('.bell-btn-circle');
+    if (!panel || panel.style.display === 'none') return;
+    if (!panel.contains(evento.target) && !campana.contains(evento.target)) {
+        panel.style.display = 'none';
+    }
+});
+
+// Muestra/oculta la fila con los aprendices matriculados en una ficha (Gestión de Fichas)
+function toggleDetalleFicha(boton, idFila) {
+    const fila = document.getElementById(idFila);
+    if (!fila) return;
+    const visible = fila.style.display !== 'none';
+    fila.style.display = visible ? 'none' : 'table-row';
+    if (boton) {
+        boton.textContent = visible ? 'Ver aprendices' : 'Ocultar aprendices';
+    }
+}
+
+// Función para procesar los primeros checks del Coordinador
+function enviarEvaluacionInicial(idSolicitud) {
+    // 1. Capturamos el estado real de los checkboxes del HTML
+    const checkFecha = document.getElementById(`checkFecha_${idSolicitud}`).checked;
+    const checkCompetencias = document.getElementById(`checkCompetencias_${idSolicitud}`).checked;
+
+    // 2. Armamos la URL con las variables que espera nuestro @PutMapping del Controller
+    const url = `/api/workflow/coordinador/evaluar-inicial/${idSolicitud}?fechaOk=${checkFecha}&competenciasOk=${checkCompetencias}`;
+
+    // 3. Disparamos la petición asíncrona al servidor de Spring Boot
+    fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Hubo un error al procesar los requisitos en el servidor.');
+    })
+    .then(solicitudActualizada => {
+        // ÉXITO: El estado cambió en Oracle. Actualizamos la UI con una notificación premium
+        alert(`¡Estado actualizado con éxito! Nuevo estado: ${solicitudActualizada.estado}`);
+
+        // La solicitud ya salió de PENDIENTE_REVISION: recargamos para que la bandeja se actualice
+        window.location.reload();
+    })
+    .catch(error => {
+        console.error(error);
+        alert(error.message);
+    });
+}
+
+// Función para que el Gestor de Etapa habilite el panel de plantillas del aprendiz
+function habilitarFormatosGestor(idSolicitud) {
+    const url = `/api/workflow/gestor/habilitar-formatos/${idSolicitud}`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Hubo un error al habilitar las plantillas en el servidor.');
+    })
+    .then(() => {
+        alert('¡Plantillas habilitadas! El aprendiz ya puede descargarlas y resubirlas firmadas.');
+        window.location.reload();
+    })
+    .catch(error => {
+        console.error(error);
+        alert(error.message);
+    });
+}

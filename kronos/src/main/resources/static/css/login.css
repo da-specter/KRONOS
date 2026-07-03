@@ -1,0 +1,302 @@
+:root {
+    --bg-main: #E2E8F0;
+    --white: #FFFFFF;
+    --verde-neon: #0BF42E;
+    --verde-oscuro: #057015;
+    --text-dark: #1E293B;
+    --text-muted: #64748B;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background-color: #F1F5F9; 
+    
+    /* 🚀 Puntos optimizados: pasaron de 1.5px a 2px y un gris más definido (#94A3B8) */
+    background-image: 
+        radial-gradient(circle at top left, rgba(11, 244, 46, 0.07) 0%, transparent 40%),  
+        radial-gradient(circle at bottom right, rgba(5, 112, 21, 0.06) 0%, transparent 45%), 
+        radial-gradient(#94A3B8 2px, transparent 2px); 
+        
+    background-size: 100% 100%, 100% 100%, 24px 24px; 
+    
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* AJUSTE EN LA TARJETA PRINCIPAL PARA DARLE EFECTO FLOTANTE PREMIUM */
+.main-container {
+    background: var(--white);
+    width: 100%;
+    max-width: 1020px;
+    min-height: 580px;
+    border-radius: 40px;
+    
+    /* 3. SOMBRA DE CAPAS MULTIPLES: Hace que la tarjeta parezca flotar de verdad en el espacio */
+    box-shadow: 
+        0 4px 6px -1px rgba(15, 23, 42, 0.03),
+        0 20px 40px -12px rgba(15, 23, 42, 0.12),
+        0 30px 60px -15px rgba(5, 112, 21, 0.05); 
+        
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+/* Marca de agua neón de fondo */
+.bg-watermark {
+    position: absolute;
+    font-size: 14vw;
+    font-weight: 900;
+    color: rgba(11, 244, 46, 0.05);
+    text-shadow: 0 0 40px rgba(11, 244, 46, 0.25);
+    letter-spacing: 12px;
+    user-select: none;
+    z-index: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+/* Contenedor Principal Adaptativo */
+.main-container {
+    background: var(--white);
+    width: 100%;
+    max-width: 1050px; /* Un pelo más ancho para dar espacio al súper logo */
+    min-height: 600px;
+    border-radius: 40px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+/* PANEL IZQUIERDO: DISEÑO DE LOGOTIPO FLOTANTE MAXIMIZADO */
+.visual-side {
+    flex: 1.2; /* Le damos un toque más de espacio al panel del logo */
+    background: linear-gradient(145deg, var(--verde-oscuro) 0%, #034A0E 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+/* Ola blanca de fondo curva - Ajustada para estirar el triángulo verde */
+.visual-side::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 110%;
+    height: 110%;
+    background: var(--white);
+    
+    /* 🚀 Se movieron los puntos clave a la derecha (82% en el centro) para alargar la punta hasta la S */
+    clip-path: polygon(100% 0, 100% 100%, 42% 100%, 82% 52%, 38% 0);
+    
+    z-index: 1;
+}
+
+/* 🚀 LOGO ENGRANDADO DOS VECES MÁS */
+.logo-container {
+    position: relative;
+    z-index: 5;
+    width: 115%; /* Expande el contenedor */
+    max-width: 580px; /* Escalado masivo para impacto total */
+    transform: translateX(-20px); /* Ajuste de centrado por tamaño */
+    filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.35));
+    animation: floatEffect 4s ease-in-out infinite;
+}
+
+.logo-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+@keyframes floatEffect {
+    0%, 100% { transform: translateX(-20px) translateY(0px); }
+    50% { transform: translateX(-20px) translateY(-15px); }
+}
+
+/* PANEL DERECHO: INTERFAZ DE CONTROL */
+.form-side {
+    flex: 0.8;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 50px 60px;
+    position: relative;
+    z-index: 10;
+}
+
+/* Logotipo alterno para móviles engrandado */
+.mobile-logo-wrapper {
+    display: none;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+.mobile-logo-wrapper img {
+    width: 100%;
+    max-width: 320px; /* También más grande en celulares */
+    height: auto;
+    filter: drop-shadow(0 8px 16px rgba(5, 112, 21, 0.2));
+}
+
+/* Cabecera del formulario e Icono de Usuario */
+.form-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.user-avatar-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(5, 112, 21, 0.06);
+    border: 1.5px solid rgba(5, 112, 21, 0.15);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--verde-oscuro);
+    margin-bottom: 12px;
+}
+
+.form-header h2 {
+    color: var(--text-dark);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Campos de entrada lineales */
+.form-group {
+    margin-bottom: 32px; /* Un poco más de aire ahora que no está el link */
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.input-container:focus-within {
+    border-color: var(--verde-oscuro);
+}
+
+.input-container .icon-svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+}
+
+.input-container:focus-within .icon-svg {
+    color: var(--verde-oscuro);
+}
+
+.input-container input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--text-dark);
+    background: transparent;
+}
+
+.input-container input::placeholder {
+    color: #94A3B8;
+}
+
+/* Botón Ovalado de Control */
+.btn-login {
+    width: 100%;
+    max-width: 260px;
+    background: linear-gradient(90deg, var(--verde-oscuro) 0%, #0a8f1e 100%);
+    color: var(--white);
+    border: none;
+    padding: 14px 30px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    align-self: center;
+    margin-top: 10px;
+    box-shadow: 0 10px 20px rgba(5, 112, 21, 0.25);
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px rgba(5, 112, 21, 0.4);
+}
+
+.alert-danger {
+    background: #FEF2F2;
+    border-left: 4px solid #EF4444;
+    color: #991B1B;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+/* ENGINE RESPONSIVE */
+@media (max-width: 900px) {
+    .main-container {
+        flex-direction: column;
+        max-width: 480px;
+        min-height: auto;
+        border-radius: 30px;
+    }
+
+    .visual-side {
+        display: none;
+    }
+
+    .mobile-logo-wrapper {
+        display: flex;
+    }
+
+    .form-side {
+        padding: 45px 35px;
+        width: 100%;
+    }
+    
+    .bg-watermark {
+        font-size: 20vw;
+    }
+}

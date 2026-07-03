@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Mi Perfil</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="brand-icon">Ⓚ</div>
+                <div class="brand-text">
+                    <h3>KRONOS</h3>
+                    <p>SENA Centro CTAPT</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a th:href="@{/index}" class="menu-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Inicio</span>
+                </a>
+
+                <a th:each="opcion : ${usuario.menuNavegacion}" th:href="${opcion.ruta}"
+                   th:classappend="${opcion.ruta == '/perfil'} ? ' active' : ''" class="menu-item">
+
+                    <th:block th:switch="${opcion.nombre}">
+
+                        <svg th:case="'👤 Mi Perfil'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+
+                        <svg th:case="'📢 Novedades'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 11l18-5v12L3 14v-3z"></path>
+                            <path d="M11.6 16.8a2 2 0 0 1-3.2 2.4L3 14"></path>
+                        </svg>
+
+                        <svg th:case="'🏢 Registro Etapa Productiva'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18"></path>
+                            <path d="M5 21V7l7-4 7 4v14"></path>
+                            <path d="M10 21v-4h4v4"></path>
+                        </svg>
+
+                        <svg th:case="'Validación de Documentos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+
+                        <svg th:case="'📁 Formatos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+
+                        <svg th:case="*" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </th:block>
+
+                    <span th:text="${opcion.nombre}">Opción Dinámica</span>
+                </a>
+
+                <a th:href="@{/auth/logout}" class="menu-item logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <p>© 2026 - Power by KRONOS</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>👤 Mi Perfil</h1>
+                <p>Consulta y edita tus datos personales guardados en el sistema.</p>
+            </div>
+
+            <div class="header-controls" style="position: relative;">
+                <div class="bell-btn-circle" style="position: relative; cursor: pointer;" onclick="toggleNotificaciones()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" th:stroke="${#lists.isEmpty(notificacionesNoLeidas)} ? 'currentColor' : '#DC2626'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span th:if="${!#lists.isEmpty(notificacionesNoLeidas)}"
+                          style="position: absolute; top: -4px; right: -4px; background: #DC2626; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px;"
+                          th:text="${notificacionesNoLeidas.size()}">3</span>
+                </div>
+
+                <div id="panelNotificaciones" style="display: none; position: absolute; top: 46px; right: 46px; width: 320px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; overflow: hidden;">
+                    <div style="padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-weight: 700; font-size: 13px; color: var(--text-dark); display: flex; justify-content: space-between; align-items: center;">
+                        <span>Notificaciones</span>
+                        <form th:action="@{/notificaciones/marcar-leidas}" method="post" th:if="${!#lists.isEmpty(notificacionesNoLeidas)}">
+                            <button type="submit" style="border: none; background: none; color: var(--verde-sena); font-size: 12px; font-weight: 600; cursor: pointer;">Marcar leídas</button>
+                        </form>
+                    </div>
+                    <div style="max-height: 280px; overflow-y: auto;">
+                        <div th:each="notificacion : ${notificacionesNoLeidas}" style="padding: 12px 16px; border-bottom: 1px solid var(--card-border); font-size: 13px; color: var(--text-dark);">
+                            <p th:text="${notificacion.mensaje}" style="margin: 0;">Mensaje</p>
+                            <span style="font-size: 11px; color: var(--text-muted);" th:text="${#temporals.format(notificacion.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                        </div>
+                        <p th:if="${#lists.isEmpty(notificacionesNoLeidas)}" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">No tienes notificaciones nuevas.</p>
+                    </div>
+                </div>
+
+                <div class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
+                    DM
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+            <div class="alert-success" th:if="${exito}" th:text="${exito}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1;">
+                <div style="display:flex; align-items:center; gap:16px; margin-bottom: 22px;">
+                    <div class="user-avatar-glow" style="width:56px; height:56px; font-size:20px;"
+                         th:text="${#strings.substring(perfil.nombre,0,1) + #strings.substring(perfil.apellido,0,1)}">DM</div>
+                    <div>
+                        <p style="font-size:17px; font-weight:700; color:var(--text-dark); margin:0;"
+                           th:text="${perfil.nombre} + ' ' + ${perfil.apellido}">Nombre Apellido</p>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:2px;"
+                           th:text="${perfil.tipoDocumento} + ' ' + ${perfil.documento}">CC 1234567</p>
+                    </div>
+                </div>
+
+                <form th:action="@{/perfil/editar}" method="post">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <div class="input-container">
+                                <input type="text" name="nombre" th:value="${perfil.nombre}" maxlength="30" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <div class="input-container">
+                                <input type="text" name="apellido" th:value="${perfil.apellido}" maxlength="30" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Correo Electrónico</label>
+                            <div class="input-container">
+                                <input type="email" name="correoElectronico" th:value="${perfil.correoElectronico}" maxlength="150" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <div class="input-container">
+                                <input type="text" name="telefono" th:value="${perfil.telefono}" maxlength="11">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--card-border);">
+                        <p style="font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:14px;">Cambiar Contraseña <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></p>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">
+                            <div class="form-group">
+                                <label>Contraseña Actual</label>
+                                <div class="input-container">
+                                    <input type="password" name="contrasenaActual" autocomplete="current-password">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña Nueva</label>
+                                <div class="input-container">
+                                    <input type="password" name="contrasenaNueva" autocomplete="new-password">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" style="margin-top: 24px;">Guardar Cambios</button>
+                </form>
+            </div>
+
+        </section>
+    </main>
+
+    <script th:src="@{/js/workflow.js}"></script>
+</body>
+</html>

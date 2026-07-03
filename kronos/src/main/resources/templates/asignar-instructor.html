@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Asignar Instructores</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="brand-icon">Ⓚ</div>
+                <div class="brand-text">
+                    <h3>KRONOS</h3>
+                    <p>SENA Centro CTAPT</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a th:href="@{/index}" class="menu-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Inicio</span>
+                </a>
+
+                <a th:each="opcion : ${usuario.menuNavegacion}" th:href="${opcion.ruta}"
+                   th:classappend="${opcion.ruta == '/coordinador/asignaciones'} ? ' active' : ''" class="menu-item">
+
+                    <th:block th:switch="${opcion.nombre}">
+
+                        <svg th:case="'👤 Mi Perfil'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+
+                        <svg th:case="'Asignar Instructores'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+
+                        <svg th:case="'🏢 Registro Etapa Productiva'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18"></path>
+                            <path d="M5 21V7l7-4 7 4v14"></path>
+                            <path d="M10 21v-4h4v4"></path>
+                        </svg>
+
+                        <svg th:case="'Validación de Documentos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+
+                        <svg th:case="'📁 Formatos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+
+                        <svg th:case="*" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </th:block>
+
+                    <span th:text="${opcion.nombre}">Opción Dinámica</span>
+                </a>
+
+                <a th:href="@{/auth/logout}" class="menu-item logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <p>© 2026 - Power by KRONOS</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>👥 Asignar Instructores</h1>
+                <p>Instructores de Seguimiento disponibles para aprendices con Etapa Productiva activa.</p>
+            </div>
+
+            <div class="header-controls" style="position: relative;">
+                <div class="bell-btn-circle" style="position: relative; cursor: pointer;" onclick="toggleNotificaciones()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" th:stroke="${#lists.isEmpty(notificacionesNoLeidas)} ? 'currentColor' : '#DC2626'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span th:if="${!#lists.isEmpty(notificacionesNoLeidas)}"
+                          style="position: absolute; top: -4px; right: -4px; background: #DC2626; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px;"
+                          th:text="${notificacionesNoLeidas.size()}">3</span>
+                </div>
+
+                <div id="panelNotificaciones" style="display: none; position: absolute; top: 46px; right: 46px; width: 320px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; overflow: hidden;">
+                    <div style="padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-weight: 700; font-size: 13px; color: var(--text-dark); display: flex; justify-content: space-between; align-items: center;">
+                        <span>Notificaciones</span>
+                        <form th:action="@{/notificaciones/marcar-leidas}" method="post" th:if="${!#lists.isEmpty(notificacionesNoLeidas)}">
+                            <button type="submit" style="border: none; background: none; color: var(--verde-sena); font-size: 12px; font-weight: 600; cursor: pointer;">Marcar leídas</button>
+                        </form>
+                    </div>
+                    <div style="max-height: 280px; overflow-y: auto;">
+                        <div th:each="notificacion : ${notificacionesNoLeidas}" style="padding: 12px 16px; border-bottom: 1px solid var(--card-border); font-size: 13px; color: var(--text-dark);">
+                            <p th:text="${notificacion.mensaje}" style="margin: 0;">Mensaje</p>
+                            <span style="font-size: 11px; color: var(--text-muted);" th:text="${#temporals.format(notificacion.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                        </div>
+                        <p th:if="${#lists.isEmpty(notificacionesNoLeidas)}" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">No tienes notificaciones nuevas.</p>
+                    </div>
+                </div>
+
+                <div class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
+                    DM
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
+                    <span>👥 Aprendices sin Instructor de Seguimiento</span>
+                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                          th:text="${#lists.size(etapasSinInstructor)} + ' pendientes'">2 pendientes</span>
+                </h3>
+
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Aprendiz</th>
+                                <th style="padding: 14px 16px;">Empresa</th>
+                                <th style="padding: 14px 16px;">Vigencia</th>
+                                <th style="padding: 14px 16px;">Asignar Instructor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="etapa : ${etapasSinInstructor}" style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+                                <td style="padding: 16px;">
+                                    <div style="font-weight: 700; color: var(--text-dark);" th:text="${etapa.aprendizFicha.usuario.nombre} + ' ' + ${etapa.aprendizFicha.usuario.apellido}">Nombre Aprendiz</div>
+                                    <span style="font-size: 11px; color: var(--text-muted);" th:text="'Ficha ' + ${etapa.aprendizFicha.ficha.numeroFicha}">Ficha 2555228</span>
+                                </td>
+                                <td style="padding: 16px;" th:text="${etapa.empresa.nombreEmpresa}">Empresa S.A.S</td>
+                                <td style="padding: 16px; font-size: 12px; color: var(--text-muted);"
+                                    th:text="${etapa.fechaInicio} + ' → ' + ${etapa.fechaFin}">2026-01-01 → 2026-06-01</td>
+                                <td style="padding: 16px;">
+                                    <form th:action="@{'/coordinador/asignaciones/' + ${etapa.idEtapa}}" method="post"
+                                          style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        <select name="idInstructorSeguimiento" required
+                                                style="border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; font-size: 13px;">
+                                            <option value="" disabled selected>Selecciona un instructor</option>
+                                            <option th:each="instructor : ${instructores}"
+                                                    th:value="${instructor.idInstructorSeguimiento}"
+                                                    th:text="${instructor.usuario.nombre} + ' ' + ${instructor.usuario.apellido} + ' (' + ${instructor.areaFormacion.nombreAreaFormacion} + ')'">
+                                                Adriana Silva (ADSO)
+                                            </option>
+                                        </select>
+                                        <button type="submit"
+                                                style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                            Asignar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <tr th:if="${#lists.isEmpty(etapasSinInstructor)}">
+                                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    🎉 Todos los aprendices con Etapa Productiva activa ya tienen Instructor de Seguimiento.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
+                    <span>🧑‍🏫 Instructores de Seguimiento</span>
+                </h3>
+
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Instructor</th>
+                                <th style="padding: 14px 16px;">Área de Formación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="instructor : ${instructores}" style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+                                <td style="padding: 16px; font-weight: 700; color: var(--text-dark);"
+                                    th:text="${instructor.usuario.nombre} + ' ' + ${instructor.usuario.apellido}">Adriana Silva</td>
+                                <td style="padding: 16px;" th:text="${instructor.areaFormacion.nombreAreaFormacion}">ADSO</td>
+                            </tr>
+
+                            <tr th:if="${#lists.isEmpty(instructores)}">
+                                <td colspan="2" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    No hay instructores de seguimiento registrados.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script th:src="@{/js/workflow.js}"></script>
+</body>
+</html>
