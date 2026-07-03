@@ -26,6 +26,12 @@ document.addEventListener('click', function (evento) {
     }
 });
 
+// Despliega/colapsa un módulo del sidebar con sub-ítems (Ej: Gestión Etapa)
+function toggleMenuGrupo(boton) {
+    const grupo = boton.closest('.menu-group');
+    if (grupo) grupo.classList.toggle('open');
+}
+
 // Muestra/oculta la fila con los aprendices matriculados en una ficha (Gestión de Fichas)
 function toggleDetalleFicha(boton, idFila) {
     const fila = document.getElementById(idFila);

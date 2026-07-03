@@ -13,4 +13,7 @@ public interface AprendizFichaRepository extends JpaRepository<AprendizFicha, Lo
 
     // Ubica la matrícula del aprendiz a partir del Usuario logueado
     Optional<AprendizFicha> findByUsuarioIdUsuario(Long idUsuario);
+
+    // Importación: evita matricular dos veces al mismo aprendiz en la misma ficha
+    boolean existsByUsuarioIdUsuarioAndFichaIdFicha(Long idUsuario, Long idFicha);
 }

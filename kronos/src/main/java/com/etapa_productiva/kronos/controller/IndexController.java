@@ -90,6 +90,9 @@ public class IndexController {
     @Autowired
     private NovedadRepository novedadRepository;
 
+    @Autowired
+    private com.etapa_productiva.kronos.service.InstructorSeguimientoService instructorSeguimientoService;
+
     @GetMapping("/index")
     public String verIndex(HttpSession session, Model model) {
         // 1. Validar seguridad: Si no hay sesión activa, va para el login
@@ -123,11 +126,15 @@ public class IndexController {
             model.addAttribute("solicitudesParaHabilitarFormatos", Collections.emptyList());
         }
 
-        // 5. Panel del Instructor de Seguimiento: fichas activas que tiene asignadas
+        // 5. Panel del Instructor de Seguimiento: dashboard (números + gráficas) de sus aprendices asignados
         if (roles != null && roles.contains("INSTRUCTOR_SEGUIMIENTO")) {
             model.addAttribute("fichasSeguimiento", buscarFichasSeguimiento(usuarioLogueado.getIdUsuario()));
+            List<com.etapa_productiva.kronos.dto.InstructorAprendizDto> misAprendices =
+                    instructorSeguimientoService.listarAprendices(usuarioLogueado.getIdUsuario());
+            model.addAttribute("dashInstructor", instructorSeguimientoService.calcularDashboard(misAprendices));
         } else {
             model.addAttribute("fichasSeguimiento", Collections.emptyList());
+            model.addAttribute("dashInstructor", null);
         }
 
         // 6. Panel del Instructor Técnico: fichas activas que tiene asignadas para revisión

@@ -11,6 +11,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Útil para el inicio de sesión (Login)
     Optional<Usuario> findByCorreoElectronico(String correoElectronico);
 
+    // Importación de aprendices: ubica al usuario por su documento para no duplicarlo
+    Optional<Usuario> findByDocumento(String documento);
+
     // Panel del Administrador: conteo de usuarios activos/inactivos
     long countByEstado(Boolean estado);
 

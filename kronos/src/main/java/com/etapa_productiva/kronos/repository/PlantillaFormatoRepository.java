@@ -31,6 +31,9 @@ public interface PlantillaFormatoRepository extends JpaRepository<PlantillaForma
            nativeQuery = true)
     List<PlantillaFormato> findWordExcelPorSeccion(@Param("idSeccion") Long idSeccion);
 
+    // La plantilla que representa el requisito ARL (para colgar de ella los DocumentoRequisito subidos por el Gestor)
+    java.util.Optional<PlantillaFormato> findFirstByNombreDocumentoContainingIgnoreCase(String nombreDocumento);
+
     // Plantillas generales de Etapa Práctica, no atadas a un tipo de contrato específico
     // (mismo campo NULL que ya usa el sistema para F023/Bitácoras universales)
     @Query(value = "SELECT p.* FROM plantilla_formato p " +

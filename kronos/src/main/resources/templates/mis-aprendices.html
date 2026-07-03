@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Mis Aprendices</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/instructor/seguimiento')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>👥 Mis Aprendices</h1>
+                <p>Aprendices que tienes en seguimiento y el estado de su etapa productiva.</p>
+            </div>
+
+            <div class="header-controls" style="position: relative;">
+                <div class="bell-btn-circle" style="position: relative; cursor: pointer;" onclick="toggleNotificaciones()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" th:stroke="${#lists.isEmpty(notificacionesNoLeidas)} ? 'currentColor' : '#DC2626'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span th:if="${!#lists.isEmpty(notificacionesNoLeidas)}"
+                          style="position: absolute; top: -4px; right: -4px; background: #DC2626; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px;"
+                          th:text="${notificacionesNoLeidas.size()}">3</span>
+                </div>
+
+                <div id="panelNotificaciones" style="display: none; position: absolute; top: 46px; right: 46px; width: 320px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; overflow: hidden;">
+                    <div style="padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-weight: 700; font-size: 13px; color: var(--text-dark);">Notificaciones</div>
+                    <div style="max-height: 280px; overflow-y: auto;">
+                        <div th:each="notificacion : ${notificacionesNoLeidas}" style="padding: 12px 16px; border-bottom: 1px solid var(--card-border); font-size: 13px; color: var(--text-dark);">
+                            <p th:text="${notificacion.mensaje}" style="margin: 0;">Mensaje</p>
+                            <span style="font-size: 11px; color: var(--text-muted);" th:text="${#temporals.format(notificacion.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                        </div>
+                        <p th:if="${#lists.isEmpty(notificacionesNoLeidas)}" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">No tienes notificaciones nuevas.</p>
+                    </div>
+                </div>
+
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">DM</div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+
+                <!-- 🔢 Resumen rápido -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: var(--verde-sena);" th:text="${dashInstructor.totalAprendices}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En progreso</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #D97706;" th:text="${dashInstructor.enProgreso}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Aprobados</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #057015;" th:text="${dashInstructor.aprobados}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Fichas · Empresas</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: var(--text-dark);">
+                            <span th:text="${dashInstructor.totalFichas}">0</span>
+                            <span style="color: var(--text-muted); font-weight: 600;">·</span>
+                            <span th:text="${dashInstructor.totalEmpresas}">0</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Barra de acciones -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 24px;">
+                    <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span>📋 Listado de aprendices</span>
+                        <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                              th:text="${#lists.size(aprendices)} + ' aprendices'">0 aprendices</span>
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <form th:action="@{/instructor/seguimiento/importar}" method="post" enctype="multipart/form-data" style="margin: 0;">
+                            <label style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                                📤 Importar
+                                <input type="file" name="archivo" accept=".xlsx,.xls" style="display: none;" onchange="this.form.submit()">
+                            </label>
+                        </form>
+                        <button type="button" onclick="abrirModalExportar('excel')"
+                                style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📊 Exportar Excel
+                        </button>
+                        <button type="button" onclick="abrirModalExportar('pdf')"
+                                style="display: flex; align-items: center; gap: 8px; background: #DC2626; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div th:if="${exito}" style="margin-top: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${exito}">Importación completada.</div>
+                <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${error}">Ocurrió un error.</div>
+
+                <div style="margin-top: 20px;">
+                    <input type="text" id="buscador" onkeyup="filtrarTabla()"
+                           placeholder="🔎 Buscar por nombre, documento, ficha, empresa, estado..."
+                           style="width: 100%; max-width: 560px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                </div>
+
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1400px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                                <th style="padding: 12px 14px;">Nombres</th>
+                                <th style="padding: 12px 14px;">Apellidos</th>
+                                <th style="padding: 12px 14px;">Tipo Doc.</th>
+                                <th style="padding: 12px 14px;">Documento</th>
+                                <th style="padding: 12px 14px;">Teléfono</th>
+                                <th style="padding: 12px 14px;">Correo</th>
+                                <th style="padding: 12px 14px;">Ficha</th>
+                                <th style="padding: 12px 14px;">Programa</th>
+                                <th style="padding: 12px 14px;">Empresa</th>
+                                <th style="padding: 12px 14px;">Modalidad</th>
+                                <th style="padding: 12px 14px;">Inicio Etapa</th>
+                                <th style="padding: 12px 14px;">Fin Etapa</th>
+                                <th style="padding: 12px 14px;">Estado Etapa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaAprendices">
+                            <tr th:each="a : ${aprendices}" class="fila" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                                <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.nombres}">Nombres</td>
+                                <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.apellidos}">Apellidos</td>
+                                <td style="padding: 12px 14px;" th:text="${a.tipoDocumento}">CC</td>
+                                <td style="padding: 12px 14px; font-weight: 600;" th:text="${a.documento}">1234567890</td>
+                                <td style="padding: 12px 14px;" th:text="${a.telefono}">3000000000</td>
+                                <td style="padding: 12px 14px;" th:text="${a.correoElectronico}">correo@ejemplo.com</td>
+                                <td style="padding: 12px 14px;" th:text="${a.ficha}">2555228</td>
+                                <td style="padding: 12px 14px;" th:text="${a.programaFormacion}">ADSO</td>
+                                <td style="padding: 12px 14px;" th:text="${a.razonSocial}">Empresa</td>
+                                <td style="padding: 12px 14px;" th:text="${a.modalidadContrato}">Contrato de Aprendizaje</td>
+                                <td style="padding: 12px 14px;" th:text="${a.etapaInicio}">01/01/2026</td>
+                                <td style="padding: 12px 14px;" th:text="${a.etapaFin}">30/06/2026</td>
+                                <td style="padding: 12px 14px;">
+                                    <span th:text="${a.estadoEtapa}"
+                                          th:style="${a.estadoEtapa == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: #057015; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.estadoEtapa == 'EN_PROGRESO'} ? 'background: rgba(217,119,6,0.12); color: #D97706; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.estadoEtapa == 'REPROBADO'} ? 'background: rgba(220,38,38,0.1); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'))">Estado</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(aprendices)}">
+                                <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no tienes aprendices asignados para seguimiento.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p id="sinResultados" style="display: none; text-align: center; padding: 30px; color: var(--text-muted); font-weight: 500;">
+                        Ningún aprendiz coincide con la búsqueda.
+                    </p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- 🔐 Modal de re-autenticación previa a la exportación -->
+    <div id="modalExportar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">🔐 Confirma tu identidad</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                Por seguridad, ingresa tu contraseña para descargar el archivo en <strong id="formatoTexto">Excel</strong>.
+            </p>
+            <input type="password" id="contrasenaExportar" placeholder="Contraseña" autocomplete="current-password"
+                   onkeydown="if (event.key === 'Enter') confirmarExportacion()"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; outline-color: var(--verde-sena); box-sizing: border-box;">
+            <p id="errorExportar" style="display: none; margin: 10px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalExportar()"
+                        style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btnConfirmar" onclick="confirmarExportacion()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">Descargar</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        function filtrarTabla() {
+            const criterio = document.getElementById('buscador').value.trim().toLowerCase();
+            const filas = document.querySelectorAll('#tablaAprendices .fila');
+            let visibles = 0;
+            filas.forEach(function (fila) {
+                const coincide = fila.textContent.toLowerCase().includes(criterio);
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+            const sr = document.getElementById('sinResultados');
+            if (sr) sr.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+
+        let formatoExportar = 'excel';
+        function abrirModalExportar(formato) {
+            formatoExportar = formato;
+            document.getElementById('formatoTexto').textContent = formato === 'pdf' ? 'PDF' : 'Excel';
+            document.getElementById('contrasenaExportar').value = '';
+            document.getElementById('errorExportar').style.display = 'none';
+            document.getElementById('modalExportar').style.display = 'flex';
+            document.getElementById('contrasenaExportar').focus();
+        }
+        function cerrarModalExportar() { document.getElementById('modalExportar').style.display = 'none'; }
+
+        function confirmarExportacion() {
+            const contrasena = document.getElementById('contrasenaExportar').value;
+            const error = document.getElementById('errorExportar');
+            const boton = document.getElementById('btnConfirmar');
+            if (!contrasena) { error.textContent = 'Debes ingresar tu contraseña para continuar.'; error.style.display = 'block'; return; }
+
+            const datos = new URLSearchParams();
+            datos.append('formato', formatoExportar);
+            datos.append('contrasena', contrasena);
+            boton.disabled = true; boton.textContent = 'Generando...'; error.style.display = 'none';
+
+            fetch('/instructor/seguimiento/exportar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: datos.toString()
+            })
+            .then(async function (respuesta) {
+                if (!respuesta.ok) {
+                    let mensaje = 'No fue posible generar el archivo.';
+                    try { const c = await respuesta.json(); if (c && c.mensaje) mensaje = c.mensaje; } catch (e) {}
+                    throw new Error(mensaje);
+                }
+                return respuesta.blob();
+            })
+            .then(function (blob) {
+                const extension = formatoExportar === 'pdf' ? 'pdf' : 'xlsx';
+                const hoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const enlace = document.createElement('a');
+                enlace.href = URL.createObjectURL(blob);
+                enlace.download = 'mis_aprendices_' + hoy + '.' + extension;
+                document.body.appendChild(enlace); enlace.click(); enlace.remove();
+                URL.revokeObjectURL(enlace.href);
+                cerrarModalExportar();
+            })
+            .catch(function (e) { error.textContent = e.message; error.style.display = 'block'; })
+            .finally(function () { boton.disabled = false; boton.textContent = 'Descargar'; });
+        }
+    </script>
+</body>
+</html>

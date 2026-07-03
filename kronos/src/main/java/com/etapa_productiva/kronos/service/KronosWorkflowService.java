@@ -16,7 +16,6 @@ import com.etapa_productiva.kronos.entity.EstadoFiltro;
 import com.etapa_productiva.kronos.entity.HistorialNovedad;
 import com.etapa_productiva.kronos.entity.InstructorSeguimiento;
 import com.etapa_productiva.kronos.entity.Municipio;
-import com.etapa_productiva.kronos.entity.Notificacion;
 import com.etapa_productiva.kronos.entity.Novedad;
 import com.etapa_productiva.kronos.entity.PlantillaFormato;
 import com.etapa_productiva.kronos.entity.SeccionFormato;
@@ -34,7 +33,6 @@ import com.etapa_productiva.kronos.repository.EmpresaRepository;
 import com.etapa_productiva.kronos.repository.InstructorSeguimientoRepository;
 import com.etapa_productiva.kronos.repository.MunicipioRepository;
 import com.etapa_productiva.kronos.repository.HistorialNovedadRepository;
-import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.NovedadRepository;
 import com.etapa_productiva.kronos.repository.PlantillaFormatoRepository;
 import com.etapa_productiva.kronos.repository.SeccionFormatoRepository;
@@ -91,7 +89,7 @@ public class KronosWorkflowService {
     private AuditoriaRepository auditoriaRepository;
 
     @Autowired
-    private NotificacionRepository notificacionRepository;
+    private NotificacionService notificacionService;
 
     @Autowired
     private DepartamentoRepository departamentoRepository;
@@ -160,11 +158,8 @@ public class KronosWorkflowService {
 
         Usuario aprendizRemitente = aprendizFicha.getUsuario();
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
-            Notificacion notificacion = new Notificacion();
-            notificacion.setUsuarioDestino(gestor);
-            notificacion.setMensaje("📝 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
+            notificacionService.crear(gestor, "📝 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
                     + " radicó una nueva solicitud de etapa productiva (" + modalidad + ").");
-            notificacionRepository.save(notificacion);
         }
 
         return guardada;
@@ -202,15 +197,14 @@ public class KronosWorkflowService {
         solicitud.setFechaActualizacion(LocalDateTime.now());
         SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
 
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuarioDestino(actualizada.getAprendizFicha().getUsuario());
+        String mensaje;
         if (actualizada.getEstado() == EstadoSolicitud.FORMATOS_HABILITADOS) {
-            notificacion.setMensaje("¡Tu solicitud fue aprobada en el primer filtro! Ya puedes subir tus formatos de "
-                    + actualizada.getSeccionFormato().getNombreSeccion() + " diligenciados.");
+            mensaje = "¡Tu solicitud fue aprobada en el primer filtro! Ya puedes subir tus formatos de "
+                    + actualizada.getSeccionFormato().getNombreSeccion() + " diligenciados.";
         } else {
-            notificacion.setMensaje("❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
+            mensaje = "❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion;
         }
-        notificacionRepository.save(notificacion);
+        notificacionService.crear(actualizada.getAprendizFicha().getUsuario(), mensaje);
 
         return actualizada;
     }
@@ -287,10 +281,8 @@ public class KronosWorkflowService {
         auditoriaRepository.save(auditoria);
 
         Usuario aprendizDestino = actualizada.getAprendizFicha().getUsuario();
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuarioDestino(aprendizDestino);
-        notificacion.setMensaje("¡Tus plantillas ya están habilitadas! Descárgalas, diligéncialas y firmarlas para resubirlas.");
-        notificacionRepository.save(notificacion);
+        notificacionService.crear(aprendizDestino,
+                "¡Tus plantillas ya están habilitadas! Descárgalas, diligéncialas y firmarlas para resubirlas.");
 
         return actualizada;
     }
@@ -399,10 +391,8 @@ public class KronosWorkflowService {
             solicitud.setObservacionRechazo(observacion);
             solicitudRepository.save(solicitud);
 
-            Notificacion notificacionRechazo = new Notificacion();
-            notificacionRechazo.setUsuarioDestino(solicitud.getAprendizFicha().getUsuario());
-            notificacionRechazo.setMensaje("❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
-            notificacionRepository.save(notificacionRechazo);
+            notificacionService.crear(solicitud.getAprendizFicha().getUsuario(),
+                    "❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
 
             throw new RuntimeException("No se puede dar de alta la etapa: Los requisitos finales fueron rechazados.");
         }
@@ -431,10 +421,8 @@ public class KronosWorkflowService {
         cronogramaService.generarCronograma(etapaGuardada);
 
         Usuario aprendizDestino = aprendizFicha.getUsuario();
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuarioDestino(aprendizDestino);
-        notificacion.setMensaje("🎉 ¡Tu Etapa Productiva ya fue registrada y está activa! Ya puedes subir tus bitácoras y tu formato de planeación.");
-        notificacionRepository.save(notificacion);
+        notificacionService.crear(aprendizDestino,
+                "🎉 ¡Tu Etapa Productiva ya fue registrada y está activa! Ya puedes subir tus bitácoras y tu formato de planeación.");
 
         return etapaGuardada;
     }
@@ -524,16 +512,12 @@ public class KronosWorkflowService {
         Usuario aprendizDestino = etapa.getAprendizFicha().getUsuario();
         Usuario instructorDestino = instructor.getUsuario();
 
-        Notificacion notificacionAprendiz = new Notificacion();
-        notificacionAprendiz.setUsuarioDestino(aprendizDestino);
-        notificacionAprendiz.setMensaje("👨‍🏫 Se te asignó a " + instructorDestino.getNombre() + " " + instructorDestino.getApellido()
-                + " como tu Instructor de Seguimiento.");
-        notificacionRepository.save(notificacionAprendiz);
+        notificacionService.crear(aprendizDestino,
+                "👨‍🏫 Se te asignó a " + instructorDestino.getNombre() + " " + instructorDestino.getApellido()
+                        + " como tu Instructor de Seguimiento.");
 
-        Notificacion notificacionInstructor = new Notificacion();
-        notificacionInstructor.setUsuarioDestino(instructorDestino);
-        notificacionInstructor.setMensaje("👨‍🎓 Se te asignó el seguimiento de " + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido() + ".");
-        notificacionRepository.save(notificacionInstructor);
+        notificacionService.crear(instructorDestino,
+                "👨‍🎓 Se te asignó el seguimiento de " + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido() + ".");
 
         return guardada;
     }
@@ -576,11 +560,9 @@ public class KronosWorkflowService {
 
         Novedad guardada = novedadRepository.save(novedad);
 
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuarioDestino(destinatario);
-        notificacion.setMensaje("📢 Nueva novedad de " + remitente.getNombre() + " " + remitente.getApellido()
-                + " (" + tipoNovedad + "): " + descripcion);
-        notificacionRepository.save(notificacion);
+        notificacionService.crear(destinatario,
+                "📢 Nueva novedad de " + remitente.getNombre() + " " + remitente.getApellido()
+                        + " (" + tipoNovedad + "): " + descripcion);
 
         return guardada;
     }
@@ -620,10 +602,8 @@ public class KronosWorkflowService {
         }
         novedadRepository.save(novedad);
 
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuarioDestino(novedad.getRemitente());
-        notificacion.setMensaje("💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta);
-        notificacionRepository.save(notificacion);
+        notificacionService.crear(novedad.getRemitente(),
+                "💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta);
 
         return guardado;
     }

@@ -14,4 +14,7 @@ public interface AsignacionInstructorEtapaRepository extends JpaRepository<Asign
 
     // Historial completo de asignaciones de una Etapa Productiva, más reciente primero
     List<AsignacionInstructorEtapa> findByEtapaProductivaIdEtapaOrderByFechaAsignacionDesc(Long idEtapa);
+
+    // Aprendices que el Instructor de Seguimiento tiene asignados actualmente (asignaciones vigentes)
+    List<AsignacionInstructorEtapa> findByInstructorIdInstructorSeguimientoAndEstadoAsignacionTrue(Long idInstructor);
 }

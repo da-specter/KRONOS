@@ -23,4 +23,7 @@ public interface DocumentoRequisitoRepository extends JpaRepository<DocumentoReq
 
     // Verificar si un aprendiz ya subió una plantilla específica (Evita duplicados en el Service)
     boolean existsByEtapaProductivaIdEtapaAndPlantillaFormatoIdPlantilla(Long idEtapa, Long idPlantilla);
+
+    // El documento de una etapa para una plantilla puntual (Ej: la ARL), para actualizarlo si se resube
+    java.util.Optional<DocumentoRequisito> findByEtapaProductivaIdEtapaAndPlantillaFormatoIdPlantilla(Long idEtapa, Long idPlantilla);
 }

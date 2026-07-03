@@ -9,4 +9,7 @@ import java.util.List;
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
     // Alimenta el componente de la campana de alertas en el frontend del usuario logueado
     List<Notificacion> findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(Long idUsuario);
+
+    // Historial completo: todas las notificaciones del usuario (leídas y no leídas), más recientes primero
+    List<Notificacion> findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(Long idUsuario);
 }

@@ -159,6 +159,49 @@ body {
     filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
 }
 
+/* 📂 Módulo desplegable del sidebar (Ej: "Gestión Etapa") */
+.menu-group-toggle {
+    width: 100%;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.menu-group-toggle .chevron {
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.menu-group.open .menu-group-toggle .chevron {
+    transform: rotate(180deg);
+}
+
+.menu-group .submenu {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0 4px 24px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.menu-group.open .submenu {
+    display: flex;
+}
+
+.submenu .menu-item {
+    padding: 10px 16px;
+    font-size: 13.5px;
+    border-radius: 12px;
+}
+
+.submenu .menu-item svg {
+    width: 18px;
+    height: 18px;
+}
+
 .sidebar-footer {
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);

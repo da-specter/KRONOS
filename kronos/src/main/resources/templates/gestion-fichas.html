@@ -8,90 +8,7 @@
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div>
-            <div class="sidebar-brand">
-                <div class="brand-icon">Ⓚ</div>
-                <div class="brand-text">
-                    <h3>KRONOS</h3>
-                    <p>SENA Centro CTAPT</p>
-                </div>
-            </div>
-
-            <nav class="sidebar-menu">
-                <a th:href="@{/index}" class="menu-item">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                    <span>Inicio</span>
-                </a>
-
-                <a th:each="opcion : ${usuario.menuNavegacion}" th:href="${opcion.ruta}"
-                   th:classappend="${opcion.ruta == '/coordinador/fichas'} ? ' active' : ''" class="menu-item">
-
-                    <th:block th:switch="${opcion.nombre}">
-
-                        <svg th:case="'👤 Mi Perfil'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-
-                        <svg th:case="'Gestión de Fichas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 3v18"></path>
-                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                            <path d="M14 9h4"></path>
-                            <path d="M14 14h4"></path>
-                        </svg>
-
-                        <svg th:case="'Asignar Instructores'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-
-                        <svg th:case="'🏢 Registro Etapa Productiva'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 21h18"></path>
-                            <path d="M5 21V7l7-4 7 4v14"></path>
-                            <path d="M10 21v-4h4v4"></path>
-                        </svg>
-
-                        <svg th:case="'Validación de Documentos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 11l3 3L22 4"></path>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                        </svg>
-
-                        <svg th:case="'📁 Formatos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                        </svg>
-
-                        <svg th:case="*" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </th:block>
-
-                    <span th:text="${opcion.nombre}">Opción Dinámica</span>
-                </a>
-
-                <a th:href="@{/auth/logout}" class="menu-item logout">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
-        </div>
-
-        <div class="sidebar-footer">
-            <p>© 2026 - Power by KRONOS</p>
-        </div>
-    </aside>
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/coordinador/fichas')}"></aside>
 
     <main class="main-content">
 
@@ -140,11 +57,36 @@
         <section class="dashboard-grid">
 
             <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
-                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
-                    <span>📋 Fichas Registradas</span>
-                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
-                          th:text="${#lists.size(fichas)} + ' fichas'">0 fichas</span>
-                </h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                    <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span>📋 Fichas Registradas</span>
+                        <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                              th:text="${#lists.size(fichas)} + ' fichas'">0 fichas</span>
+                    </h3>
+
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <!-- 📤 Importar Excel de aprendices+ficha -->
+                        <form th:action="@{/coordinador/fichas/importar}" method="post" enctype="multipart/form-data" style="margin: 0;">
+                            <label style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                                📤 Importar
+                                <input type="file" name="archivo" accept=".xlsx,.xls" style="display: none;" onchange="this.form.submit()">
+                            </label>
+                        </form>
+                        <button type="button" onclick="abrirModalExportarFichas('excel')"
+                                style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📊 Exportar Excel
+                        </button>
+                        <button type="button" onclick="abrirModalExportarFichas('pdf')"
+                                style="display: flex; align-items: center; gap: 8px; background: #DC2626; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div th:if="${exito}" style="margin-top: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${exito}">Importación completada.</div>
+                <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${error}">Ocurrió un error.</div>
 
                 <div style="overflow-x: auto; margin-top: 20px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -181,7 +123,7 @@
                                               th:text="${totalSinEtapaPorFicha[ficha.idFicha]}">0</span>
                                     </td>
                                     <td style="padding: 16px;">
-                                        <button type="button" onclick="toggleDetalleFicha(this, 'detalle-' + [[${ficha.idFicha}]])"
+                                        <button type="button" class="btn-ver-aprendices" th:data-detalle="'detalle-' + ${ficha.idFicha}"
                                                 style="background: none; border: 1px solid var(--card-border); color: var(--verde-sena); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
                                             Ver aprendices
                                         </button>
@@ -189,6 +131,18 @@
                                 </tr>
                                 <tr th:id="'detalle-' + ${ficha.idFicha}" style="display: none; border-bottom: 1px solid var(--card-border); background: rgba(5, 112, 21, 0.04);">
                                     <td colspan="8" style="padding: 16px 16px 20px 16px;">
+                                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;">
+                                            <button type="button" class="btn-export-aprendices" data-formato="excel"
+                                                    th:data-idficha="${ficha.idFicha}" th:data-numero="${ficha.numeroFicha}"
+                                                    style="background: var(--verde-sena); color: #fff; border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                                📊 Exportar aprendices (Excel)
+                                            </button>
+                                            <button type="button" class="btn-export-aprendices" data-formato="pdf"
+                                                    th:data-idficha="${ficha.idFicha}" th:data-numero="${ficha.numeroFicha}"
+                                                    style="background: #DC2626; color: #fff; border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                                📄 Exportar aprendices (PDF)
+                                            </button>
+                                        </div>
                                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
                                             <thead>
                                                 <tr style="font-size: 12px; color: var(--text-muted); font-weight: 700;">
@@ -237,6 +191,136 @@
         </section>
     </main>
 
+    <!-- 🔐 Modal de re-autenticación previa a la exportación -->
+    <div id="modalExportarFichas" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">🔐 Confirma tu identidad</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                Por seguridad, ingresa tu contraseña para descargar <strong id="descripcionExport">el reporte</strong>.
+            </p>
+
+            <input type="password" id="contrasenaExportFichas" placeholder="Contraseña" autocomplete="current-password"
+                   onkeydown="if (event.key === 'Enter') confirmarExportacionFichas()"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; outline-color: var(--verde-sena); box-sizing: border-box;">
+
+            <p id="errorExportFichas" style="display: none; margin: 10px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalExportarFichas()"
+                        style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarExportFichas" onclick="confirmarExportacionFichas()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                    Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        // Estado de la exportación en curso: modo 'fichas' (listado) o 'aprendices' (una ficha)
+        let exportFichas = { modo: 'fichas', formato: 'excel', idFicha: null };
+
+        function abrirModalExportarFichas(formato) {
+            exportFichas = { modo: 'fichas', formato: formato, idFicha: null };
+            document.getElementById('descripcionExport').textContent =
+                'el listado de fichas en ' + (formato === 'pdf' ? 'PDF' : 'Excel');
+            mostrarModalExportFichas();
+        }
+
+        function abrirModalExportarAprendices(formato, idFicha, numeroFicha) {
+            exportFichas = { modo: 'aprendices', formato: formato, idFicha: idFicha };
+            document.getElementById('descripcionExport').textContent =
+                'los aprendices de la ficha ' + numeroFicha + ' en ' + (formato === 'pdf' ? 'PDF' : 'Excel');
+            mostrarModalExportFichas();
+        }
+
+        // Los botones "Exportar aprendices" de cada ficha se enlazan por delegación (data-*)
+        document.addEventListener('click', function (evento) {
+            const boton = evento.target.closest('.btn-export-aprendices');
+            if (!boton) return;
+            abrirModalExportarAprendices(boton.dataset.formato, boton.dataset.idficha, boton.dataset.numero);
+        });
+
+        // El botón "Ver aprendices" despliega/colapsa el detalle de la ficha (data-detalle)
+        document.addEventListener('click', function (evento) {
+            const boton = evento.target.closest('.btn-ver-aprendices');
+            if (!boton) return;
+            toggleDetalleFicha(boton, boton.dataset.detalle);
+        });
+
+        function mostrarModalExportFichas() {
+            document.getElementById('contrasenaExportFichas').value = '';
+            document.getElementById('errorExportFichas').style.display = 'none';
+            document.getElementById('modalExportarFichas').style.display = 'flex';
+            document.getElementById('contrasenaExportFichas').focus();
+        }
+
+        function cerrarModalExportarFichas() {
+            document.getElementById('modalExportarFichas').style.display = 'none';
+        }
+
+        function confirmarExportacionFichas() {
+            const contrasena = document.getElementById('contrasenaExportFichas').value;
+            const error = document.getElementById('errorExportFichas');
+            const boton = document.getElementById('btnConfirmarExportFichas');
+
+            if (!contrasena) {
+                error.textContent = 'Debes ingresar tu contraseña para continuar.';
+                error.style.display = 'block';
+                return;
+            }
+
+            const datos = new URLSearchParams();
+            datos.append('formato', exportFichas.formato);
+            datos.append('contrasena', contrasena);
+            let url = '/coordinador/fichas/exportar';
+            if (exportFichas.modo === 'aprendices') {
+                url = '/coordinador/fichas/aprendices/exportar';
+                datos.append('idFicha', exportFichas.idFicha);
+            }
+
+            boton.disabled = true;
+            boton.textContent = 'Generando...';
+            error.style.display = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: datos.toString()
+            })
+            .then(async function (respuesta) {
+                if (!respuesta.ok) {
+                    let mensaje = 'No fue posible generar el archivo.';
+                    try { const c = await respuesta.json(); if (c && c.mensaje) mensaje = c.mensaje; } catch (e) {}
+                    throw new Error(mensaje);
+                }
+                return respuesta.blob();
+            })
+            .then(function (blob) {
+                const extension = exportFichas.formato === 'pdf' ? 'pdf' : 'xlsx';
+                const hoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const prefijo = exportFichas.modo === 'aprendices' ? 'aprendices_ficha_' : 'fichas_';
+                const enlace = document.createElement('a');
+                enlace.href = URL.createObjectURL(blob);
+                enlace.download = prefijo + hoy + '.' + extension;
+                document.body.appendChild(enlace);
+                enlace.click();
+                enlace.remove();
+                URL.revokeObjectURL(enlace.href);
+                cerrarModalExportarFichas();
+            })
+            .catch(function (e) {
+                error.textContent = e.message;
+                error.style.display = 'block';
+            })
+            .finally(function () {
+                boton.disabled = false;
+                boton.textContent = 'Descargar';
+            });
+        }
+    </script>
 </body>
 </html>

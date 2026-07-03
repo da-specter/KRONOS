@@ -34,14 +34,7 @@ public class AuthService {
                 .orElseThrow(() -> new BadCredentialsException("Usuario o contraseña incorrectos"));
 
         // 2. Validar contraseña con soporte para BCrypt y texto plano legacy
-        String passwordGuardada = usuario.getPassword();
-        boolean coincide;
-        if (passwordGuardada != null && (passwordGuardada.startsWith("$2a$") || passwordGuardada.startsWith("$2b$") || passwordGuardada.startsWith("$2y$"))) {
-            coincide = passwordEncoder.matches(request.getContrasena(), passwordGuardada);
-        } else {
-            coincide = request.getContrasena().equals(passwordGuardada);
-        }
-        if (!coincide) {
+        if (!verificarContrasena(usuario, request.getContrasena())) {
             throw new BadCredentialsException("Usuario o contraseña incorrectos");
         }
 
@@ -75,7 +68,12 @@ public class AuthService {
             // solo cuando el Gestor de Etapa habilita su solicitud (ver IndexController/FormatosController).
         }
         if (roles.contains("GESTOR_ETAPA")) {
-            menuNavegacion.add(new MenuDto("Gestión de Fichas", "/coordinador/fichas"));
+            // Módulo desplegable "Gestión Etapa": agrupa la consulta de fichas y de aprendices
+            // para que el sidebar del Gestor no se sature de ítems sueltos.
+            menuNavegacion.add(new MenuDto("Gestión Etapa", null, List.of(
+                    new MenuDto("Gestión Fichas", "/coordinador/fichas"),
+                    new MenuDto("Gestión Aprendices", "/gestor/aprendices")
+            )));
             menuNavegacion.add(new MenuDto("Asignar Instructores", "/coordinador/asignaciones"));
             menuNavegacion.add(new MenuDto("Validación de Documentos", "/gestor/documentos"));
             menuNavegacion.add(new MenuDto("🏢 Registro Etapa Productiva", "/gestor/registro-etapa"));
@@ -99,5 +97,21 @@ public class AuthService {
                 .roles(roles)
                 .menuNavegacion(menuNavegacion)
                 .build();
+    }
+
+    /**
+     * 🔐 Compara una contraseña en texto plano contra la guardada en Oracle,
+     * soportando hashes BCrypt y contraseñas legacy en texto plano.
+     * Se reutiliza en el login y en la re-autenticación previa a exportar datos.
+     */
+    public boolean verificarContrasena(Usuario usuario, String contrasenaIngresada) {
+        if (usuario == null || contrasenaIngresada == null) {
+            return false;
+        }
+        String passwordGuardada = usuario.getPassword();
+        if (passwordGuardada != null && (passwordGuardada.startsWith("$2a$") || passwordGuardada.startsWith("$2b$") || passwordGuardada.startsWith("$2y$"))) {
+            return passwordEncoder.matches(contrasenaIngresada, passwordGuardada);
+        }
+        return contrasenaIngresada.equals(passwordGuardada);
     }
 }

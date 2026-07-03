@@ -1,5 +1,6 @@
 package com.etapa_productiva.kronos.entity;
 
 public enum TipoReporte {
-    EJECUTIVO, CONTRATOS_EXCEL
+    EJECUTIVO, CONTRATOS_EXCEL, FICHAS_EXCEL,
+    APRENDIZ_EXCEL
 }
