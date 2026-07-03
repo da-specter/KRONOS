@@ -151,6 +151,7 @@
 
                 <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
                       th:action="@{'/gestor/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
+                      onsubmit="return validarNovedadRegistro(this)"
                       style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
 
                     <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
@@ -230,6 +231,14 @@
                         </label>
                     </div>
 
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Novedad (obligatoria si rechazas modalidad o formatos)</label>
+                        <div class="input-container">
+                            <textarea name="observacion" rows="2" placeholder="Escribe el motivo del rechazo para notificar al aprendiz..."
+                                      style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Registro</button>
                 </form>
             </div>
@@ -246,6 +255,19 @@
             const form = document.getElementById('form-registro-' + idSolicitud);
             if (!form) return;
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Si el Gestor va a rechazar modalidad o formatos, exige que deje la novedad para notificar al aprendiz
+        function validarNovedadRegistro(form) {
+            const modalidadOk = form.querySelector('input[name="modalidadOk"]').checked;
+            const formatosOk = form.querySelector('input[name="formatosOk"]').checked;
+            const observacion = form.querySelector('textarea[name="observacion"]').value.trim();
+
+            if ((!modalidadOk || !formatosOk) && !observacion) {
+                alert('Debes escribir una novedad explicando el motivo del rechazo antes de continuar.');
+                return false;
+            }
+            return true;
         }
     </script>
     <script th:src="@{/js/workflow.js}"></script>

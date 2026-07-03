@@ -88,12 +88,13 @@ public class KronosWorkflowController {
             @PathVariable Long idSolicitud,
             @RequestParam boolean fechaOk,
             @RequestParam boolean competenciasOk,
+            @RequestParam(required = false) String observacion,
             HttpSession session) {
         ResponseEntity<?> denegado = verificarAcceso(session, "GESTOR_ETAPA");
         if (denegado != null) return denegado;
 
         try {
-            SolicitudEtapaPractica solicitud = workflowService.coordinadorEvaluarPrimerFiltro(idSolicitud, fechaOk, competenciasOk);
+            SolicitudEtapaPractica solicitud = workflowService.coordinadorEvaluarPrimerFiltro(idSolicitud, fechaOk, competenciasOk, observacion);
             return ResponseEntity.ok(solicitud);
         } catch (Exception e) {
             return manejarExcepcion(e);
@@ -129,6 +130,7 @@ public class KronosWorkflowController {
             @PathVariable Long idSolicitud,
             @RequestParam boolean modalidadOk,
             @RequestParam boolean formatosOk,
+            @RequestParam(required = false) String observacion,
             @Valid @RequestBody FinalizarEtapaDTO datosFinales, // Usamos un DTO para agrupar los objetos relacionales complejos
             HttpSession session) {
         ResponseEntity<?> denegado = verificarAcceso(session, "GESTOR_ETAPA");
@@ -146,7 +148,8 @@ public class KronosWorkflowController {
                     datosFinales.getFechaFin(),
                     datosFinales.getNombreJefeInmediato(),
                     datosFinales.getCorreoJefeInmediato(),
-                    datosFinales.getTelefonoJefeInmediato()
+                    datosFinales.getTelefonoJefeInmediato(),
+                    observacion
             );
             return ResponseEntity.ok(etapaActiva);
         } catch (Exception e) {

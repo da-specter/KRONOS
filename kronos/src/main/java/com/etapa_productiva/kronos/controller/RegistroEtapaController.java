@@ -75,6 +75,7 @@ public class RegistroEtapaController {
             @RequestParam String nombreJefeInmediato,
             @RequestParam String correoJefeInmediato,
             @RequestParam String telefonoJefeInmediato,
+            @RequestParam(required = false) String observacion,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -94,7 +95,8 @@ public class RegistroEtapaController {
                     idSolicitud, idAprendizFicha, modalidadOk, formatosOk,
                     nit, nombreEmpresa, direccionEmpresa, telefonoEmpresa, correoEmpresa,
                     nombreMunicipio, nombreDepartamento, nombreTipoContrato,
-                    fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato);
+                    fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato,
+                    observacion);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

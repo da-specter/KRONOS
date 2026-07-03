@@ -265,10 +265,40 @@
                 </p>
 
                 <!-- Estado 4: RECHAZADO -->
-                <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'RECHAZADO'}"
-                   style="margin-top: 16px; font-size: 13px; color: #DC2626; font-weight: 600;">
-                    ❌ Tu solicitud fue rechazada. Contacta a tu Gestor de Etapa para más información.
-                </p>
+                <div th:if="${solicitudActual != null and solicitudActual.estado.name() == 'RECHAZADO'}" style="margin-top: 16px;">
+                    <p style="font-size: 13px; color: #DC2626; font-weight: 600;">
+                        ❌ Tu solicitud fue rechazada.
+                    </p>
+                    <p th:if="${solicitudActual.observacionRechazo != null and !#strings.isEmpty(solicitudActual.observacionRechazo)}"
+                       style="font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 6px;"
+                       th:text="'Novedad del Gestor de Etapa: ' + ${solicitudActual.observacionRechazo}">
+                        Novedad del Gestor de Etapa: motivo del rechazo
+                    </p>
+
+                    <form th:action="@{/aprendiz/solicitar}" method="post" style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
+                            <label for="idSeccionFormatoReenvio">Modalidad del contrato</label>
+                            <div class="input-container">
+                                <select id="idSeccionFormatoReenvio" name="idSeccionFormato" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
+                            <label for="modalidadReenvio">Modalidad</label>
+                            <div class="input-container">
+                                <select id="modalidadReenvio" name="modalidad" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option value="PRESENCIAL">Presencial</option>
+                                    <option value="HIBRIDO">Híbrido</option>
+                                    <option value="REMOTO">Remoto</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-login" style="margin-top: 0;">Reenviar Solicitud</button>
+                    </form>
+                </div>
 
                 <!-- Estado 5: APROBADO_EN_ETAPA -->
                 <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}"
@@ -294,6 +324,7 @@
                                 <th style="padding: 14px 16px;">Modalidad Aspira</th>
                                 <th style="padding: 14px 16px;">Fecha Estipulada</th>
                                 <th style="padding: 14px 16px;">Competencias Aprobadas</th>
+                                <th style="padding: 14px 16px;">Novedad (si rechaza)</th>
                                 <th style="padding: 14px 16px; text-align: center;">Acción</th>
                             </tr>
                         </thead>
@@ -324,9 +355,14 @@
                                         <span style="margin-left: 8px; font-weight: 500; color: var(--text-muted);">100% Aprobado</span>
                                     </label>
                                 </td>
-                                
+
+                                <td style="padding: 16px;">
+                                    <textarea th:id="'observacion_' + ${solicitud.idSolicitud}" rows="2" placeholder="Escribe la novedad si vas a rechazar algún check..."
+                                              style="width: 100%; min-width: 180px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; padding: 6px 8px; resize: vertical;"></textarea>
+                                </td>
+
                                 <td style="padding: 16px; text-align: center;">
-                                    <button th:onclick="'enviarEvaluacionInicial(' + ${solicitud.idSolicitud} + ')'" 
+                                    <button th:onclick="'enviarEvaluacionInicial(' + ${solicitud.idSolicitud} + ')'"
                                             style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
                                         Habilitar Formatos
                                     </button>
@@ -334,7 +370,7 @@
                             </tr>
                             
                             <tr th:if="${#lists.isEmpty(solicitudesPendientes)}">
-                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
                                     🎉 No hay solicitudes pendientes por revisar el día de hoy.
                                 </td>
                             </tr>

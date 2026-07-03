@@ -52,6 +52,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import com.etapa_productiva.kronos.entity.ModalidadEtapa;
 
 @Service
@@ -119,28 +120,43 @@ public class KronosWorkflowService {
     /**
      * 👨‍🎓 PASO 1: El Aprendiz inicia el proceso creando su solicitud en el sistema.
      * Ahora utiliza de forma segura el Enum para la modalidad que aspira.
+     * Si el aprendiz ya tenía una solicitud RECHAZADA, se reutiliza esa misma fila
+     * (reenvío): se resetean los checks y el motivo de rechazo y vuelve a PENDIENTE_REVISION.
      */
     @Transactional
     public SolicitudEtapaPractica aprendizCrearSolicitud(Long idAprendizFicha, Long idSeccionFormato, ModalidadEtapa modalidad) {
-        // Validación de seguridad para evitar solicitudes duplicadas en proceso
-        if (solicitudRepository.existsByAprendizFichaIdAprendizFichaAndEstadoNot(idAprendizFicha, EstadoSolicitud.RECHAZADO)) {
-            throw new IllegalStateException("El aprendiz ya cuenta con una solicitud activa en el sistema.");
-        }
-
         AprendizFicha aprendizFicha = aprendizFichaRepository.findById(idAprendizFicha)
                 .orElseThrow(() -> new RuntimeException("Aprendiz-Ficha no encontrado con ID: " + idAprendizFicha));
         SeccionFormato seccionFormato = seccionFormatoRepository.findById(idSeccionFormato)
                 .orElseThrow(() -> new RuntimeException("Modalidad de contrato no encontrada con ID: " + idSeccionFormato));
 
-            // Fíjate en la 'S' mayúscula de nuevaSolicitud:
-        SolicitudEtapaPractica nuevaSolicitud = new SolicitudEtapaPractica();
-        nuevaSolicitud.setAprendizFicha(aprendizFicha);
-        nuevaSolicitud.setSeccionFormato(seccionFormato);
-        nuevaSolicitud.setModalidadSolicitada(modalidad); // 🚀 Ya no fallará por tipo
-        nuevaSolicitud.setEstado(EstadoSolicitud.PENDIENTE_REVISION);
-        nuevaSolicitud.setFechaActualizacion(LocalDateTime.now());
+        Optional<SolicitudEtapaPractica> solicitudExistente = solicitudRepository.findByAprendizFichaIdAprendizFicha(idAprendizFicha);
 
-        SolicitudEtapaPractica guardada = solicitudRepository.save(nuevaSolicitud);
+        SolicitudEtapaPractica solicitud;
+        if (solicitudExistente.isPresent()) {
+            solicitud = solicitudExistente.get();
+            if (solicitud.getEstado() != EstadoSolicitud.RECHAZADO) {
+                throw new IllegalStateException("El aprendiz ya cuenta con una solicitud activa en el sistema.");
+            }
+            // Reenvío: se reutiliza la misma fila para no romper la relación 1-a-1 aprendiz/solicitud
+            solicitud.setCheckFechaEstipulada(false);
+            solicitud.setCheckCompetenciasAprobadas(false);
+            solicitud.setCheckModalidadAprobada(false);
+            solicitud.setCheckFormatosRadicados(false);
+            solicitud.setRutaFormatosSubidos(null);
+            solicitud.setPlantillasHabilitadas(false);
+            solicitud.setObservacionRechazo(null);
+        } else {
+            solicitud = new SolicitudEtapaPractica();
+            solicitud.setAprendizFicha(aprendizFicha);
+        }
+
+        solicitud.setSeccionFormato(seccionFormato);
+        solicitud.setModalidadSolicitada(modalidad); // 🚀 Ya no fallará por tipo
+        solicitud.setEstado(EstadoSolicitud.PENDIENTE_REVISION);
+        solicitud.setFechaActualizacion(LocalDateTime.now());
+
+        SolicitudEtapaPractica guardada = solicitudRepository.save(solicitud);
 
         Usuario aprendizRemitente = aprendizFicha.getUsuario();
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
@@ -157,9 +173,10 @@ public class KronosWorkflowService {
     /**
      * 👨‍💼 PASO 2 y 3: El Coordinador evalúa el primer filtro (Bandeja de entrada).
      * Digita los checks de Fecha Estipulada y Competencias Aprobadas en la interfaz.
+     * Si rechaza algún check, deja una novedad (observación) que se notifica al aprendiz.
      */
     @Transactional
-    public SolicitudEtapaPractica coordinadorEvaluarPrimerFiltro(Long idSolicitud, boolean fechaOk, boolean competenciasOk) {
+    public SolicitudEtapaPractica coordinadorEvaluarPrimerFiltro(Long idSolicitud, boolean fechaOk, boolean competenciasOk, String observacion) {
         SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
@@ -173,20 +190,27 @@ public class KronosWorkflowService {
         // Si cumple ambos requisitos iniciales, se le habilita el módulo de formatos
         if (fechaOk && competenciasOk) {
             solicitud.setEstado(EstadoSolicitud.FORMATOS_HABILITADOS);
+            solicitud.setObservacionRechazo(null);
         } else {
+            if (observacion == null || observacion.isBlank()) {
+                throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
+            }
             solicitud.setEstado(EstadoSolicitud.RECHAZADO);
+            solicitud.setObservacionRechazo(observacion);
         }
 
         solicitud.setFechaActualizacion(LocalDateTime.now());
         SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
 
+        Notificacion notificacion = new Notificacion();
+        notificacion.setUsuarioDestino(actualizada.getAprendizFicha().getUsuario());
         if (actualizada.getEstado() == EstadoSolicitud.FORMATOS_HABILITADOS) {
-            Notificacion notificacion = new Notificacion();
-            notificacion.setUsuarioDestino(actualizada.getAprendizFicha().getUsuario());
             notificacion.setMensaje("¡Tu solicitud fue aprobada en el primer filtro! Ya puedes subir tus formatos de "
                     + actualizada.getSeccionFormato().getNombreSeccion() + " diligenciados.");
-            notificacionRepository.save(notificacion);
+        } else {
+            notificacion.setMensaje("❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
         }
+        notificacionRepository.save(notificacion);
 
         return actualizada;
     }
@@ -341,7 +365,8 @@ public class KronosWorkflowService {
             LocalDate fechaFin,                // Columna FECHA_FIN (Imagen 2)
             String nombreJefeInmediato,        // Columna NOMBRE_JEFE_INMEDIATO (Imagen 3)
             String correoJefeInmediato,        // Columna CORREO_JEFE_INMEDIATO (Imagen 3)
-            String telefonoJefeInmediato) {    // Columna TELEFONO_JEFE_INMEDIATO (Imagen 3)
+            String telefonoJefeInmediato,       // Columna TELEFONO_JEFE_INMEDIATO (Imagen 3)
+            String observacion) {               // Novedad que deja el Gestor si rechaza modalidad/formatos
 
         // 1. Validar y cerrar la solicitud intermedia del flujo de trabajo
         SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
@@ -367,11 +392,22 @@ public class KronosWorkflowService {
         solicitud.setCheckFormatosRadicados(formatosOk);
 
         if (!modalidadOk || !formatosOk) {
+            if (observacion == null || observacion.isBlank()) {
+                throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
+            }
             solicitud.setEstado(EstadoSolicitud.RECHAZADO);
+            solicitud.setObservacionRechazo(observacion);
             solicitudRepository.save(solicitud);
+
+            Notificacion notificacionRechazo = new Notificacion();
+            notificacionRechazo.setUsuarioDestino(solicitud.getAprendizFicha().getUsuario());
+            notificacionRechazo.setMensaje("❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
+            notificacionRepository.save(notificacionRechazo);
+
             throw new RuntimeException("No se puede dar de alta la etapa: Los requisitos finales fueron rechazados.");
         }
 
+        solicitud.setObservacionRechazo(null);
         solicitud.setEstado(EstadoSolicitud.APROBADO_EN_ETAPA);
         solicitudRepository.save(solicitud);
 
@@ -426,7 +462,8 @@ public class KronosWorkflowService {
             LocalDate fechaFin,
             String nombreJefeInmediato,
             String correoJefeInmediato,
-            String telefonoJefeInmediato) {
+            String telefonoJefeInmediato,
+            String observacion) {
 
         Departamento departamento = departamentoRepository.findByNombreDepartamentoIgnoreCase(nombreDepartamento)
                 .orElseGet(() -> departamentoRepository.save(
@@ -455,7 +492,7 @@ public class KronosWorkflowService {
         return coordinadorHabilitarYAsignarEtapa(
                 idSolicitud, modalidadOk, formatosOk, idAprendizFicha,
                 empresa.getIdEmpresa(), tipoContrato.getIdTipoContrato(),
-                fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato);
+                fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato, observacion);
     }
 
     /**

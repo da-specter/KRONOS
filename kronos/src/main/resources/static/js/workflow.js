@@ -42,9 +42,17 @@ function enviarEvaluacionInicial(idSolicitud) {
     // 1. Capturamos el estado real de los checkboxes del HTML
     const checkFecha = document.getElementById(`checkFecha_${idSolicitud}`).checked;
     const checkCompetencias = document.getElementById(`checkCompetencias_${idSolicitud}`).checked;
+    const observacionEl = document.getElementById(`observacion_${idSolicitud}`);
+    const observacion = observacionEl ? observacionEl.value.trim() : '';
+
+    // Si se va a rechazar algún check, la novedad es obligatoria para que el aprendiz sepa el motivo
+    if ((!checkFecha || !checkCompetencias) && !observacion) {
+        alert('Debes escribir una novedad explicando el motivo del rechazo antes de continuar.');
+        return;
+    }
 
     // 2. Armamos la URL con las variables que espera nuestro @PutMapping del Controller
-    const url = `/api/workflow/coordinador/evaluar-inicial/${idSolicitud}?fechaOk=${checkFecha}&competenciasOk=${checkCompetencias}`;
+    const url = `/api/workflow/coordinador/evaluar-inicial/${idSolicitud}?fechaOk=${checkFecha}&competenciasOk=${checkCompetencias}&observacion=${encodeURIComponent(observacion)}`;
 
     // 3. Disparamos la petición asíncrona al servidor de Spring Boot
     fetch(url, {

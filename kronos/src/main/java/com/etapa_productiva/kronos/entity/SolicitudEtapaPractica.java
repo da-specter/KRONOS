@@ -72,4 +72,10 @@ public class SolicitudEtapaPractica {
 
     @Column(name = "FECHA_ACTUALIZACION", nullable = false)
     private LocalDateTime fechaActualizacion;
+
+    // Motivo que el Gestor de Etapa deja al rechazar un check (fecha/competencias/modalidad/formatos).
+    // Se limpia automáticamente cuando el aprendiz reenvía la solicitud o cuando un check pasa a aprobado.
+    @Lob
+    @Column(name = "OBSERVACION_RECHAZO", columnDefinition = "CLOB")
+    private String observacionRechazo;
 }
