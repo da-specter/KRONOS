@@ -11,6 +11,7 @@ public class LoginResponse {
     private String nombre;
     private String apellido;
     private String correo;
+    private String fotoPerfil;
     private List<String> roles;
     private List<MenuDto> menuNavegacion;
 }

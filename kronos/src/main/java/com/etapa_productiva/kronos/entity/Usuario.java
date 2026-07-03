@@ -47,6 +47,10 @@ private TipoDocumento tipoDocumento;
     @Column(name = "TELEFONO", columnDefinition = "VARCHAR2(11)")
     private String telefono;
 
+    // 🖼️ Ruta pública (bajo /uploads/**) de la foto de perfil, disponible para cualquier rol
+    @Column(name = "FOTO_PERFIL", columnDefinition = "VARCHAR2(255)")
+    private String fotoPerfil;
+
     // Mapeo estricto del booleano como NUMBER(1,0) para Oracle
     @Column(name = "ESTADO", columnDefinition = "NUMBER(1,0) DEFAULT 1", nullable = false)
     private Boolean estado;

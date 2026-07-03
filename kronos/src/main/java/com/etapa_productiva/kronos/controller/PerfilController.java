@@ -6,13 +6,21 @@ import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.UsuarioRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 /**
  * 👤 Módulo "Mi Perfil": disponible para cualquier rol autenticado. Permite ver y editar
@@ -30,6 +38,9 @@ public class PerfilController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Value("${app.upload.root-dir:uploads}")
+    private String uploadRootDir;
 
     @GetMapping("/perfil")
     public String verPerfil(HttpSession session, Model model) {
@@ -108,5 +119,60 @@ public class PerfilController {
         }
 
         return "redirect:/perfil";
+    }
+
+    @PostMapping("/perfil/foto")
+    public String cambiarFotoPerfil(
+            @RequestParam("foto") MultipartFile foto,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuarioLogueado == null) {
+            return "redirect:/auth/login";
+        }
+
+        try {
+            Usuario usuario = usuarioRepository.findById(usuarioLogueado.getIdUsuario())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+            usuario.setFotoPerfil(guardarFotoPerfil(foto, usuario.getIdUsuario()));
+            usuarioRepository.save(usuario);
+
+            usuarioLogueado.setFotoPerfil(usuario.getFotoPerfil());
+            session.setAttribute("usuarioSesion", usuarioLogueado);
+
+            redirectAttributes.addFlashAttribute("exito", "Tu foto de perfil se actualizó correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/perfil";
+    }
+
+    private String guardarFotoPerfil(MultipartFile foto, Long idUsuario) {
+        if (foto == null || foto.isEmpty()) {
+            throw new IllegalArgumentException("Debes seleccionar una imagen para tu foto de perfil.");
+        }
+        String tipoContenido = foto.getContentType();
+        if (tipoContenido == null || !tipoContenido.startsWith("image/")) {
+            throw new IllegalArgumentException("La foto de perfil debe ser una imagen (JPG, PNG, etc).");
+        }
+
+        try {
+            Path directorio = Paths.get(uploadRootDir, "perfil", "usuario_" + idUsuario);
+            Files.createDirectories(directorio);
+
+            String nombreOriginal = foto.getOriginalFilename() != null ? foto.getOriginalFilename() : "foto";
+            int puntoIdx = nombreOriginal.lastIndexOf('.');
+            String extension = puntoIdx >= 0 ? nombreOriginal.substring(puntoIdx).toLowerCase() : "";
+            String nombreArchivo = UUID.randomUUID() + extension;
+
+            Path destino = directorio.resolve(nombreArchivo);
+            foto.transferTo(destino);
+            return "/" + destino.toString().replace('\\', '/');
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo guardar la foto de perfil en el servidor: " + e.getMessage(), e);
+        }
     }
 }

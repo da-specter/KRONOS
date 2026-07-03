@@ -119,7 +119,10 @@
                     </div>
                 </div>
 
-                <div class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
                     DM
                 </div>
             </div>
@@ -131,8 +134,12 @@
             <div class="alert-success" th:if="${exito}" th:text="${exito}" style="grid-column: 1 / -1; margin-top: 0;"></div>
 
             <div class="dashboard-panel" style="grid-column: 1 / -1;">
-                <div style="display:flex; align-items:center; gap:16px; margin-bottom: 22px;">
-                    <div class="user-avatar-glow" style="width:56px; height:56px; font-size:20px;"
+                <div style="display:flex; align-items:center; gap:16px; margin-bottom: 18px;">
+                    <img th:if="${perfil.fotoPerfil != null and !#strings.isEmpty(perfil.fotoPerfil)}"
+                         th:src="@{${perfil.fotoPerfil}}" alt="Foto de perfil"
+                         style="width:56px; height:56px; border-radius:50%; object-fit:cover;">
+                    <div th:unless="${perfil.fotoPerfil != null and !#strings.isEmpty(perfil.fotoPerfil)}"
+                         class="user-avatar-glow" style="width:56px; height:56px; font-size:20px;"
                          th:text="${#strings.substring(perfil.nombre,0,1) + #strings.substring(perfil.apellido,0,1)}">DM</div>
                     <div>
                         <p style="font-size:17px; font-weight:700; color:var(--text-dark); margin:0;"
@@ -141,6 +148,12 @@
                            th:text="${perfil.tipoDocumento} + ' ' + ${perfil.documento}">CC 1234567</p>
                     </div>
                 </div>
+
+                <form th:action="@{/perfil/foto}" method="post" enctype="multipart/form-data"
+                      style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--card-border);">
+                    <input type="file" name="foto" accept="image/*" required style="font-size: 13px;">
+                    <button type="submit" class="btn-login" style="margin-top:0; width:auto; padding: 8px 18px; font-size: 13px;">Cambiar Foto</button>
+                </form>
 
                 <form th:action="@{/perfil/editar}" method="post">
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">

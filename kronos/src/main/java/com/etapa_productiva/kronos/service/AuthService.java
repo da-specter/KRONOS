@@ -95,6 +95,7 @@ public class AuthService {
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
                 .correo(usuario.getCorreoElectronico())
+                .fotoPerfil(usuario.getFotoPerfil())
                 .roles(roles)
                 .menuNavegacion(menuNavegacion)
                 .build();
