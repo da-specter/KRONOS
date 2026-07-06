@@ -221,12 +221,17 @@ public class KronosWorkflowService {
         return actualizada;
     }
 
+    private static final int MAXIMO_ARCHIVOS_REQUISITOS = 10;
+
     /**
-     * 👨‍🎓 PASO 4: El Aprendiz descarga los documentos del formato de su modalidad,
-     * los diligencia y sube el archivo radicado al sistema (nombre físico único con UUID).
+     * 👨‍🎓 PASO 4: El Aprendiz descarga los documentos del formato de su modalidad, los
+     * diligencia y sube hasta {@value #MAXIMO_ARCHIVOS_REQUISITOS} archivos radicados al
+     * sistema, cada uno con un asunto obligatorio que describe su contenido. Se guardan como
+     * DocumentoSolicitud (sin plantilla asociada, por ser formatos libres) para que el
+     * Gestor de Etapa pueda ver los asuntos en su bandeja.
      */
     @Transactional
-    public SolicitudEtapaPractica aprendizSubirFormatos(Long idSolicitud, MultipartFile archivo) {
+    public SolicitudEtapaPractica aprendizSubirFormatos(Long idSolicitud, List<MultipartFile> archivos, List<String> asuntos) {
         SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
@@ -234,25 +239,61 @@ public class KronosWorkflowService {
             throw new IllegalStateException("Acción denegada: La solicitud no se encuentra en estado de carga de formatos.");
         }
 
-        if (archivo == null || archivo.isEmpty()) {
-            throw new IllegalArgumentException("Debes seleccionar un archivo para subir.");
+        if (archivos == null || asuntos == null || archivos.size() != asuntos.size()) {
+            throw new IllegalArgumentException("Cada archivo debe traer su asunto correspondiente.");
         }
 
-        String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo";
-        int puntoIdx = nombreOriginal.lastIndexOf('.');
-        String extension = puntoIdx >= 0 ? nombreOriginal.substring(puntoIdx).toLowerCase() : "";
-        if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
-            throw new IllegalArgumentException("Solo se aceptan archivos de Word (.doc, .docx) o Excel (.xls, .xlsx).");
+        // Se descartan las filas del formulario que quedaron vacías (el aprendiz no llenó todas las que agregó)
+        List<MultipartFile> archivosUsados = new java.util.ArrayList<>();
+        List<String> asuntosUsados = new java.util.ArrayList<>();
+        for (int i = 0; i < archivos.size(); i++) {
+            MultipartFile archivo = archivos.get(i);
+            if (archivo != null && !archivo.isEmpty()) {
+                archivosUsados.add(archivo);
+                asuntosUsados.add(asuntos.get(i));
+            }
+        }
+
+        if (archivosUsados.isEmpty()) {
+            throw new IllegalArgumentException("Debes seleccionar al menos un archivo para subir.");
+        }
+        if (archivosUsados.size() > MAXIMO_ARCHIVOS_REQUISITOS) {
+            throw new IllegalArgumentException("Puedes subir máximo " + MAXIMO_ARCHIVOS_REQUISITOS + " archivos.");
         }
 
         try {
             Path directorio = Paths.get(uploadDir, "solicitud_" + idSolicitud);
             Files.createDirectories(directorio);
-            String nombreArchivo = java.util.UUID.randomUUID() + extension;
-            Path destino = directorio.resolve(nombreArchivo);
-            archivo.transferTo(destino);
 
-            solicitud.setRutaFormatosSubidos(rutaWeb(destino));
+            for (int i = 0; i < archivosUsados.size(); i++) {
+                MultipartFile archivo = archivosUsados.get(i);
+                String asunto = asuntosUsados.get(i) == null ? "" : asuntosUsados.get(i).trim();
+                if (asunto.isBlank()) {
+                    throw new IllegalArgumentException("Todos los archivos deben indicar un asunto que describa su contenido.");
+                }
+
+                String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo";
+                int puntoIdx = nombreOriginal.lastIndexOf('.');
+                String extension = puntoIdx >= 0 ? nombreOriginal.substring(puntoIdx).toLowerCase() : "";
+                if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
+                    throw new IllegalArgumentException("Solo se aceptan archivos de Word (.doc, .docx) o Excel (.xls, .xlsx).");
+                }
+
+                String nombreArchivo = java.util.UUID.randomUUID() + extension;
+                Path destino = directorio.resolve(nombreArchivo);
+                archivo.transferTo(destino);
+
+                DocumentoSolicitud documento = DocumentoSolicitud.builder()
+                        .solicitud(solicitud)
+                        .plantillaFormato(null)
+                        .rutaArchivoLleno(rutaWeb(destino))
+                        .asunto(asunto)
+                        .estadoValidacion(EstadoValidacion.PENDIENTE)
+                        .fechaSubida(LocalDateTime.now())
+                        .build();
+                documentoSolicitudRepository.save(documento);
+            }
+
             solicitud.setEstado(EstadoSolicitud.FORMATOS_ENVIADOS); // Viaja a la bandeja del Gestor de Etapa
             solicitud.setFechaActualizacion(LocalDateTime.now());
 

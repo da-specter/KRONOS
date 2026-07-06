@@ -7,11 +7,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import java.time.LocalDateTime;
 
+// Sin restricción única de BD entre (ID_SOLICITUD, ID_PLANTILLA): Oracle sí compara las claves
+// compuestas con NULL parcial, y ahora puede haber muchas filas con ID_PLANTILLA NULL por
+// solicitud (los formatos requisito libres, identificados por "asunto"). La no-duplicación de
+// una plantilla puntual ya resubida se sigue garantizando en el código (ver
+// KronosWorkflowService.aprendizSubirPlantillaFirmada, que busca-y-actualiza en vez de insertar).
 @Entity
-@Table(name = "DOCUMENTO_SOLICITUD", uniqueConstraints = {
-    // Un aprendiz no puede resubir dos veces la misma plantilla para la misma solicitud
-    @UniqueConstraint(columnNames = {"ID_SOLICITUD", "ID_PLANTILLA"})
-})
+@Table(name = "DOCUMENTO_SOLICITUD")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,14 +30,20 @@ public class DocumentoSolicitud {
     @JoinColumn(name = "ID_SOLICITUD", referencedColumnName = "ID_SOLICITUD", columnDefinition = "NUMBER(19,0)", nullable = false)
     private SolicitudEtapaPractica solicitud;
 
-    // Relación Muchos a Uno: identifica cuál plantilla en blanco fue la que diligenció el aprendiz
+    // Relación Muchos a Uno: identifica cuál plantilla en blanco fue la que diligenció el aprendiz.
+    // Queda NULL cuando el documento es un formato requisito libre (ver "asunto") y no corresponde
+    // a una plantilla puntual del catálogo.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_PLANTILLA", referencedColumnName = "ID_PLANTILLA", columnDefinition = "NUMBER(19,0)", nullable = false)
+    @JoinColumn(name = "ID_PLANTILLA", referencedColumnName = "ID_PLANTILLA", columnDefinition = "NUMBER(19,0)")
     private PlantillaFormato plantillaFormato;
 
     // Almacena la ubicación física del archivo firmado en el servidor
     @Column(name = "RUTA_ARCHIVO_LLENO", columnDefinition = "VARCHAR2(500)", nullable = false)
     private String rutaArchivoLleno;
+
+    // Descripción obligatoria de qué contiene el archivo, escrita por el aprendiz al subirlo
+    @Column(name = "ASUNTO", columnDefinition = "VARCHAR2(200)", nullable = false)
+    private String asunto;
 
     // Estado individual de la revisión usando el Enum (PENDIENTE, APROBADO, RECHAZADO)
     @Enumerated(EnumType.STRING)

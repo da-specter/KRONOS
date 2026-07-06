@@ -137,12 +137,23 @@ public class IndexController {
                     solicitudRepository.findByEstado(EstadoSolicitud.PENDIENTE_REVISION));
             model.addAttribute("documentosPendientes",
                     documentoSolicitudRepository.findByEstadoValidacion(EstadoValidacion.PENDIENTE));
-            model.addAttribute("solicitudesParaHabilitarFormatos",
-                    solicitudRepository.findByEstadoAndPlantillasHabilitadas(EstadoSolicitud.FORMATOS_ENVIADOS, false));
+
+            List<SolicitudEtapaPractica> solicitudesParaHabilitarFormatos =
+                    solicitudRepository.findByEstadoAndPlantillasHabilitadas(EstadoSolicitud.FORMATOS_ENVIADOS, false);
+            model.addAttribute("solicitudesParaHabilitarFormatos", solicitudesParaHabilitarFormatos);
+
+            // Asuntos de los archivos que cada aprendiz radicó, para que el Gestor los vea en la bandeja
+            java.util.Map<Long, List<com.etapa_productiva.kronos.entity.DocumentoSolicitud>> documentosPorSolicitud = new java.util.HashMap<>();
+            for (SolicitudEtapaPractica s : solicitudesParaHabilitarFormatos) {
+                documentosPorSolicitud.put(s.getIdSolicitud(),
+                        documentoSolicitudRepository.findBySolicitudIdSolicitud(s.getIdSolicitud()));
+            }
+            model.addAttribute("documentosPorSolicitudParaHabilitar", documentosPorSolicitud);
         } else {
             model.addAttribute("solicitudesPendientes", Collections.emptyList());
             model.addAttribute("documentosPendientes", Collections.emptyList());
             model.addAttribute("solicitudesParaHabilitarFormatos", Collections.emptyList());
+            model.addAttribute("documentosPorSolicitudParaHabilitar", Collections.emptyMap());
         }
 
         // 5. Panel del Instructor de Seguimiento: dashboard (números + gráficas) de sus aprendices asignados
@@ -327,7 +338,8 @@ public class IndexController {
      */
     @PostMapping(value = "/aprendiz/subir-formatos", consumes = "multipart/form-data")
     public String subirFormatosAprendiz(
-            @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam("archivos") List<MultipartFile> archivos,
+            @RequestParam("asuntos") List<String> asuntos,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -348,7 +360,7 @@ public class IndexController {
                 throw new IllegalStateException("No tienes una solicitud de etapa práctica en curso.");
             }
 
-            workflowService.aprendizSubirFormatos(solicitudActual.getIdSolicitud(), archivo);
+            workflowService.aprendizSubirFormatos(solicitudActual.getIdSolicitud(), archivos, asuntos);
 
             System.out.println("🚀 [INDEX] Formatos iniciales subidos por: " + usuarioLogueado.getNombre());
         } catch (Exception e) {

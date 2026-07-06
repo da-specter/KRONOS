@@ -45,4 +45,13 @@ public class PlantillaFormato {
         if (this.fechaSubida == null) this.fechaSubida = LocalDateTime.now();
         if (this.estado == null) this.estado = true;
     }
+
+    // El archivo físico se guarda como "{timestamp}_{nombreOriginal}" (ver AdminPlantillasController.guardarArchivo).
+    // Esto expone ese nombre original tal cual se llama el archivo, sin el prefijo de timestamp ni la carpeta.
+    public String getNombreArchivoOriginal() {
+        if (rutaArchivoPlantilla == null) return "";
+        String base = rutaArchivoPlantilla.substring(rutaArchivoPlantilla.lastIndexOf('/') + 1);
+        int guionBajo = base.indexOf('_');
+        return (guionBajo > 0 && guionBajo < base.length() - 1) ? base.substring(guionBajo + 1) : base;
+    }
 }

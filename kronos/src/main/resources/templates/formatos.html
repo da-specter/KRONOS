@@ -32,10 +32,23 @@
                     <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
                           th:text="${solicitudActual.seccionFormato.nombreSeccion}">Pasantía</span>
                 </h3>
-                <form th:action="@{/aprendiz/subir-formatos}" method="post" enctype="multipart/form-data"
-                      style="margin-top: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <input type="file" name="archivo" accept=".doc,.docx,.xls,.xlsx" required style="font-size: 13px;">
-                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 8px 18px; font-size: 13px;">Subir Formatos</button>
+                <form id="formSubirFormatos" th:action="@{/aprendiz/subir-formatos}" method="post" enctype="multipart/form-data" style="margin-top: 16px;">
+                    <div id="filasFormatos">
+                        <div class="fila-formato" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <input type="file" name="archivos" accept=".doc,.docx,.xls,.xlsx" required style="font-size: 13px;">
+                            <input type="text" name="asuntos" placeholder="¿Qué contiene este archivo? (obligatorio)" required maxlength="200"
+                                   style="flex: 1; min-width: 220px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border); font-size: 13px;">
+                            <button type="button" class="btn-quitar-formato" title="Quitar" style="background: none; border: none; color: #DC2626; font-weight: 700; font-size: 16px; cursor: pointer; padding: 0 6px;">✕</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
+                        <button type="button" id="btnAgregarFormato"
+                                style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); border: none; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                            + Agregar otro archivo
+                        </button>
+                        <button type="submit" class="btn-login" style="margin-top: 0; padding: 8px 18px; font-size: 13px;">Subir Formatos</button>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Puedes subir hasta 10 archivos. Cada uno debe indicar un asunto que describa su contenido.</p>
                 </form>
             </div>
 
@@ -54,7 +67,7 @@
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
-                            <span th:text="${plantilla.nombreDocumento}">Formato</span>
+                            <span th:text="${plantilla.nombreArchivoOriginal}">Formato</span>
                         </a>
                     </div>
 
@@ -82,7 +95,7 @@
                                     <polyline points="7 10 12 15 17 10"></polyline>
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
-                                <span th:text="${plantilla.nombreDocumento}">Formato</span>
+                                <span th:text="${plantilla.nombreArchivoOriginal}">Formato</span>
                             </a>
                         </div>
 
@@ -98,5 +111,29 @@
     </main>
 
     <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        (function () {
+            var MAXIMO_ARCHIVOS = 10;
+            var contenedor = document.getElementById('filasFormatos');
+            var btnAgregar = document.getElementById('btnAgregarFormato');
+            if (!contenedor || !btnAgregar) return;
+
+            btnAgregar.addEventListener('click', function () {
+                if (contenedor.children.length >= MAXIMO_ARCHIVOS) {
+                    alert('Puedes subir máximo ' + MAXIMO_ARCHIVOS + ' archivos.');
+                    return;
+                }
+                var fila = contenedor.children[0].cloneNode(true);
+                fila.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+                contenedor.appendChild(fila);
+            });
+
+            contenedor.addEventListener('click', function (evento) {
+                if (evento.target.classList.contains('btn-quitar-formato') && contenedor.children.length > 1) {
+                    evento.target.closest('.fila-formato').remove();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

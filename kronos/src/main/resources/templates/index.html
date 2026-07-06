@@ -416,7 +416,8 @@
                                     th:text="${documento.solicitud.aprendizFicha.usuario.nombre} + ' ' + ${documento.solicitud.aprendizFicha.usuario.apellido}">
                                     Nombre Aprendiz
                                 </td>
-                                <td style="padding: 16px;" th:text="${documento.plantillaFormato.nombreDocumento}">Documento</td>
+                                <td style="padding: 16px;"
+                                    th:text="${documento.plantillaFormato != null ? documento.plantillaFormato.nombreDocumento : documento.asunto}">Documento</td>
                                 <td style="padding: 16px;" th:text="${#temporals.format(documento.fechaSubida, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
                                 <td style="padding: 16px;">
                                     <a th:href="${documento.rutaArchivoLleno}" target="_blank"
@@ -464,7 +465,21 @@
                                 </td>
                                 <td style="padding: 16px;" th:text="${solicitud.seccionFormato.nombreSeccion}">Pasantía</td>
                                 <td style="padding: 16px;">
-                                    <a th:if="${solicitud.rutaFormatosSubidos != null}" th:href="${solicitud.rutaFormatosSubidos}" target="_blank"
+                                    <div th:if="${not #lists.isEmpty(documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud))}"
+                                         style="display: flex; flex-direction: column; gap: 6px;">
+                                        <a th:each="doc : ${documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud)}"
+                                           th:href="${doc.rutaArchivoLleno}" target="_blank"
+                                           style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none; font-size: 12px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="7 10 12 15 17 10"></polyline>
+                                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                            </svg>
+                                            <span th:text="${doc.asunto}">Asunto del archivo</span>
+                                        </a>
+                                    </div>
+                                    <a th:if="${#lists.isEmpty(documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud)) and solicitud.rutaFormatosSubidos != null}"
+                                       th:href="${solicitud.rutaFormatosSubidos}" target="_blank"
                                        style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
