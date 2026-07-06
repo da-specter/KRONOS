@@ -2,6 +2,8 @@ package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.LoginResponse;
 import com.etapa_productiva.kronos.entity.EstadoSolicitud;
+import com.etapa_productiva.kronos.repository.DepartamentoRepository;
+import com.etapa_productiva.kronos.repository.MunicipioRepository;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.SolicitudRepository;
 import com.etapa_productiva.kronos.service.KronosWorkflowService;
@@ -33,6 +35,12 @@ public class RegistroEtapaController {
     private NotificacionRepository notificacionRepository;
 
     @Autowired
+    private DepartamentoRepository departamentoRepository;
+
+    @Autowired
+    private MunicipioRepository municipioRepository;
+
+    @Autowired
     private KronosWorkflowService workflowService;
 
     @GetMapping("/gestor/registro-etapa")
@@ -55,6 +63,14 @@ public class RegistroEtapaController {
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 
         model.addAttribute("solicitudesParaRegistrar", solicitudRepository.findByEstado(EstadoSolicitud.FORMATOS_ENVIADOS));
+
+        // 🗺️ Catálogo de división territorial para los selects de Municipio/Departamento del formulario
+        model.addAttribute("departamentos", departamentoRepository.findAll().stream()
+                .sorted((a, b) -> a.getNombreDepartamento().compareToIgnoreCase(b.getNombreDepartamento()))
+                .toList());
+        model.addAttribute("municipios", municipioRepository.findAll().stream()
+                .sorted((a, b) -> a.getNombreMunicipio().compareToIgnoreCase(b.getNombreMunicipio()))
+                .toList());
 
         return "registro-etapa";
     }

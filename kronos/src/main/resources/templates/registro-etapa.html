@@ -73,12 +73,26 @@
                             <div class="input-container"><input type="email" name="correoEmpresa" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label>Municipio</label>
-                            <div class="input-container"><input type="text" name="nombreMunicipio" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <label>Departamento</label>
+                            <div class="input-container">
+                                <select name="nombreDepartamento" required onchange="filtrarMunicipios(this)"
+                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                    <option value="">Selecciona un departamento</option>
+                                    <option th:each="d : ${departamentos}" th:value="${d.nombreDepartamento}"
+                                            th:text="${d.nombreDepartamento}" th:attr="data-id=${d.idDepartamento}"></option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label>Departamento</label>
-                            <div class="input-container"><input type="text" name="nombreDepartamento" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <label>Municipio</label>
+                            <div class="input-container">
+                                <select name="nombreMunicipio" required
+                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                    <option value="">Selecciona un departamento primero</option>
+                                    <option th:each="m : ${municipios}" th:value="${m.nombreMunicipio}"
+                                            th:text="${m.nombreMunicipio}" th:attr="data-dept=${m.departamento.idDepartamento}" hidden></option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -149,6 +163,19 @@
             const form = document.getElementById('form-registro-' + idSolicitud);
             if (!form) return;
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Filtra el select de Municipio del mismo formulario para que solo muestre los
+        // municipios que pertenecen al Departamento elegido (evita combinaciones inválidas).
+        function filtrarMunicipios(selectDepartamento) {
+            const opcionElegida = selectDepartamento.options[selectDepartamento.selectedIndex];
+            const idDepartamento = opcionElegida ? opcionElegida.getAttribute('data-id') : '';
+            const selectMunicipio = selectDepartamento.closest('form').querySelector('select[name="nombreMunicipio"]');
+            selectMunicipio.value = '';
+            Array.from(selectMunicipio.options).forEach(function (opcion) {
+                if (!opcion.value) return; // deja visible el placeholder
+                opcion.hidden = opcion.getAttribute('data-dept') !== idDepartamento;
+            });
         }
 
         // Si el Gestor va a rechazar modalidad o formatos, exige que deje la novedad para notificar al aprendiz
