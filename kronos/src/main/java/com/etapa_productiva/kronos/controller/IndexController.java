@@ -577,7 +577,7 @@ public class IndexController {
         if (etapaCertificando(etapaActiva)) {
             menu.removeIf(m -> ITEMS_ETAPA_EN_CURSO.contains(m.getNombre()));
         } else if (formatosDesbloqueados(solicitudActual)) {
-            menu.add(new MenuDto("📁 Formatos", "/formatos"));
+            menu.add(new MenuDto("Formatos", "/formatos"));
         }
         return menu;
     }

@@ -78,7 +78,7 @@ public class AuthService {
                     new MenuDto("Bitácoras", "/instructor/seguimiento/bitacoras"),
                     new MenuDto("Formato Planeación 023", "/instructor/seguimiento/planeacion")
             )));
-            menuNavegacion.add(new MenuDto("📢 Novedades", "/novedades"));
+            menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
         }
         if (roles.contains("INSTRUCTOR_TECNICO")) {
             // Módulo del líder de ficha: consulta de sus fichas/aprendices + añadir/importar aprendices
@@ -100,11 +100,11 @@ public class AuthService {
             )));
             menuNavegacion.add(new MenuDto("Asignar Instructores", "/coordinador/asignaciones"));
             menuNavegacion.add(new MenuDto("Validación de Documentos", "/gestor/documentos"));
-            menuNavegacion.add(new MenuDto("🏢 Registro Etapa Productiva", "/gestor/registro-etapa"));
+            menuNavegacion.add(new MenuDto("Registro Etapa Productiva", "/gestor/registro-etapa"));
             // Bandeja de aprendices que ya completaron bitácoras + Formato 023 (estado POR_CERTIFICAR)
-            menuNavegacion.add(new MenuDto("🎓 Certificación Aprendiz", "/gestor/certificacion"));
-            menuNavegacion.add(new MenuDto("📢 Novedades", "/novedades"));
-            menuNavegacion.add(new MenuDto("📁 Formatos", "/formatos"));
+            menuNavegacion.add(new MenuDto("Certificación Aprendiz", "/gestor/certificacion"));
+            menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
+            menuNavegacion.add(new MenuDto("Formatos", "/formatos"));
         }
         if (roles.contains("ADMINISTRADOR")) {
             // 🛠️ Sidebar exclusivo del Administrador: 4 módulos madre desplegables.
@@ -130,8 +130,8 @@ public class AuthService {
             )));
         }
 
-        // 👤 Disponible para cualquier rol: ver y editar los datos propios guardados en Usuario
-        menuNavegacion.add(new MenuDto("👤 Mi Perfil", "/perfil"));
+        // Disponible para cualquier rol: ver y editar los datos propios guardados en Usuario
+        menuNavegacion.add(new MenuDto("Mi Perfil", "/perfil"));
 
         return LoginResponse.builder()
                 .idUsuario(usuario.getIdUsuario())

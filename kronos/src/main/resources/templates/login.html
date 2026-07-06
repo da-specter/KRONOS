@@ -29,7 +29,7 @@
 
             <div class="form-header">
                 <div class="user-avatar-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
@@ -37,6 +37,7 @@
                 <h2>Inicio de Sesión</h2>
             </div>
 
+            <div class="alert-success" th:if="${exito}" th:text="${exito}"></div>
             <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
 
             <form th:action="@{/auth/login}" th:object="${loginRequest}" method="post" style="display: flex; flex-direction: column;">
@@ -63,20 +64,33 @@
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
-                        <input id="contrasena" 
-                               type="password" 
-                               th:field="*{contrasena}" 
-                               placeholder="Introduce tu contraseña" 
+                        <input id="contrasena"
+                               type="password"
+                               th:field="*{contrasena}"
+                               placeholder="Introduce tu contraseña"
                                required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('contrasena', 'eyeIconShow', 'eyeIconHide')" aria-label="Mostrar u ocultar contraseña" tabindex="-1">
+                            <svg id="eyeIconShow" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg id="eyeIconHide" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
+                <a th:href="@{/auth/recuperar}" class="forgot-password-link">¿Olvidaste tu contraseña?</a>
+
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
-                
+
             </form>
         </div>
 
     </div>
 
+    <script th:src="@{/js/toggle-password.js}"></script>
 </body>
 </html>

@@ -3,6 +3,7 @@ package com.etapa_productiva.kronos.controller;
 import com.etapa_productiva.kronos.dto.LoginRequest;
 import com.etapa_productiva.kronos.dto.LoginResponse;
 import com.etapa_productiva.kronos.service.AuthService;
+import com.etapa_productiva.kronos.service.PasswordRecoveryService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/auth")
@@ -20,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private PasswordRecoveryService passwordRecoveryService;
 
     @GetMapping("/login")
     public String verLogin(Model model) {
@@ -63,5 +69,50 @@ public class AuthController {
     public String cerrarSesion(HttpSession session) {
         session.invalidate();
         return "redirect:/auth/login";
+    }
+
+    @GetMapping("/recuperar")
+    public String verRecuperar() {
+        return "recuperar-contrasena";
+    }
+
+    @PostMapping("/recuperar/enviar")
+    public String enviarCodigoRecuperacion(
+            @RequestParam String correoElectronico,
+            Model model) {
+        try {
+            passwordRecoveryService.solicitarCodigoPorCorreo(correoElectronico);
+            model.addAttribute("correoElectronico", correoElectronico);
+            return "restablecer-contrasena";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "recuperar-contrasena";
+        }
+    }
+
+    @PostMapping("/recuperar/restablecer")
+    public String restablecerContrasena(
+            @RequestParam String correoElectronico,
+            @RequestParam String codigo,
+            @RequestParam String nuevaContrasena,
+            @RequestParam String confirmarContrasena,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        if (!nuevaContrasena.equals(confirmarContrasena)) {
+            model.addAttribute("error", "Las contraseñas no coinciden.");
+            model.addAttribute("correoElectronico", correoElectronico);
+            return "restablecer-contrasena";
+        }
+
+        try {
+            passwordRecoveryService.restablecerContrasena(correoElectronico, codigo, nuevaContrasena);
+            redirectAttributes.addFlashAttribute("exito", "Tu contraseña se restableció correctamente. Ya puedes iniciar sesión.");
+            return "redirect:/auth/login";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("correoElectronico", correoElectronico);
+            return "restablecer-contrasena";
+        }
     }
 }
