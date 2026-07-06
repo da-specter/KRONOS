@@ -23,55 +23,72 @@
 
         <section class="dashboard-grid">
 
-            <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 22px; margin-top: 10px;">
+            <div class="alert-success" th:if="${exito}" th:text="${exito}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+            <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
 
-                <div th:each="documento : ${documentos}"
-                     style="background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); display: flex; flex-direction: column; gap: 14px;">
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
+                    <span>🗂️ Solicitudes para Habilitar Plantillas</span>
+                </h3>
 
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                        <div>
-                            <p style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin: 0;"
-                               th:text="${documento.solicitud.aprendizFicha.usuario.nombre} + ' ' + ${documento.solicitud.aprendizFicha.usuario.apellido}">
-                                Nombre Aprendiz
-                            </p>
-                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
-                               th:text="'Ficha ' + ${documento.solicitud.aprendizFicha.ficha.numeroFicha}">
-                                Ficha 2555228
-                            </p>
-                        </div>
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Aprendiz</th>
+                                <th style="padding: 14px 16px;">Modalidad del Contrato</th>
+                                <th style="padding: 14px 16px;">Formato Radicado</th>
+                                <th style="padding: 14px 16px; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="solicitud : ${solicitudesParaHabilitarFormatos}" style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+                                <td style="padding: 16px;">
+                                    <div style="font-weight: 700; color: var(--text-dark);" th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</div>
+                                    <span style="font-size: 11px; color: var(--text-muted);" th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud}">Ficha 2555228 · Sol. #102</span>
+                                </td>
+                                <td style="padding: 16px;" th:text="${solicitud.seccionFormato.nombreSeccion}">Pasantía</td>
+                                <td style="padding: 16px;">
+                                    <div th:if="${not #lists.isEmpty(documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud))}"
+                                         style="display: flex; flex-direction: column; gap: 6px;">
+                                        <a th:each="doc : ${documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud)}"
+                                           th:href="${doc.rutaArchivoLleno}" target="_blank"
+                                           style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none; font-size: 12px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="7 10 12 15 17 10"></polyline>
+                                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                            </svg>
+                                            <span th:text="${doc.asunto}">Asunto del archivo</span>
+                                        </a>
+                                    </div>
+                                    <a th:if="${#lists.isEmpty(documentosPorSolicitudParaHabilitar.get(solicitud.idSolicitud)) and solicitud.rutaFormatosSubidos != null}"
+                                       th:href="${solicitud.rutaFormatosSubidos}" target="_blank"
+                                       style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Descargar
+                                    </a>
+                                </td>
+                                <td style="padding: 16px; text-align: center;">
+                                    <button th:onclick="'habilitarFormatosGestor(' + ${solicitud.idSolicitud} + ')'"
+                                            style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                                        Habilitar Formatos
+                                    </button>
+                                </td>
+                            </tr>
 
-                        <span th:text="${documento.estadoValidacion}"
-                              th:style="${documento.estadoValidacion.name() == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${documento.estadoValidacion.name() == 'RECHAZADO'} ? 'background: rgba(220,38,38,0.1); color: #DC2626;' : 'background: #FEF3C7; color: #B45309;')"
-                              style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
-                            PENDIENTE
-                        </span>
-                    </div>
-
-                    <div class="inner-status-card" style="margin: 0;">
-                        <p style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">Documento</p>
-                        <p style="font-size: 14px; color: var(--text-dark); font-weight: 700;"
-                           th:text="${documento.plantillaFormato != null ? documento.plantillaFormato.nombreDocumento : documento.asunto}">GFPI-F-165</p>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;"
-                           th:text="'Radicado: ' + ${#temporals.format(documento.fechaSubida, 'dd/MM/yyyy HH:mm')}">
-                            Radicado: 01/01/2026 10:00
-                        </p>
-                    </div>
-
-                    <a th:href="${documento.rutaArchivoLleno}" target="_blank"
-                       style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--verde-sena); color: #FFFFFF; text-decoration: none; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Descargar
-                    </a>
+                            <tr th:if="${#lists.isEmpty(solicitudesParaHabilitarFormatos)}">
+                                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    🎉 No hay solicitudes pendientes de habilitar plantillas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <p th:if="${#lists.isEmpty(documentos)}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
-                    Aún no hay documentos radicados por los aprendices.
-                </p>
-
             </div>
 
         </section>

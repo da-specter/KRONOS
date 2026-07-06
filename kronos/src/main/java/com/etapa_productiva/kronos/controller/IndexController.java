@@ -130,30 +130,16 @@ public class IndexController {
         List<String> roles = usuarioLogueado.getRoles();
 
         // 3 y 4. Bandeja del Gestor de Etapa: absorbe lo que antes era exclusivo del Coordinador
-        //    (solicitudes pendientes) + lo que ya le pertenecía (documentos por validar,
-        //    solicitudes que ya enviaron formatos y esperan que se les habiliten las plantillas)
+        //    (solicitudes pendientes) + los documentos por validar (el detalle de "Solicitudes
+        //    para Habilitar Plantillas" vive en /gestor/documentos, módulo Validación de Documentos)
         if (roles != null && roles.contains("GESTOR_ETAPA")) {
             model.addAttribute("solicitudesPendientes",
                     solicitudRepository.findByEstado(EstadoSolicitud.PENDIENTE_REVISION));
             model.addAttribute("documentosPendientes",
                     documentoSolicitudRepository.findByEstadoValidacion(EstadoValidacion.PENDIENTE));
-
-            List<SolicitudEtapaPractica> solicitudesParaHabilitarFormatos =
-                    solicitudRepository.findByEstadoAndPlantillasHabilitadas(EstadoSolicitud.FORMATOS_ENVIADOS, false);
-            model.addAttribute("solicitudesParaHabilitarFormatos", solicitudesParaHabilitarFormatos);
-
-            // Asuntos de los archivos que cada aprendiz radicó, para que el Gestor los vea en la bandeja
-            java.util.Map<Long, List<com.etapa_productiva.kronos.entity.DocumentoSolicitud>> documentosPorSolicitud = new java.util.HashMap<>();
-            for (SolicitudEtapaPractica s : solicitudesParaHabilitarFormatos) {
-                documentosPorSolicitud.put(s.getIdSolicitud(),
-                        documentoSolicitudRepository.findBySolicitudIdSolicitud(s.getIdSolicitud()));
-            }
-            model.addAttribute("documentosPorSolicitudParaHabilitar", documentosPorSolicitud);
         } else {
             model.addAttribute("solicitudesPendientes", Collections.emptyList());
             model.addAttribute("documentosPendientes", Collections.emptyList());
-            model.addAttribute("solicitudesParaHabilitarFormatos", Collections.emptyList());
-            model.addAttribute("documentosPorSolicitudParaHabilitar", Collections.emptyMap());
         }
 
         // 5. Panel del Instructor de Seguimiento: dashboard (números + gráficas) de sus aprendices asignados

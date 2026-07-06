@@ -32,7 +32,7 @@ public class Auditoria {
     private LocalDateTime fecha;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "ACCION", columnDefinition = "VARCHAR2(10)", nullable = false)
+    @Column(name = "ACCION", columnDefinition = "VARCHAR2(30)", nullable = false)
     private AccionAuditoria accion;
 
     @PrePersist

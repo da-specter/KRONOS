@@ -22,12 +22,13 @@ public interface PlantillaFormatoRepository extends JpaRepository<PlantillaForma
             @Param("idEtapa") Long idEtapa
     );
 
-    // Plantillas Word/Excel activas, vinculadas estrictamente al tipo de contrato (SeccionFormato) de la solicitud
+    // Plantillas de catálogo activas (Word/Excel/PDF), vinculadas estrictamente al tipo de contrato (SeccionFormato) de la solicitud
     @Query(value = "SELECT p.* FROM plantilla_formato p " +
                    "WHERE p.estado = 1 " +
                    "AND p.id_seccion_formato = :idSeccion " +
                    "AND (LOWER(p.ruta_archivo_plantilla) LIKE '%.doc' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.docx' " +
-                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xls' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xlsx')",
+                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xls' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xlsx' " +
+                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.pdf')",
            nativeQuery = true)
     List<PlantillaFormato> findWordExcelPorSeccion(@Param("idSeccion") Long idSeccion);
 
@@ -40,7 +41,8 @@ public interface PlantillaFormatoRepository extends JpaRepository<PlantillaForma
                    "WHERE p.estado = 1 " +
                    "AND p.id_seccion_formato IS NULL " +
                    "AND (LOWER(p.ruta_archivo_plantilla) LIKE '%.doc' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.docx' " +
-                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xls' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xlsx')",
+                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xls' OR LOWER(p.ruta_archivo_plantilla) LIKE '%.xlsx' " +
+                   "OR LOWER(p.ruta_archivo_plantilla) LIKE '%.pdf')",
            nativeQuery = true)
     List<PlantillaFormato> findWordExcelSinSeccion();
 }
