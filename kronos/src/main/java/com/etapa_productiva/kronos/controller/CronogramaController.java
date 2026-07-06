@@ -1,7 +1,6 @@
 package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.LoginResponse;
-import com.etapa_productiva.kronos.dto.MenuDto;
 import com.etapa_productiva.kronos.entity.AprendizFicha;
 import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,23 +54,23 @@ public class CronogramaController {
         }
 
         model.addAttribute("usuario", usuarioLogueado);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 
-        // Menú reactivo: refleja el mismo "📁 Formatos" condicional que usa /index (sin duplicarlo en la sesión).
+        EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
+        model.addAttribute("etapaActiva", etapaActiva);
+
+        // Menú reactivo: refleja el mismo "📁 Formatos"/"Subir Bitácoras" condicional que usa /index
+        // (sin duplicarlo en la sesión).
         SolicitudEtapaPractica solicitudActual = aprendizFichaRepository.findByUsuarioIdUsuario(usuarioLogueado.getIdUsuario())
                 .map(AprendizFicha::getIdAprendizFicha)
                 .flatMap(solicitudRepository::findByAprendizFichaIdAprendizFicha)
                 .orElse(null);
-        List<MenuDto> menuNavegacionActual = new ArrayList<>(
-                usuarioLogueado.getMenuNavegacion() != null ? usuarioLogueado.getMenuNavegacion() : Collections.emptyList());
-        if (IndexController.formatosDesbloqueados(solicitudActual)) {
-            menuNavegacionActual.add(new MenuDto("📁 Formatos", "/formatos"));
-        }
-        model.addAttribute("menuNavegacionActual", menuNavegacionActual);
-
-        EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
-        model.addAttribute("etapaActiva", etapaActiva);
+        model.addAttribute("menuNavegacionActual",
+                IndexController.menuAprendizReactivo(usuarioLogueado, solicitudActual, etapaActiva));
 
         if (etapaActiva != null) {
             List<CronogramaBitacoras> cronograma = cronogramaService.obtenerOGenerarCronograma(etapaActiva);

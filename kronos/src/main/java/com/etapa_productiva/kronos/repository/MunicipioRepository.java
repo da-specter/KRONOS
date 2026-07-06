@@ -13,4 +13,8 @@ public interface MunicipioRepository extends JpaRepository<Municipio, Long> {
 
     // Evita duplicar el mismo municipio cuando el Gestor lo escribe libremente en el formulario
     Optional<Municipio> findByNombreMunicipioIgnoreCaseAndDepartamentoIdDepartamento(String nombreMunicipio, Long idDepartamento);
+
+    // Importación de visitas: el Excel institucional no trae el Departamento, solo el nombre del
+    // municipio; se busca por nombre en cualquier departamento (debe existir ya en el catálogo).
+    Optional<Municipio> findFirstByNombreMunicipioIgnoreCase(String nombreMunicipio);
 }

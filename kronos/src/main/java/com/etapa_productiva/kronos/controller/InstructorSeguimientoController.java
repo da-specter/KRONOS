@@ -67,6 +67,9 @@ public class InstructorSeguimientoController {
 
         List<InstructorAprendizDto> aprendices = instructorSeguimientoService.listarAprendices(usuario.getIdUsuario());
         model.addAttribute("usuario", usuario);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuario.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuario.getIdUsuario()));
         model.addAttribute("aprendices", aprendices);

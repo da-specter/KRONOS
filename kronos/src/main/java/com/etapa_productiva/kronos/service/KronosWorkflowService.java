@@ -2,6 +2,7 @@ package com.etapa_productiva.kronos.service;
 
 import com.etapa_productiva.kronos.entity.EtapaProductiva; // Import exacto de tu entidad
 import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
+import com.etapa_productiva.kronos.entity.EstadoEtapa;
 import com.etapa_productiva.kronos.entity.EstadoSolicitud;
 import com.etapa_productiva.kronos.entity.EstadoValidacion;
 import com.etapa_productiva.kronos.entity.AccionAuditoria;
@@ -133,10 +134,21 @@ public class KronosWorkflowService {
         SolicitudEtapaPractica solicitud;
         if (solicitudExistente.isPresent()) {
             solicitud = solicitudExistente.get();
-            if (solicitud.getEstado() != EstadoSolicitud.RECHAZADO) {
+
+            // Además del reenvío tras un RECHAZADO, también se permite radicar una nueva
+            // solicitud si la Etapa Productiva de la anterior ya fue CERTIFICADA (el aprendiz
+            // terminó su ciclo anterior y quiere iniciar uno nuevo).
+            boolean rechazada = solicitud.getEstado() == EstadoSolicitud.RECHAZADO;
+            boolean cicloCertificado = solicitud.getEstado() == EstadoSolicitud.APROBADO_EN_ETAPA
+                    && etapaProductivaRepository.findByAprendizIdUsuario(aprendizFicha.getUsuario().getIdUsuario())
+                            .map(e -> e.getEstadoEtapa() == EstadoEtapa.CERTIFICADO)
+                            .orElse(false);
+
+            if (!rechazada && !cicloCertificado) {
                 throw new IllegalStateException("El aprendiz ya cuenta con una solicitud activa en el sistema.");
             }
-            // Reenvío: se reutiliza la misma fila para no romper la relación 1-a-1 aprendiz/solicitud
+            // Reenvío o nuevo ciclo tras certificación: se reutiliza la misma fila para no
+            // romper la relación 1-a-1 aprendiz/solicitud
             solicitud.setCheckFechaEstipulada(false);
             solicitud.setCheckCompetenciasAprobadas(false);
             solicitud.setCheckModalidadAprobada(false);

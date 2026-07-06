@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InstructorAprendizDto {
+    private Long idEtapa;
     private String nombres;
     private String apellidos;
     private String tipoDocumento;

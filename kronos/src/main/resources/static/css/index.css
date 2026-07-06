@@ -42,6 +42,35 @@ body {
     box-shadow: 6px 0 30px rgba(5, 112, 21, 0.08);
 }
 
+/* El bloque superior (marca + menú) ocupa el alto disponible y permite que el menú
+   scrollee internamente cuando se despliegan módulos (el fondo verde nunca se corta) */
+.sidebar > div:first-child {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 🍔 Botón hamburguesa: solo visible en pantallas pequeñas */
+.menu-hamburguesa {
+    display: none;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #FFFFFF;
+}
+
+.menu-hamburguesa svg {
+    width: 22px;
+    height: 22px;
+}
+
 /* Contenedor de la Marca (Logo) */
 .sidebar-brand {
     display: flex;
@@ -81,12 +110,32 @@ body {
     margin-top: 2px;
 }
 
-/* Lista del Menú de Navegación */
+/* Lista del Menú de Navegación: scrollea por dentro si crece más que la pantalla,
+   manteniendo la marca arriba y el footer abajo siempre dentro del fondo verde */
 .sidebar-menu {
     display: flex;
     flex-direction: column;
     gap: 10px;
     flex-grow: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.sidebar-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 /* Ítems del Menú Base (Inactivos) */
@@ -599,14 +648,216 @@ body {
 /* ================= RESPONSIVE MOTOR ================= */
 @media (max-width: 1150px) {
     .dashboard-grid { grid-template-columns: 1fr; }
+    .sidebar { width: 240px; padding: 30px 16px 20px 16px; }
+    .main-content { padding: 24px; }
 }
 
+/* 📱 Pantallas pequeñas: el sidebar se vuelve una barra superior con menú
+   hamburguesa desplegable, para no perder la navegación en móvil */
 @media (max-width: 768px) {
     body { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; padding: 20px; }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 100vh;
+        padding: 14px 20px;
+        position: sticky;
+        top: 0;
+    }
+
     .sidebar-brand { margin-bottom: 0; }
+
+    .menu-hamburguesa { display: flex; }
+
+    /* El menú nace oculto y se despliega con el botón hamburguesa */
     .sidebar-menu { display: none; }
-    .main-content { padding: 20px; height: auto; }
+
+    .sidebar.abierto .sidebar-menu {
+        display: flex;
+        margin-top: 16px;
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    .sidebar-footer { display: none; }
+
+    .main-content { padding: 20px; height: auto; overflow-y: visible; }
     .top-header-capsule { border-radius: 24px; flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
     .header-controls { width: 100%; justify-content: center; }
+}
+
+/* ================= TARJETA DE ÉXITO: CERTIFICACIÓN DEL APRENDIZ ================= */
+/* Reemplaza el panel operativo de Etapa Práctica cuando el aprendiz completa su proceso
+   (POR_CERTIFICAR) o es certificado por el Gestor de Etapa (CERTIFICADO). */
+.success-card {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #0B2E12 0%, #06210C 55%, #04160A 100%);
+    border: 1px solid rgba(11, 244, 46, 0.35);
+    border-radius: 20px;
+    padding: 40px clamp(20px, 5vw, 56px);
+    color: #EAFBEE;
+    box-shadow: 0 0 0 1px rgba(11, 244, 46, 0.08), 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.success-card::before {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    background:
+        radial-gradient(circle at 25% 20%, rgba(11, 244, 46, 0.28), transparent 55%),
+        radial-gradient(circle at 80% 85%, rgba(11, 244, 46, 0.16), transparent 50%);
+    pointer-events: none;
+    animation: successGlowDrift 9s ease-in-out infinite alternate;
+}
+
+@keyframes successGlowDrift {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(2%, -2%, 0) scale(1.06); }
+}
+
+.success-card-badge {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(11, 244, 46, 0.12);
+    border: 1px solid rgba(11, 244, 46, 0.45);
+    color: var(--verde-neon);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    padding: 8px 18px;
+    border-radius: 999px;
+    text-shadow: 0 0 12px rgba(11, 244, 46, 0.6);
+}
+
+.success-card-badge-gold {
+    background: rgba(250, 204, 21, 0.12);
+    border-color: rgba(250, 204, 21, 0.5);
+    color: #FACC15;
+    text-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+}
+
+.success-card h2 {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 800;
+    margin-top: 18px;
+    color: #ffffff;
+    line-height: 1.3;
+}
+
+.success-card p.success-lead {
+    position: relative;
+    z-index: 1;
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: #C9EFD2;
+    margin-top: 14px;
+    max-width: 760px;
+}
+
+.success-checklist {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.success-check-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(11, 244, 46, 0.25);
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #EAFBEE;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.success-check-item .check-icon {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--verde-neon);
+    color: #06210C;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 0 12px rgba(11, 244, 46, 0.7);
+}
+
+.success-next-steps {
+    position: relative;
+    z-index: 1;
+    margin-top: 28px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(11, 244, 46, 0.3);
+    border-radius: 14px;
+    padding: 20px 22px;
+}
+
+.success-next-steps h4 {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--verde-neon);
+    margin-bottom: 12px;
+    font-weight: 800;
+}
+
+.success-next-steps ol {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.success-next-steps li {
+    font-size: 13px;
+    color: #DFF7E4;
+    line-height: 1.6;
+}
+
+.success-next-steps li strong { color: #ffffff; }
+
+.success-done-list {
+    position: relative;
+    z-index: 1;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+}
+
+.success-done-list li {
+    list-style: none;
+    font-size: 13.5px;
+    color: #C9EFD2;
+    font-weight: 600;
+}
+
+.success-closing {
+    position: relative;
+    z-index: 1;
+    margin-top: 24px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #EAFBEE;
+    max-width: 760px;
 }

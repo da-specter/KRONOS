@@ -33,6 +33,12 @@ public class Ficha {
     @Column(name = "FECHA_FIN", columnDefinition = "DATE", nullable = false)
     private LocalDate fechaFin;
 
+    // 🕒 Jornada de la ficha (Gestión de Fichas del Administrador). Nullable porque las
+    // fichas históricas creadas antes de este módulo no traen jornada registrada.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "JORNADA", columnDefinition = "VARCHAR2(20)")
+    private Jornada jornada;
+
     // Control de estado booleano mapeado como NUMBER(1,0) para Oracle DB
     @Column(name = "ESTADO", columnDefinition = "NUMBER(1,0) DEFAULT 1", nullable = false)
     private Boolean estado;

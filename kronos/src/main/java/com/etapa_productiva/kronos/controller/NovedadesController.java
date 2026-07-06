@@ -55,6 +55,9 @@ public class NovedadesController {
         }
 
         model.addAttribute("usuario", usuarioLogueado);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 

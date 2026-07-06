@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Mis Fichas</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/instructor/tecnico')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>🛠️ Mis Fichas</h1>
+                <p>Como líder de ficha consultas tus aprendices, su etapa práctica y puedes añadir o importar nuevos aprendices.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+
+                <!-- 🔢 Resumen rápido -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: var(--verde-sena);" th:text="${dashTecnico.totalAprendices}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En etapa práctica</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #057015;" th:text="${dashTecnico.enEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Sin etapa práctica</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #D97706;" th:text="${dashTecnico.sinEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Por certificar</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #2563EB;" th:text="${dashTecnico.porCertificar}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Certificados · Fichas</p>
+                        <p style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: var(--text-dark);">
+                            <span th:text="${dashTecnico.certificados}">0</span>
+                            <span style="color: var(--text-muted); font-weight: 600;">·</span>
+                            <span th:text="${dashTecnico.totalFichas}">0</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 📋 Mis fichas asignadas -->
+                <h3 class="panel-header-title" style="margin: 28px 0 0 0;">📋 Fichas a mi cargo</h3>
+                <div style="overflow-x: auto; margin-top: 14px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                                <th style="padding: 12px 14px;">Ficha</th>
+                                <th style="padding: 12px 14px;">Programa de Formación</th>
+                                <th style="padding: 12px 14px;">Vigencia</th>
+                                <th style="padding: 12px 14px;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="asignacion : ${fichasTecnico}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                                <td style="padding: 12px 14px; font-weight: 700; color: var(--text-dark);" th:text="${asignacion.ficha.numeroFicha}">2555228</td>
+                                <td style="padding: 12px 14px;" th:text="${asignacion.ficha.programaFormacion.nombrePrograma}">ADSO</td>
+                                <td style="padding: 12px 14px;" th:text="${#temporals.format(asignacion.ficha.fechaInicio, 'dd/MM/yyyy')} + ' → ' + ${#temporals.format(asignacion.ficha.fechaFin, 'dd/MM/yyyy')}">01/01/2026 → 31/12/2026</td>
+                                <td style="padding: 12px 14px;">
+                                    <span th:text="${asignacion.ficha.estado} ? 'Activa' : 'Inactiva'"
+                                          th:style="${asignacion.ficha.estado} ? 'background: rgba(5,112,21,0.1); color: #057015; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'">Activa</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(fichasTecnico)}">
+                                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no tienes fichas asignadas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Barra de acciones -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 28px;">
+                    <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span>👥 Aprendices de mis fichas</span>
+                        <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                              th:text="${#lists.size(aprendices)} + ' aprendices'">0 aprendices</span>
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="abrirModal('modalAgregar')"
+                                style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            ➕ Añadir aprendiz
+                        </button>
+                        <button type="button" onclick="abrirModal('modalImportar')"
+                                style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📤 Importar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div th:if="${exito}" style="margin-top: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${exito}">Operación completada.</div>
+                <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${error}">Ocurrió un error.</div>
+
+                <!-- 🔎 Buscador multi-criterio -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 20px;">
+                    <input type="text" id="filtroTexto" onkeyup="filtrarAprendices()"
+                           placeholder="🔎 Nombre, apellido o documento..."
+                           style="padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); grid-column: span 2; min-width: 0;">
+                    <select id="filtroTipoDoc" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
+                        <option value="">Tipo de documento (todos)</option>
+                        <option th:each="t : ${tiposDocumento}" th:value="${t.name()}" th:text="${t.name()}">CC</option>
+                    </select>
+                    <select id="filtroContrato" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
+                        <option value="">Modalidad de contrato (todas)</option>
+                        <option th:each="m : ${modalidadesContrato}" th:value="${m}" th:text="${m}">Contrato de Aprendizaje</option>
+                    </select>
+                    <select id="filtroModalidad" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
+                        <option value="">Modalidad (todas)</option>
+                        <option value="Presencial">Presencial</option>
+                        <option value="Remoto">Remoto</option>
+                        <option value="Híbrido">Híbrido</option>
+                    </select>
+                    <button type="button" onclick="limpiarFiltros()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; font-weight: 600; background: #F9FAFB; color: var(--text-muted); cursor: pointer;">
+                        ✖ Limpiar filtros
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1500px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                                <th style="padding: 12px 14px;">Nombres</th>
+                                <th style="padding: 12px 14px;">Apellidos</th>
+                                <th style="padding: 12px 14px;">Tipo Doc.</th>
+                                <th style="padding: 12px 14px;">Documento</th>
+                                <th style="padding: 12px 14px;">Teléfono</th>
+                                <th style="padding: 12px 14px;">Ficha</th>
+                                <th style="padding: 12px 14px;">Situación</th>
+                                <th style="padding: 12px 14px;">Empresa</th>
+                                <th style="padding: 12px 14px;">Mod. Contrato</th>
+                                <th style="padding: 12px 14px;">Modalidad</th>
+                                <th style="padding: 12px 14px;">Inicio Etapa</th>
+                                <th style="padding: 12px 14px;">Fin Etapa</th>
+                                <th style="padding: 12px 14px;">Estado Etapa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaAprendices">
+                            <tr th:each="a : ${aprendices}" class="fila" style="border-bottom: 1px solid var(--card-border); font-size: 13px;"
+                                th:data-nombre="${#strings.toLowerCase(a.nombres)}"
+                                th:data-apellido="${#strings.toLowerCase(a.apellidos)}"
+                                th:data-documento="${a.documento}"
+                                th:data-tipodoc="${a.tipoDocumento}"
+                                th:data-contrato="${a.modalidadContrato}"
+                                th:data-modalidad="${a.modalidad}">
+                                <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.nombres}">Nombres</td>
+                                <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.apellidos}">Apellidos</td>
+                                <td style="padding: 12px 14px;" th:text="${a.tipoDocumento}">CC</td>
+                                <td style="padding: 12px 14px; font-weight: 600;" th:text="${a.documento}">1234567890</td>
+                                <td style="padding: 12px 14px;" th:text="${a.telefono}">3000000000</td>
+                                <td style="padding: 12px 14px;" th:text="${a.ficha}">2555228</td>
+                                <td style="padding: 12px 14px; white-space: nowrap;">
+                                    <span th:text="${a.situacion}"
+                                          th:style="${a.situacion == 'En etapa práctica'} ? 'background: rgba(5,112,21,0.1); color: #057015; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.situacion == 'Sin etapa práctica'} ? 'background: rgba(217,119,6,0.12); color: #D97706; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.situacion == 'Por certificar'} ? 'background: rgba(37,99,235,0.1); color: #2563EB; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'))">Situación</span>
+                                </td>
+                                <td style="padding: 12px 14px;" th:text="${a.empresa}">Empresa</td>
+                                <td style="padding: 12px 14px;" th:text="${a.modalidadContrato}">Contrato de Aprendizaje</td>
+                                <td style="padding: 12px 14px;" th:text="${a.modalidad}">Presencial</td>
+                                <td style="padding: 12px 14px;" th:text="${a.etapaInicio}">01/01/2026</td>
+                                <td style="padding: 12px 14px;" th:text="${a.etapaFin}">30/06/2026</td>
+                                <td style="padding: 12px 14px;">
+                                    <span th:text="${a.estadoEtapa}"
+                                          th:style="${a.estadoEtapa == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: #057015; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.estadoEtapa == 'EN_PROGRESO'} ? 'background: rgba(217,119,6,0.12); color: #D97706; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : (${a.estadoEtapa == 'REPROBADO'} ? 'background: rgba(220,38,38,0.1); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
+                                                   : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'))">Estado</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(aprendices)}">
+                                <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no hay aprendices matriculados en tus fichas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p id="sinResultados" style="display: none; text-align: center; padding: 30px; color: var(--text-muted); font-weight: 500;">
+                        Ningún aprendiz coincide con la búsqueda.
+                    </p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ➕ Modal: Añadir aprendiz a una de mis fichas -->
+    <div id="modalAgregar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 460px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">➕ Añadir aprendiz a mi ficha</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                Si el documento no existe en el sistema, se creará el usuario con rol Aprendiz
+                (su contraseña inicial será su número de documento).
+            </p>
+            <form th:action="@{/instructor/tecnico/agregar}" method="post" style="display: flex; flex-direction: column; gap: 12px;">
+                <select name="idFicha" required
+                        style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                    <option value="" disabled selected>Selecciona la ficha</option>
+                    <option th:each="asignacion : ${fichasTecnico}" th:value="${asignacion.ficha.idFicha}"
+                            th:text="${asignacion.ficha.numeroFicha} + ' — ' + ${asignacion.ficha.programaFormacion.nombrePrograma}">2555228 — ADSO</option>
+                </select>
+                <div style="display: grid; grid-template-columns: 130px 1fr; gap: 10px;">
+                    <select name="tipoDocumento" required
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option th:each="t : ${tiposDocumento}" th:value="${t.name()}" th:text="${t.name()}">CC</option>
+                    </select>
+                    <input type="text" name="documento" placeholder="Número de documento" required maxlength="10" pattern="[0-9A-Za-z]+"
+                           style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; min-width: 0;">
+                </div>
+                <input type="text" name="nombre" placeholder="Nombres" required maxlength="30"
+                       style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px;">
+                <input type="text" name="apellido" placeholder="Apellidos" required maxlength="30"
+                       style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px;">
+                <input type="text" name="telefono" placeholder="Teléfono (opcional)" maxlength="11"
+                       style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px;">
+                <input type="email" name="correo" placeholder="Correo electrónico (opcional)" maxlength="150"
+                       style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                    <button type="button" onclick="cerrarModal('modalAgregar')"
+                            style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                    <button type="submit"
+                            style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">Añadir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📤 Modal: Importar aprendices por Excel a una de mis fichas -->
+    <div id="modalImportar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 460px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">📤 Importar aprendices a mi ficha</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                El Excel debe tener columnas <strong>Nombre</strong>, <strong>Apellido</strong>,
+                <strong>Tipo Documento</strong>, <strong>Número Documento</strong> y opcionalmente
+                <strong>Teléfono</strong> y <strong>Correo</strong>. Todos quedarán matriculados en la ficha que elijas.
+            </p>
+            <form th:action="@{/instructor/tecnico/importar}" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
+                <select name="idFicha" required
+                        style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                    <option value="" disabled selected>Selecciona la ficha</option>
+                    <option th:each="asignacion : ${fichasTecnico}" th:value="${asignacion.ficha.idFicha}"
+                            th:text="${asignacion.ficha.numeroFicha} + ' — ' + ${asignacion.ficha.programaFormacion.nombrePrograma}">2555228 — ADSO</option>
+                </select>
+                <input type="file" name="archivo" accept=".xlsx,.xls" required
+                       style="padding: 12px 14px; border: 1px dashed var(--card-border); border-radius: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                    <button type="button" onclick="cerrarModal('modalImportar')"
+                            style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                    <button type="submit"
+                            style="background: #2563EB; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // 🔎 Buscador multi-criterio: texto (nombre/apellido/documento) + tipo doc +
+        // modalidad de contrato + modalidad (presencial/remoto/híbrido)
+        function filtrarAprendices() {
+            const texto = document.getElementById('filtroTexto').value.trim().toLowerCase();
+            const tipoDoc = document.getElementById('filtroTipoDoc').value;
+            const contrato = document.getElementById('filtroContrato').value;
+            const modalidad = document.getElementById('filtroModalidad').value;
+
+            const filas = document.querySelectorAll('#tablaAprendices .fila');
+            let visibles = 0;
+            filas.forEach(function (fila) {
+                const d = fila.dataset;
+                const coincideTexto = !texto
+                    || (d.nombre + ' ' + d.apellido + ' ' + d.documento).toLowerCase().includes(texto);
+                const coincideTipo = !tipoDoc || d.tipodoc === tipoDoc;
+                const coincideContrato = !contrato || d.contrato === contrato;
+                const coincideModalidad = !modalidad || d.modalidad === modalidad;
+
+                const visible = coincideTexto && coincideTipo && coincideContrato && coincideModalidad;
+                fila.style.display = visible ? '' : 'none';
+                if (visible) visibles++;
+            });
+            const sr = document.getElementById('sinResultados');
+            if (sr) sr.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtroTexto').value = '';
+            document.getElementById('filtroTipoDoc').value = '';
+            document.getElementById('filtroContrato').value = '';
+            document.getElementById('filtroModalidad').value = '';
+            filtrarAprendices();
+        }
+    </script>
+</body>
+</html>

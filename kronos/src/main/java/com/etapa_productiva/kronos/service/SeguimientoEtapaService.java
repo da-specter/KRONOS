@@ -4,9 +4,14 @@ import com.etapa_productiva.kronos.entity.Bitacora;
 import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EstadoBitacora;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
+import com.etapa_productiva.kronos.entity.EvaluacionBitacora;
+import com.etapa_productiva.kronos.entity.EvaluacionPlaneacion;
 import com.etapa_productiva.kronos.entity.FormatoPlaneacion;
+import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
 import com.etapa_productiva.kronos.repository.BitacoraRepository;
 import com.etapa_productiva.kronos.repository.CronogramaBitacorasRepository;
+import com.etapa_productiva.kronos.repository.EvaluacionBitacoraRepository;
+import com.etapa_productiva.kronos.repository.EvaluacionPlaneacionRepository;
 import com.etapa_productiva.kronos.repository.FormatoPlaneacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,13 +40,38 @@ public class SeguimientoEtapaService {
     @Autowired
     private BitacoraRepository bitacoraRepository;
 
+    @Autowired
+    private EvaluacionBitacoraRepository evaluacionBitacoraRepository;
+
+    @Autowired
+    private EvaluacionPlaneacionRepository evaluacionPlaneacionRepository;
+
     @Value("${app.upload.root-dir:uploads}")
     private String uploadRootDir;
 
     @Transactional
     public FormatoPlaneacion subirFormatoPlaneacion(EtapaProductiva etapa, String asunto, MultipartFile archivo) {
-        if (formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapa.getIdEtapa()).isPresent()) {
-            throw new IllegalStateException("Ya radicaste el Formato de Planeación para tu Etapa Productiva.");
+        FormatoPlaneacion existente = formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapa.getIdEtapa()).orElse(null);
+
+        if (existente != null) {
+            // Solo se puede volver a radicar (sobre el mismo registro) si el Instructor Técnico
+            // pidió corrección o lo reprobó; si está en revisión o ya aprobado, no se puede resubir.
+            EvaluacionPlaneacion ultima = evaluacionPlaneacionRepository
+                    .findTopByFormatoPlaneacionIdFormatoPlaneacionOrderByFechaEvaluacionDesc(existente.getIdFormatoPlaneacion())
+                    .orElse(null);
+            boolean puedeResubir = ultima != null
+                    && (ultima.getResultado() == ResultadoEvaluacion.CORREGIR || ultima.getResultado() == ResultadoEvaluacion.REPROBADO);
+            if (!puedeResubir) {
+                throw new IllegalStateException(ultima == null
+                        ? "Ya radicaste el Formato de Planeación; está en revisión por tu Instructor Técnico."
+                        : "Ya radicaste el Formato de Planeación y fue aprobado.");
+            }
+
+            existente.setAsunto(asunto);
+            existente.setRutaArchivo(guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa()));
+            existente.setFechaEntrega(java.time.LocalDate.now());
+            existente.setFechaHoraSubida(java.time.LocalDateTime.now());
+            return formatoPlaneacionRepository.save(existente);
         }
 
         String rutaGuardada = guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa());
@@ -64,11 +94,24 @@ public class SeguimientoEtapaService {
             throw new IllegalArgumentException("Ese cupo de bitácora no pertenece a tu Etapa Productiva.");
         }
 
-        boolean yaSubida = bitacoraRepository.findByEtapaProductivaIdEtapaOrderByFechaEntregaDesc(etapa.getIdEtapa())
+        // Última bitácora radicada para ese cupo (si existe): solo se permite volver a radicar
+        // si el Instructor Técnico pidió corrección o la reprobó; si está en revisión o aprobada, no.
+        Bitacora anterior = bitacoraRepository.findByEtapaProductivaIdEtapaOrderByFechaEntregaDesc(etapa.getIdEtapa())
                 .stream()
-                .anyMatch(b -> b.getCronogramaBitacora().getIdCronograma().equals(idCronograma));
-        if (yaSubida) {
-            throw new IllegalStateException("Ya radicaste la Bitácora N°" + cronograma.getNumeroBitacora() + ".");
+                .filter(b -> b.getCronogramaBitacora().getIdCronograma().equals(idCronograma))
+                .findFirst()
+                .orElse(null);
+        if (anterior != null) {
+            EvaluacionBitacora ultima = evaluacionBitacoraRepository
+                    .findTopByBitacoraIdBitacoraOrderByFechaEvaluacionDesc(anterior.getIdBitacora())
+                    .orElse(null);
+            boolean puedeResubir = ultima != null
+                    && (ultima.getResultado() == ResultadoEvaluacion.CORREGIR || ultima.getResultado() == ResultadoEvaluacion.REPROBADO);
+            if (!puedeResubir) {
+                throw new IllegalStateException(ultima == null
+                        ? "Ya radicaste la Bitácora N°" + cronograma.getNumeroBitacora() + "; está en revisión por tu Instructor Técnico."
+                        : "Ya radicaste la Bitácora N°" + cronograma.getNumeroBitacora() + " y fue aprobada.");
+            }
         }
 
         String rutaGuardada = guardarArchivo(archivo, "bitacoras", etapa.getIdEtapa());

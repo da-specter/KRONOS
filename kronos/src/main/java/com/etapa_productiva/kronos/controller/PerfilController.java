@@ -54,6 +54,9 @@ public class PerfilController {
 
         model.addAttribute("usuario", usuarioLogueado);
         model.addAttribute("perfil", perfil);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 

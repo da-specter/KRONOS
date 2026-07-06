@@ -75,6 +75,7 @@ public class InstructorSeguimientoService {
             Ficha ficha = etapa.getAprendizFicha().getFicha();
 
             filas.add(InstructorAprendizDto.builder()
+                    .idEtapa(etapa.getIdEtapa())
                     .nombres(valor(aprendiz.getNombre()))
                     .apellidos(valor(aprendiz.getApellido()))
                     .tipoDocumento(aprendiz.getTipoDocumento() != null ? aprendiz.getTipoDocumento().name() : SIN_DATO)

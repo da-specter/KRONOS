@@ -50,6 +50,13 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- ✉️ Envío de correo para las alertas de visitas de seguimiento (sin credenciales SMTP
+		     configuradas queda inactivo: ver EmailService y application.properties) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>com.oracle.database.jdbc</groupId>
 			<artifactId>ojdbc11</artifactId>

@@ -14,6 +14,14 @@
                     <h3>KRONOS</h3>
                     <p>SENA Centro CTAPT</p>
                 </div>
+                <!-- 🍔 Solo visible en móvil: despliega/oculta el menú de navegación -->
+                <button type="button" class="menu-hamburguesa" onclick="toggleSidebarMovil()" aria-label="Abrir menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
             <nav class="sidebar-menu">
@@ -69,6 +77,22 @@
         <div class="sidebar-footer">
             <p>© 2026 - Power by KRONOS</p>
         </div>
+
+        <!-- 📂 Funciones del sidebar. Viven DENTRO del fragmento para que funcionen
+             en TODAS las vistas que lo usan (no todas cargan workflow.js). -->
+        <script>
+            // Despliega/colapsa un módulo con sub-ítems (Ej: Datos Maestros)
+            function toggleMenuGrupo(boton) {
+                const grupo = boton.closest('.menu-group');
+                if (grupo) grupo.classList.toggle('open');
+            }
+
+            // 🍔 Móvil: muestra/oculta el menú completo desde el botón hamburguesa
+            function toggleSidebarMovil() {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) sidebar.classList.toggle('abierto');
+            }
+        </script>
     </aside>
 
     <!-- 🎨 Ícono según el nombre del ítem del menú -->
@@ -86,6 +110,36 @@
         </svg>
 
         <svg th:case="'Gestión Fichas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3v18"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M14 9h4"></path>
+            <path d="M14 14h4"></path>
+        </svg>
+
+        <!-- Mis Fichas (Instructor Técnico): tarjeta de ficha -->
+        <svg th:case="'Mis Fichas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3v18"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M14 9h4"></path>
+            <path d="M14 14h4"></path>
+        </svg>
+
+        <!-- Evaluación de Formatos (Instructor de Seguimiento): documento con calificación -->
+        <svg th:case="'Evaluación de Formatos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="m9 15 2 2 4-4"></path>
+        </svg>
+
+        <!-- Bitácoras (evaluación, Instructor de Seguimiento) -->
+        <svg th:case="'Bitácoras'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+
+        <!-- Formato Planeación 023 (evaluación, Instructor de Seguimiento) -->
+        <svg th:case="'Formato Planeación 023'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 3v18"></path>
             <rect x="3" y="3" width="18" height="18" rx="2"></rect>
             <path d="M14 9h4"></path>
@@ -110,6 +164,13 @@
             <path d="M10 21v-4h4v4"></path>
         </svg>
 
+        <!-- Certificación Aprendiz (Gestor de Etapa): birrete de graduación -->
+        <svg th:case="'🎓 Certificación Aprendiz'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            <path d="M22 10v6"></path>
+        </svg>
+
         <svg th:case="'Validación de Documentos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 11l3 3L22 4"></path>
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
@@ -132,6 +193,11 @@
             <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
 
+        <svg th:case="'Mis Visitas de Seguimiento'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+
         <svg th:case="'Mis Aprendices'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
@@ -139,16 +205,129 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
 
-        <svg th:case="'Agendar Visitas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg th:case="'Visitas de Seguimiento'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
 
+        <svg th:case="'Agendar Citas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+            <path d="M15 5l4 4"></path>
+        </svg>
+
+        <svg th:case="'Mi agenda de visitas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+            <line x1="8" y1="7" x2="16" y2="7"></line>
+            <line x1="8" y1="11" x2="16" y2="11"></line>
+            <line x1="8" y1="15" x2="13" y2="15"></line>
+        </svg>
+
         <svg th:case="'📢 Novedades'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 11l18-5v12L3 14v-3z"></path>
             <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+        </svg>
+
+        <!-- 🛠️ Módulos exclusivos del Administrador -->
+
+        <!-- Datos Maestros: base de datos (cilindros) -->
+        <svg th:case="'Datos Maestros'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+
+        <!-- Áreas de Formación: capas organizacionales -->
+        <svg th:case="'Áreas de Formación'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+
+        <!-- Programas de Formación: libro abierto (catálogo académico) -->
+        <svg th:case="'Programas de Formación'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+
+        <!-- Gestión de Fichas (admin): tarjeta con código -->
+        <svg th:case="'Gestión de Fichas'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3v18"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M14 9h4"></path>
+            <path d="M14 14h4"></path>
+        </svg>
+
+        <!-- División Territorial: mapa (DIVIPOLA) -->
+        <svg th:case="'División Territorial'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21"></polygon>
+            <line x1="8" y1="3" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="21"></line>
+        </svg>
+
+        <!-- Control de Accesos: escudo de seguridad -->
+        <svg th:case="'Control de Accesos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+
+        <!-- Usuarios del Sistema: grupo de personas -->
+        <svg th:case="'Usuarios del Sistema'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+
+        <!-- Soporte de Credenciales: llave -->
+        <svg th:case="'Soporte de Credenciales'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+        </svg>
+
+        <!-- Gestión de Formatos: carpeta -->
+        <svg th:case="'Gestión de Formatos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+
+        <!-- Plantillas Oficiales: documento con texto -->
+        <svg th:case="'Plantillas Oficiales'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+
+        <!-- Sistema y Automatización: engranaje -->
+        <svg th:case="'Sistema y Automatización'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+
+        <!-- Monitoreo de Jobs: actividad (pulso) -->
+        <svg th:case="'Monitoreo de Jobs'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+
+        <!-- Auditoría: lupa sobre documento -->
+        <svg th:case="'Auditoría'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+
+        <!-- Configuración Global: controles deslizantes -->
+        <svg th:case="'Configuración Global'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
         </svg>
 
         <svg th:case="*" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

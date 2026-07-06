@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Monitoreo de Jobs</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/admin/jobs')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>📈 Monitoreo de Jobs</h1>
+                <p>Historial del proceso automático de la 1:00 a.m.: alertas de 2 y 3 días antes de las visitas.</p>
+            </div>
+            <div class="header-controls">
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">AD</div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+
+                <div th:if="${exito}" style="margin-bottom: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${exito}">OK</div>
+                <div th:if="${error}" style="margin-bottom: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${error}">Error</div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span>⏰ <span th:text="${nombreJob}">Job</span></span>
+                        <span style="background: rgba(37, 99, 235, 0.1); color: #2563EB; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                              th:text="${#lists.size(ejecuciones)} + ' corridas registradas'">0</span>
+                    </h3>
+                    <form th:action="@{/admin/jobs/ejecutar}" method="post" style="margin: 0;">
+                        <button type="submit"
+                                style="background: var(--verde-sena); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            ▶️ Ejecutar ahora (verificación manual)
+                        </button>
+                    </form>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Inicio</th>
+                                <th style="padding: 14px 16px;">Fin</th>
+                                <th style="padding: 14px 16px;">Resultado</th>
+                                <th style="padding: 14px 16px;">Alertas Instructores</th>
+                                <th style="padding: 14px 16px;">Alertas Aprendices</th>
+                                <th style="padding: 14px 16px;">Correos</th>
+                                <th style="padding: 14px 16px;">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="ejecucion : ${ejecuciones}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                                <td style="padding: 14px 16px; font-weight: 700; color: var(--text-dark);"
+                                    th:text="${#temporals.format(ejecucion.fechaInicio, 'dd/MM/yyyy HH:mm:ss')}">01/01</td>
+                                <td style="padding: 14px 16px; color: var(--text-muted);"
+                                    th:text="${ejecucion.fechaFin != null ? #temporals.format(ejecucion.fechaFin, 'HH:mm:ss') : '-'}">01:00</td>
+                                <td style="padding: 14px 16px;">
+                                    <span th:if="${ejecucion.exito}" style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;">✔ Exitoso</span>
+                                    <span th:unless="${ejecucion.exito}" style="background: rgba(220, 38, 38, 0.1); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;">✘ Falló</span>
+                                </td>
+                                <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.alertasInstructores}">0</td>
+                                <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.alertasAprendices}">0</td>
+                                <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.correosEnviados}">0</td>
+                                <td style="padding: 14px 16px; font-size: 12px; color: var(--text-muted);" th:text="${ejecucion.detalle}">Detalle</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(ejecuciones)}">
+                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no hay corridas registradas. El job corre automáticamente todos los días a la 1:00 a.m.,
+                                    o puedes dispararlo manualmente con el botón "Ejecutar ahora".
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+</body>
+</html>

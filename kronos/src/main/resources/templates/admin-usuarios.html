@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Usuarios del Sistema</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/admin/usuarios')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>👥 Usuarios del Sistema</h1>
+                <p>Registro, asignación de roles, activación de cuentas y carga masiva por rol.</p>
+            </div>
+            <div class="header-controls">
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">AD</div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+
+                <div th:if="${exito}" style="margin-bottom: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${exito}">OK</div>
+                <div th:if="${error}" style="margin-bottom: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${error}">Error</div>
+                <div th:if="${erroresImportacion}" style="margin-bottom: 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #B45309; padding: 12px 16px; border-radius: 12px; font-size: 13px;">
+                    <p style="font-weight: 700; margin: 0 0 8px 0;">⚠️ Filas con observaciones:</p>
+                    <p th:each="err : ${erroresImportacion}" th:text="${err}" style="margin: 2px 0;">Fila X</p>
+                </div>
+
+                <!-- ➕ Registrar usuario -->
+                <h3 class="panel-header-title" style="margin: 0 0 6px 0;">➕ Registrar Usuario</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px 0;">
+                    La contraseña inicial de todo usuario nuevo es su número de documento.
+                </p>
+                <form th:action="@{/admin/usuarios/crear}" method="post"
+                      style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 28px;">
+                    <div style="min-width: 110px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Tipo doc.</label>
+                        <select name="tipoDocumento" required style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                            <option th:each="t : ${tiposDocumento}" th:value="${t}" th:text="${t}">CC</option>
+                        </select>
+                    </div>
+                    <div style="min-width: 130px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Documento</label>
+                        <input type="text" name="documento" required maxlength="10" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <div style="flex: 1; min-width: 140px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Nombre</label>
+                        <input type="text" name="nombre" required maxlength="30" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <div style="flex: 1; min-width: 140px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Apellido</label>
+                        <input type="text" name="apellido" required maxlength="30" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <div style="flex: 1.5; min-width: 200px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Correo</label>
+                        <input type="email" name="correo" required maxlength="150" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <div style="min-width: 120px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Teléfono</label>
+                        <input type="text" name="telefono" maxlength="11" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <div style="min-width: 190px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Rol</label>
+                        <select name="nombreRol" required style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                            <option value="">-- Selecciona --</option>
+                            <option th:each="r : ${roles}" th:value="${r.nombreRol}" th:text="${r.nombreRol}">ROL</option>
+                        </select>
+                    </div>
+                    <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">Registrar</button>
+                </form>
+
+                <!-- 📤 Carga masiva por rol -->
+                <h3 class="panel-header-title" style="margin: 0 0 6px 0;">📤 Carga Masiva por Rol</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px 0;">
+                    Columnas del Excel: <b>DOCUMENTO</b> y <b>NOMBRE</b> (obligatorias); <b>TP</b>, <b>APELLIDO</b>, <b>CORREO</b> y <b>TELEFONO</b> (opcionales).
+                    Para el rol APRENDIZ, la columna <b>FICHA</b> matricula al aprendiz en esa ficha si ya existe.
+                    Todos entran con su documento como contraseña inicial.
+                </p>
+                <form th:action="@{/admin/usuarios/importar}" method="post" enctype="multipart/form-data"
+                      style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 28px;">
+                    <div style="min-width: 240px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Rol a asignar a los importados</label>
+                        <select name="nombreRol" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                            <option value="">-- Selecciona --</option>
+                            <option th:each="r : ${roles}" th:value="${r.nombreRol}" th:text="${r.nombreRol}">ROL</option>
+                        </select>
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        📤 Seleccionar Excel e Importar
+                        <input type="file" name="archivo" accept=".xlsx,.xls" style="display: none;" onchange="this.form.submit()">
+                    </label>
+                </form>
+
+                <!-- 📋 Listado -->
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                    <span>📋 Usuarios Registrados</span>
+                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                          th:text="${#lists.size(usuarios)} + ' usuarios'">0</span>
+                </h3>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Documento</th>
+                                <th style="padding: 14px 16px;">Nombre</th>
+                                <th style="padding: 14px 16px;">Correo</th>
+                                <th style="padding: 14px 16px;">Roles</th>
+                                <th style="padding: 14px 16px;">Estado</th>
+                                <th style="padding: 14px 16px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <th:block th:each="u : ${usuarios}">
+                                <tr style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+                                    <td style="padding: 14px 16px; font-weight: 700; color: var(--text-dark);"
+                                        th:text="${u.tipoDocumento + ' ' + u.documento}">CC 123</td>
+                                    <td style="padding: 14px 16px;" th:text="${u.nombre + ' ' + u.apellido}">Nombre</td>
+                                    <td style="padding: 14px 16px; font-size: 12px;" th:text="${u.correo}">correo</td>
+                                    <td style="padding: 14px 16px;">
+                                        <span th:each="rol : ${u.roles}"
+                                              style="background: rgba(37, 99, 235, 0.1); color: #2563EB; font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: 700; margin-right: 4px; display: inline-block; margin-bottom: 3px;"
+                                              th:text="${rol}">ROL</span>
+                                        <span th:if="${#lists.isEmpty(u.roles)}" style="color: var(--text-muted); font-size: 12px;">Sin rol</span>
+                                    </td>
+                                    <td style="padding: 14px 16px;">
+                                        <span th:if="${u.estado}" style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;">Activo</span>
+                                        <span th:unless="${u.estado}" style="background: rgba(220, 38, 38, 0.1); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;">Inactivo</span>
+                                    </td>
+                                    <td style="padding: 14px 16px; display: flex; gap: 8px; align-items: center;">
+                                        <form th:action="@{/admin/usuarios/estado}" method="post" style="margin: 0;">
+                                            <input type="hidden" name="idUsuario" th:value="${u.idUsuario}">
+                                            <input type="hidden" name="activar" th:value="${!u.estado}">
+                                            <button type="submit"
+                                                    th:style="'border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; background: ' + (${u.estado} ? '#DC2626' : 'var(--verde-sena)')"
+                                                    th:text="${u.estado} ? 'Desactivar' : 'Activar'">Estado</button>
+                                        </form>
+                                        <details style="position: relative;">
+                                            <summary style="list-style: none; cursor: pointer; background: #2563EB; color: #fff; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;">🎭 Roles</summary>
+                                            <div style="position: absolute; right: 0; top: 36px; z-index: 20; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 14px; width: 260px; display: flex; flex-direction: column; gap: 10px;">
+                                                <form th:action="@{/admin/usuarios/rol/asignar}" method="post" style="display: flex; gap: 6px; margin: 0;">
+                                                    <input type="hidden" name="idUsuario" th:value="${u.idUsuario}">
+                                                    <select name="nombreRol" required style="flex: 1; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px;">
+                                                        <option value="">-- Rol --</option>
+                                                        <option th:each="r : ${roles}" th:value="${r.nombreRol}" th:text="${r.nombreRol}">ROL</option>
+                                                    </select>
+                                                    <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">＋</button>
+                                                </form>
+                                                <form th:action="@{/admin/usuarios/rol/quitar}" method="post" style="display: flex; gap: 6px; margin: 0;">
+                                                    <input type="hidden" name="idUsuario" th:value="${u.idUsuario}">
+                                                    <select name="nombreRol" required style="flex: 1; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px;">
+                                                        <option value="">-- Rol a quitar --</option>
+                                                        <option th:each="rol : ${u.roles}" th:value="${rol}" th:text="${rol}">ROL</option>
+                                                    </select>
+                                                    <button type="submit" style="background: #DC2626; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">－</button>
+                                                </form>
+                                            </div>
+                                        </details>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            <tr th:if="${#lists.isEmpty(usuarios)}">
+                                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no hay usuarios registrados.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+</body>
+</html>

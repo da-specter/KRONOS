@@ -1,12 +1,13 @@
 package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.LoginResponse;
-import com.etapa_productiva.kronos.dto.MenuDto;
 import com.etapa_productiva.kronos.entity.AprendizFicha;
+import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.PlantillaFormato;
 import com.etapa_productiva.kronos.entity.SeccionFormato;
 import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
 import com.etapa_productiva.kronos.repository.AprendizFichaRepository;
+import com.etapa_productiva.kronos.repository.EtapaProductivaRepository;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.PlantillaFormatoRepository;
 import com.etapa_productiva.kronos.repository.SeccionFormatoRepository;
@@ -18,8 +19,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +47,9 @@ public class FormatosController {
     @Autowired
     private SolicitudRepository solicitudRepository;
 
+    @Autowired
+    private EtapaProductivaRepository etapaProductivaRepository;
+
     @GetMapping("/formatos")
     public String verFormatos(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
@@ -62,33 +64,44 @@ public class FormatosController {
         }
 
         SolicitudEtapaPractica solicitudActual = null;
+        EtapaProductiva etapaActiva = null;
         if (roles.contains("APRENDIZ")) {
             solicitudActual = aprendizFichaRepository.findByUsuarioIdUsuario(usuarioLogueado.getIdUsuario())
                     .map(AprendizFicha::getIdAprendizFicha)
                     .flatMap(solicitudRepository::findByAprendizFichaIdAprendizFicha)
                     .orElse(null);
+            etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
 
-            if (!IndexController.formatosDesbloqueados(solicitudActual)) {
+            if (!IndexController.formatosDesbloqueados(solicitudActual) || IndexController.etapaCertificando(etapaActiva)) {
                 redirectAttributes.addFlashAttribute("error",
-                        "Aún no tienes el módulo de Formatos habilitado. Debes esperar a que el Gestor de Etapa apruebe el primer filtro de tu solicitud.");
+                        "El módulo de Formatos no está disponible para tu proceso en este momento.");
                 return "redirect:/index";
             }
         }
         model.addAttribute("solicitudActual", solicitudActual);
 
         model.addAttribute("usuario", usuarioLogueado);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 
         // Menú reactivo: refleja el mismo "📁 Formatos" condicional que usa /index (sin duplicarlo en la sesión).
-        List<MenuDto> menuNavegacionActual = new ArrayList<>(
-                usuarioLogueado.getMenuNavegacion() != null ? usuarioLogueado.getMenuNavegacion() : Collections.emptyList());
-        if (roles.contains("APRENDIZ") && IndexController.formatosDesbloqueados(solicitudActual)) {
-            menuNavegacionActual.add(new MenuDto("📁 Formatos", "/formatos"));
-        }
-        model.addAttribute("menuNavegacionActual", menuNavegacionActual);
+        model.addAttribute("menuNavegacionActual", roles.contains("APRENDIZ")
+                ? IndexController.menuAprendizReactivo(usuarioLogueado, solicitudActual, etapaActiva)
+                : usuarioLogueado.getMenuNavegacion());
 
-        List<SeccionFormato> secciones = seccionFormatoRepository.findByEstadoTrue();
+        // El Gestor de Etapa ve el catálogo completo (las 4 modalidades de contrato);
+        // el Aprendiz solo ve la tarjeta de la modalidad que escogió en su solicitud.
+        List<SeccionFormato> todasLasSecciones = seccionFormatoRepository.findByEstadoTrue();
+        List<SeccionFormato> secciones = todasLasSecciones;
+        if (solicitudActual != null) {
+            Long idSeccionElegida = solicitudActual.getSeccionFormato().getIdSeccionFormato();
+            secciones = todasLasSecciones.stream()
+                    .filter(s -> s.getIdSeccionFormato().equals(idSeccionElegida))
+                    .toList();
+        }
         model.addAttribute("secciones", secciones);
 
         Map<Long, List<PlantillaFormato>> plantillasPorSeccion = new HashMap<>();

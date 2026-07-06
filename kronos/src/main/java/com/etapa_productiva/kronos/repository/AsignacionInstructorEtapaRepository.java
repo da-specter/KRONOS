@@ -17,4 +17,9 @@ public interface AsignacionInstructorEtapaRepository extends JpaRepository<Asign
 
     // Aprendices que el Instructor de Seguimiento tiene asignados actualmente (asignaciones vigentes)
     List<AsignacionInstructorEtapa> findByInstructorIdInstructorSeguimientoAndEstadoAsignacionTrue(Long idInstructor);
+
+    // 📊 Dashboard del Administrador: cuántos instructores distintos tienen al menos una asignación vigente
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT COUNT(DISTINCT a.instructor.idInstructorSeguimiento) FROM AsignacionInstructorEtapa a WHERE a.estadoAsignacion = true")
+    long countInstructoresConAsignacionActiva();
 }

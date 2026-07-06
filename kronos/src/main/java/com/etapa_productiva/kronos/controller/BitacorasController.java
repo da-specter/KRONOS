@@ -1,17 +1,19 @@
 package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.LoginResponse;
-import com.etapa_productiva.kronos.dto.MenuDto;
 import com.etapa_productiva.kronos.entity.AprendizFicha;
 import com.etapa_productiva.kronos.entity.Bitacora;
 import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.EvaluacionBitacora;
+import com.etapa_productiva.kronos.entity.FormatoPlaneacion;
+import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
 import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
 import com.etapa_productiva.kronos.repository.AprendizFichaRepository;
 import com.etapa_productiva.kronos.repository.BitacoraRepository;
 import com.etapa_productiva.kronos.repository.EtapaProductivaRepository;
 import com.etapa_productiva.kronos.repository.EvaluacionBitacoraRepository;
+import com.etapa_productiva.kronos.repository.EvaluacionPlaneacionRepository;
 import com.etapa_productiva.kronos.repository.FormatoPlaneacionRepository;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.SolicitudRepository;
@@ -27,9 +29,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +69,9 @@ public class BitacorasController {
     private EvaluacionBitacoraRepository evaluacionBitacoraRepository;
 
     @Autowired
+    private EvaluacionPlaneacionRepository evaluacionPlaneacionRepository;
+
+    @Autowired
     private CronogramaService cronogramaService;
 
     @GetMapping("/aprendiz/bitacoras")
@@ -82,27 +87,31 @@ public class BitacorasController {
         }
 
         model.addAttribute("usuario", usuarioLogueado);
+        model.addAttribute("notificaciones",
+                notificacionRepository.findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
-
-        // Menú reactivo: refleja el mismo "📁 Formatos" condicional que usa /index (sin duplicarlo en la sesión).
-        SolicitudEtapaPractica solicitudActual = aprendizFichaRepository.findByUsuarioIdUsuario(usuarioLogueado.getIdUsuario())
-                .map(AprendizFicha::getIdAprendizFicha)
-                .flatMap(solicitudRepository::findByAprendizFichaIdAprendizFicha)
-                .orElse(null);
-        List<MenuDto> menuNavegacionActual = new ArrayList<>(
-                usuarioLogueado.getMenuNavegacion() != null ? usuarioLogueado.getMenuNavegacion() : Collections.emptyList());
-        if (IndexController.formatosDesbloqueados(solicitudActual)) {
-            menuNavegacionActual.add(new MenuDto("📁 Formatos", "/formatos"));
-        }
-        model.addAttribute("menuNavegacionActual", menuNavegacionActual);
 
         EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
         model.addAttribute("etapaActiva", etapaActiva);
 
+        // Menú reactivo: refleja el mismo "📁 Formatos"/"Subir Bitácoras" condicional que usa /index
+        // (sin duplicarlo en la sesión).
+        SolicitudEtapaPractica solicitudActual = aprendizFichaRepository.findByUsuarioIdUsuario(usuarioLogueado.getIdUsuario())
+                .map(AprendizFicha::getIdAprendizFicha)
+                .flatMap(solicitudRepository::findByAprendizFichaIdAprendizFicha)
+                .orElse(null);
+        model.addAttribute("menuNavegacionActual",
+                IndexController.menuAprendizReactivo(usuarioLogueado, solicitudActual, etapaActiva));
+
         if (etapaActiva != null) {
-            model.addAttribute("formatoPlaneacion",
-                    formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapaActiva.getIdEtapa()).orElse(null));
+            FormatoPlaneacion formatoPlaneacion =
+                    formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapaActiva.getIdEtapa()).orElse(null);
+            model.addAttribute("formatoPlaneacion", formatoPlaneacion);
+            model.addAttribute("evaluacionPlaneacion", formatoPlaneacion == null ? null :
+                    evaluacionPlaneacionRepository.findTopByFormatoPlaneacionIdFormatoPlaneacionOrderByFechaEvaluacionDesc(
+                            formatoPlaneacion.getIdFormatoPlaneacion()).orElse(null));
 
             List<Bitacora> bitacorasSubidas = bitacoraRepository.findByEtapaProductivaIdEtapaOrderByFechaEntregaDesc(etapaActiva.getIdEtapa());
             model.addAttribute("bitacorasSubidas", bitacorasSubidas);
@@ -115,17 +124,34 @@ public class BitacorasController {
             }
             model.addAttribute("ultimaEvaluacionPorBitacora", ultimaEvaluacionPorBitacora);
 
-            Set<Long> cronogramasYaSubidos = bitacorasSubidas.stream()
-                    .map(b -> b.getCronogramaBitacora().getIdCronograma())
-                    .collect(Collectors.toSet());
+            // Un cupo del cronograma vuelve a estar disponible para radicar si la última
+            // bitácora subida para él fue evaluada como CORREGIR o REPROBADO.
+            Map<Long, Bitacora> ultimaBitacoraPorCronograma = new HashMap<>();
+            for (Bitacora bitacora : bitacorasSubidas) {
+                Long idCronograma = bitacora.getCronogramaBitacora().getIdCronograma();
+                Bitacora actual = ultimaBitacoraPorCronograma.get(idCronograma);
+                if (actual == null || bitacora.getFechaHoraSubida().isAfter(actual.getFechaHoraSubida())) {
+                    ultimaBitacoraPorCronograma.put(idCronograma, bitacora);
+                }
+            }
+            Set<Long> cronogramasBloqueados = new HashSet<>();
+            for (Map.Entry<Long, Bitacora> entrada : ultimaBitacoraPorCronograma.entrySet()) {
+                EvaluacionBitacora evaluacion = ultimaEvaluacionPorBitacora.get(entrada.getValue().getIdBitacora());
+                boolean puedeResubir = evaluacion != null
+                        && (evaluacion.getResultado() == ResultadoEvaluacion.CORREGIR || evaluacion.getResultado() == ResultadoEvaluacion.REPROBADO);
+                if (!puedeResubir) {
+                    cronogramasBloqueados.add(entrada.getKey());
+                }
+            }
 
             List<CronogramaBitacoras> cronogramaPendiente = cronogramaService.obtenerOGenerarCronograma(etapaActiva)
                     .stream()
-                    .filter(c -> !cronogramasYaSubidos.contains(c.getIdCronograma()))
+                    .filter(c -> !cronogramasBloqueados.contains(c.getIdCronograma()))
                     .collect(Collectors.toList());
             model.addAttribute("cronogramaPendiente", cronogramaPendiente);
         } else {
             model.addAttribute("formatoPlaneacion", null);
+            model.addAttribute("evaluacionPlaneacion", null);
             model.addAttribute("bitacorasSubidas", Collections.emptyList());
             model.addAttribute("ultimaEvaluacionPorBitacora", Collections.emptyMap());
             model.addAttribute("cronogramaPendiente", Collections.emptyList());

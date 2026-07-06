@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Mis Visitas de Seguimiento</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${menuNavegacionActual}, '/aprendiz/visitas')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>📍 Mis Visitas de Seguimiento</h1>
+                <p>Visitas que tu Instructor de Seguimiento agendó para tu Etapa Productiva.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <p th:if="${etapaActiva == null}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                Aún no tienes una Etapa Productiva activa. Cuando tu Instructor de Seguimiento te agende una visita, aparecerá aquí.
+            </p>
+
+            <!-- 📍 Visitas de seguimiento agendadas por tu Instructor -->
+            <div class="dashboard-panel" th:if="${etapaActiva != null}" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="margin: 0 0 16px 0;"><span>📍 Agenda de Visitas</span></h3>
+
+                <div style="display: flex; flex-direction: column; gap: 26px;">
+
+                    <div>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #6B7280; display: inline-block;"></span>
+                            Pasadas
+                            <span style="background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agendaVisitas.pasadas)}">0</span>
+                        </p>
+                        <div th:replace="~{fragments/visitas :: tablaVisitas(${agendaVisitas.pasadas}, 'No hay visitas pasadas.', false)}"></div>
+                    </div>
+
+                    <div>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #D97706; display: inline-block;"></span>
+                            Pendientes (hoy)
+                            <span style="background: rgba(217,119,6,0.12); color: #D97706; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agendaVisitas.pendientes)}">0</span>
+                        </p>
+                        <div th:replace="~{fragments/visitas :: tablaVisitas(${agendaVisitas.pendientes}, 'No tienes visitas programadas para hoy.', false)}"></div>
+                    </div>
+
+                    <div>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--verde-sena); display: inline-block;"></span>
+                            Futuras
+                            <span style="background: rgba(5,112,21,0.1); color: var(--verde-sena); font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agendaVisitas.futuras)}">0</span>
+                        </p>
+                        <div th:replace="~{fragments/visitas :: tablaVisitas(${agendaVisitas.futuras}, 'No hay visitas futuras agendadas.', false)}"></div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script th:src="@{/js/workflow.js}"></script>
+</body>
+</html>

@@ -51,6 +51,11 @@ public class VisitaSeguimiento {
     @Column(name = "OBSERVACIONES", columnDefinition = "VARCHAR2(500)")
     private String observaciones;
 
+    // 📎 Ruta pública (bajo /uploads/**) del archivo de evidencia (Word/PDF/Excel/imagen)
+    // que el Instructor de Seguimiento adjunta una vez la visita queda REALIZADA.
+    @Column(name = "RUTA_EVIDENCIA", columnDefinition = "VARCHAR2(500)")
+    private String rutaEvidencia;
+
     @PrePersist
     protected void onPrePersist() {
         if (this.estadoVisita == null) {

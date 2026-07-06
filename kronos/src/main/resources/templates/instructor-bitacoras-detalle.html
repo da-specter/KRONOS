@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Bitácoras del Aprendiz</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/instructor/seguimiento/bitacoras')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>📓 <span th:text="${detalle.nombres} + ' ' + ${detalle.apellidos}">Nombre Apellido</span></h1>
+                <p th:text="'Documento: ' + ${detalle.documento} + ' · Ficha: ' + ${detalle.ficha}">Documento: 123 · Ficha: 2555228</p>
+            </div>
+
+            <div class="header-controls" style="position: relative;">
+                <a th:href="@{/instructor/seguimiento/bitacoras}"
+                   style="background: #F9FAFB; border: 1px solid var(--card-border); color: var(--text-dark); font-size: 13px; font-weight: 700; padding: 10px 18px; border-radius: 10px; text-decoration: none; white-space: nowrap;">
+                    ← Volver
+                </a>
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">DM</div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div th:if="${exito}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); font-size: 13px; font-weight: 600; padding: 14px 18px;" th:text="${exito}">Operación completada.</div>
+            <div th:if="${error}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; font-size: 13px; font-weight: 600; padding: 14px 18px;" th:text="${error}">Ocurrió un error.</div>
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title">📋 Bitácoras radicadas</h3>
+
+                <div th:each="b : ${detalle.bitacoras}" class="inner-status-card" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;"
+                               th:text="'Bitácora N°' + ${b.numeroBitacora} + ' — ' + ${b.asunto}">Bitácora N°1 — Avance semanal</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" th:text="'Subida: ' + ${b.fechaSubida}">Subida: 01/01/2026 10:00</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span th:text="${b.resultado == null} ? 'EN REVISIÓN' : (${b.resultado == 'APROBADO'} ? 'APROBADA' : (${b.resultado == 'CORREGIR'} ? 'PARA CORREGIR' : 'REPROBADA'))"
+                                  th:style="${b.resultado == null} ? 'background: #FEF3C7; color: #B45309;' : (${b.resultado == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${b.resultado == 'CORREGIR'} ? 'background: rgba(37,99,235,0.1); color: #2563EB;' : 'background: rgba(220,38,38,0.1); color: #DC2626;'))"
+                                  style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
+                                EN REVISIÓN
+                            </span>
+                            <a th:href="${b.rutaArchivo}" target="_blank"
+                               style="background: #2563EB; color: #fff; font-size: 12px; padding: 8px 16px; border-radius: 8px; font-weight: 700; text-decoration: none; white-space: nowrap;">
+                                ⬇ Descargar
+                            </a>
+                        </div>
+                    </div>
+
+                    <p th:if="${b.observaciones != null}" style="margin: 0; font-size: 13px; color: var(--text-dark); background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px;">
+                        <strong>Novedad:</strong> <span th:text="${b.observaciones}">Debe corregir la sección 3.</span>
+                    </p>
+
+                    <!-- Formulario de evaluación / re-evaluación -->
+                    <form th:action="@{/instructor/seguimiento/bitacoras/evaluar}" method="post"
+                          style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; border-top: 1px dashed var(--card-border); padding-top: 14px;">
+                        <input type="hidden" name="idBitacora" th:value="${b.idBitacora}">
+                        <input type="hidden" name="idEtapa" th:value="${detalle.idEtapa}">
+                        <div style="min-width: 170px;">
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Resultado</label>
+                            <select name="resultado" required onchange="toggleNovedad(this)"
+                                    style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; background: #fff; color: var(--text-dark); margin-top: 4px;">
+                                <option value="" disabled selected>Selecciona...</option>
+                                <option th:each="r : ${resultados}" th:value="${r}" th:text="${r.name() == 'APROBADO'} ? 'Aprobado' : (${r.name() == 'REPROBADO'} ? 'Reprobado' : 'Corregir')">Aprobado</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 240px;">
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Novedad (obligatoria si no aprueba)</label>
+                            <input type="text" name="observaciones" maxlength="500" placeholder="Escribe qué debe corregir o por qué se reprueba..."
+                                   style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px; box-sizing: border-box;">
+                        </div>
+                        <button type="submit"
+                                style="background: var(--verde-sena); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            Guardar evaluación
+                        </button>
+                    </form>
+                </div>
+
+                <p th:if="${#lists.isEmpty(detalle.bitacoras)}" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); font-weight: 500;">
+                    Este aprendiz aún no ha radicado ninguna bitácora.
+                </p>
+            </div>
+
+        </section>
+    </main>
+
+    <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        function toggleNovedad(select) {
+            const form = select.closest('form');
+            const input = form.querySelector('input[name="observaciones"]');
+            input.required = select.value !== 'APROBADO';
+        }
+    </script>
+</body>
+</html>

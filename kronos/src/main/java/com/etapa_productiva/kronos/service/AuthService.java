@@ -24,6 +24,9 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ConfiguracionGlobalService configuracionGlobalService;
+
     @Transactional(readOnly = true)
     public LoginResponse iniciarSesion(LoginRequest request) {
         
@@ -50,19 +53,40 @@ public class AuthService {
 
         System.out.println("🕵️‍♂️ [SERVICE] Roles detectados en Oracle: " + roles);
 
+        // 4.5 🚧 Modo mantenimiento (Configuración Global): solo los Administradores pueden entrar
+        if (!roles.contains("ADMINISTRADOR")
+                && configuracionGlobalService.getBooleano(ConfiguracionGlobalService.MODO_MANTENIMIENTO, false)) {
+            throw new BadCredentialsException(configuracionGlobalService.getValor(
+                    ConfiguracionGlobalService.MENSAJE_MANTENIMIENTO,
+                    "El portal KRONOS está en mantenimiento. Intenta más tarde."));
+        }
+
         // 5. Construcción del menú dinámico según tu nuevo script de roles
         List<MenuDto> menuNavegacion = new ArrayList<>();
         
         if (roles.contains("INSTRUCTOR_SEGUIMIENTO")) {
             menuNavegacion.add(new MenuDto("Mis Aprendices", "/instructor/seguimiento"));
-            menuNavegacion.add(new MenuDto("Agendar Visitas", "/instructor/visitas"));
+            // Módulo desplegable "Visitas de Seguimiento": separa el agendamiento (+ aprendices
+            // pendientes por agendar) de la agenda consolidada (pasadas/pendientes/futuras).
+            menuNavegacion.add(new MenuDto("Visitas de Seguimiento", null, List.of(
+                    new MenuDto("Agendar Citas", "/instructor/visitas/agendar"),
+                    new MenuDto("Mi agenda de visitas", "/instructor/visitas")
+            )));
+            // Módulo desplegable "Evaluación de Formatos": calificar Bitácoras y Formato de Planeación (023)
+            // de los aprendices que tiene asignados
+            menuNavegacion.add(new MenuDto("Evaluación de Formatos", null, List.of(
+                    new MenuDto("Bitácoras", "/instructor/seguimiento/bitacoras"),
+                    new MenuDto("Formato Planeación 023", "/instructor/seguimiento/planeacion")
+            )));
             menuNavegacion.add(new MenuDto("📢 Novedades", "/novedades"));
         }
         if (roles.contains("INSTRUCTOR_TECNICO")) {
-            menuNavegacion.add(new MenuDto("Revisiones Técnicas", "/instructor/tecnico"));
+            // Módulo del líder de ficha: consulta de sus fichas/aprendices + añadir/importar aprendices
+            menuNavegacion.add(new MenuDto("Mis Fichas", "/instructor/tecnico"));
         }
         if (roles.contains("APRENDIZ")) {
             menuNavegacion.add(new MenuDto("Mi Cronograma", "/aprendiz/cronograma"));
+            menuNavegacion.add(new MenuDto("Mis Visitas de Seguimiento", "/aprendiz/visitas"));
             menuNavegacion.add(new MenuDto("Subir Bitácoras", "/aprendiz/bitacoras"));
             // "📁 Formatos" NO se agrega aquí: para el Aprendiz aparece de forma reactiva
             // solo cuando el Gestor de Etapa habilita su solicitud (ver IndexController/FormatosController).
@@ -77,12 +101,33 @@ public class AuthService {
             menuNavegacion.add(new MenuDto("Asignar Instructores", "/coordinador/asignaciones"));
             menuNavegacion.add(new MenuDto("Validación de Documentos", "/gestor/documentos"));
             menuNavegacion.add(new MenuDto("🏢 Registro Etapa Productiva", "/gestor/registro-etapa"));
+            // Bandeja de aprendices que ya completaron bitácoras + Formato 023 (estado POR_CERTIFICAR)
+            menuNavegacion.add(new MenuDto("🎓 Certificación Aprendiz", "/gestor/certificacion"));
             menuNavegacion.add(new MenuDto("📢 Novedades", "/novedades"));
             menuNavegacion.add(new MenuDto("📁 Formatos", "/formatos"));
         }
         if (roles.contains("ADMINISTRADOR")) {
-            menuNavegacion.add(new MenuDto("Configuración Global", "/admin/config"));
-            menuNavegacion.add(new MenuDto("Control de Usuarios", "/admin/usuarios"));
+            // 🛠️ Sidebar exclusivo del Administrador: 4 módulos madre desplegables.
+            // El "Panel de Control" es el ítem fijo "Inicio" (/index), que para este rol
+            // pinta la vista general del sistema (aprendices, fichas, instructores, servidores).
+            menuNavegacion.add(new MenuDto("Datos Maestros", null, List.of(
+                    new MenuDto("Áreas de Formación", "/admin/areas"),
+                    new MenuDto("Programas de Formación", "/admin/programas"),
+                    new MenuDto("Gestión de Fichas", "/admin/fichas"),
+                    new MenuDto("División Territorial", "/admin/divipola")
+            )));
+            menuNavegacion.add(new MenuDto("Control de Accesos", null, List.of(
+                    new MenuDto("Usuarios del Sistema", "/admin/usuarios"),
+                    new MenuDto("Soporte de Credenciales", "/admin/credenciales")
+            )));
+            menuNavegacion.add(new MenuDto("Gestión de Formatos", null, List.of(
+                    new MenuDto("Plantillas Oficiales", "/admin/plantillas")
+            )));
+            menuNavegacion.add(new MenuDto("Sistema y Automatización", null, List.of(
+                    new MenuDto("Monitoreo de Jobs", "/admin/jobs"),
+                    new MenuDto("Auditoría", "/admin/auditoria"),
+                    new MenuDto("Configuración Global", "/admin/config")
+            )));
         }
 
         // 👤 Disponible para cualquier rol: ver y editar los datos propios guardados en Usuario

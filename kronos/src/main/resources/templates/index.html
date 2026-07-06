@@ -14,55 +14,32 @@
         
         <header class="top-header-capsule">
             <div class="welcome-info">
-                <h1 th:text="'¡Hola, ' + ${usuario.nombre} + '!'">¡Hola, Darwin!</h1>
-                <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}">
-                    Éxitos en tu proceso de etapa práctica, <strong>¡Mucho Ánimo Aprendiz SENA!</strong>
-                </p>
-                <p th:unless="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}">
-                    Estás en camino a gestionar con éxito tu proceso de <strong>Etapa Productiva</strong>.
-                </p>
+                <!-- 👋 Administrador: saludo dinámico por franja horaria (mañana/tarde/noche) -->
+                <th:block th:if="${saludoAdminTitulo != null}">
+                    <h1 th:text="${saludoAdminTitulo}">¡Buenos días, Andres!</h1>
+                    <p th:text="${saludoAdminFrase}">El motor de KRONOS está encendido.</p>
+                </th:block>
+
+                <!-- Los demás roles conservan el saludo original -->
+                <th:block th:if="${saludoAdminTitulo == null}">
+                    <h1 th:text="'¡Hola, ' + ${usuario.nombre} + '!'">¡Hola, Darwin!</h1>
+                    <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}">
+                        Éxitos en tu proceso de etapa práctica, <strong>¡Mucho Ánimo Aprendiz SENA!</strong>
+                    </p>
+                    <p th:unless="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}">
+                        Estás en camino a gestionar con éxito tu proceso de <strong>Etapa Productiva</strong>.
+                    </p>
+                </th:block>
             </div>
 
-            <div class="header-controls" style="position: relative;">
-                <div class="bell-btn-circle" style="position: relative; cursor: pointer;" onclick="toggleNotificaciones()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" th:stroke="${#lists.isEmpty(notificacionesNoLeidas)} ? 'currentColor' : '#DC2626'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span th:if="${!#lists.isEmpty(notificacionesNoLeidas)}"
-                          style="position: absolute; top: -4px; right: -4px; background: #DC2626; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px;"
-                          th:text="${notificacionesNoLeidas.size()}">3</span>
-                </div>
-
-                <div id="panelNotificaciones" style="display: none; position: absolute; top: 46px; right: 46px; width: 320px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; overflow: hidden;">
-                    <div style="padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-weight: 700; font-size: 13px; color: var(--text-dark); display: flex; justify-content: space-between; align-items: center;">
-                        <span>Notificaciones</span>
-                        <form th:action="@{/notificaciones/marcar-leidas}" method="post" th:if="${!#lists.isEmpty(notificacionesNoLeidas)}">
-                            <button type="submit" style="border: none; background: none; color: var(--verde-sena); font-size: 12px; font-weight: 600; cursor: pointer;">Marcar leídas</button>
-                        </form>
-                    </div>
-                    <div style="max-height: 280px; overflow-y: auto;">
-                        <div th:each="notificacion : ${notificacionesNoLeidas}" style="padding: 12px 16px; border-bottom: 1px solid var(--card-border); font-size: 13px; color: var(--text-dark);">
-                            <p th:text="${notificacion.mensaje}" style="margin: 0;">Mensaje</p>
-                            <span style="font-size: 11px; color: var(--text-muted);" th:text="${#temporals.format(notificacion.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
-                        </div>
-                        <p th:if="${#lists.isEmpty(notificacionesNoLeidas)}" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">No tienes notificaciones nuevas.</p>
-                    </div>
-                </div>
-
-                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
-                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
-                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
-                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
-                    DM
-                </div>
-            </div>
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
         </header>
 
         <section class="dashboard-grid">
             
-            <!-- 🗓️ Línea de tiempo real de la Etapa Productiva (Mes 1 a Mes 6), calculada desde FECHA_INICIO/FECHA_FIN -->
-            <div class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ')}">
+            <!-- 🗓️ Línea de tiempo real de la Etapa Productiva (Mes 1 a Mes 6), calculada desde FECHA_INICIO/FECHA_FIN.
+                 Desaparece una vez el aprendiz completa su certificación (ver tarjeta de éxito más abajo). -->
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ') and !mostrarCertificacion}">
                 <h3 class="panel-header-title">🗓️ Línea de Tiempo de tu Etapa Productiva</h3>
 
                 <div th:if="${etapaActiva == null}" class="inner-status-card" style="text-align: center; color: var(--text-muted); font-weight: 500; font-size: 13px;">
@@ -142,7 +119,78 @@
                 </div>
             </div>
 
-            <div id="mis-formatos" class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ')}" style="grid-column: 1 / -1; margin-top: 10px;">
+            <!-- 🥳 Tarjeta de éxito: reemplaza toda la operativa de etapa práctica una vez el aprendiz
+                 completa el 100% de sus requisitos (POR_CERTIFICAR) o es certificado por el Gestor de Etapa.
+                 Va primero para que, si además puede radicar una nueva etapa (CERTIFICADO), la bandeja
+                 de solicitud aparezca justo debajo. -->
+            <div class="success-card" th:if="${usuario.roles.contains('APRENDIZ') and mostrarCertificacion}">
+
+                <!-- Variante 1: POR_CERTIFICAR — acaba de completar bitácoras + Formato 023 -->
+                <th:block th:unless="${etapaCertificada}">
+                    <span class="success-card-badge">⏳ ESTADO ACTUAL DEL PROCESO: POR CERTIFICAR</span>
+                    <h2 th:text="'🥳 ¡Misión Cumplida, ' + ${usuario.nombre} + '!'">🥳 ¡Misión Cumplida!</h2>
+                    <p class="success-lead">
+                        ¡Felicidades! Has cargado y aprobado el 100% de tus requisitos de etapa práctica en KRONOS.
+                        Tu expediente digital ha sido completado con éxito y ya se encuentra en el escritorio del
+                        Coordinador Académico para la firma de tu paz y salvo definitivo.
+                    </p>
+
+                    <div class="success-checklist">
+                        <div class="success-check-item">
+                            <span class="check-icon">✓</span>
+                            <span th:text="'Bitácoras Quincenales: ' + ${infoCertificacion.bitacorasAprobadas} + ' de ' + ${infoCertificacion.totalBitacoras} + ' Aprobadas.'">Bitácoras Quincenales: 12 de 12 Aprobadas.</span>
+                        </div>
+                        <div class="success-check-item">
+                            <span class="check-icon">✓</span>
+                            <span>Formato de Planeación (023): Aprobado.</span>
+                        </div>
+                        <div class="success-check-item">
+                            <span class="check-icon">✓</span>
+                            <span th:text="'Visitas de Seguimiento: ' + ${infoCertificacion.visitasRealizadas} + ' de ' + ${infoCertificacion.totalVisitas} + ' Realizadas.'">Visitas de Seguimiento: 3 de 3 Realizadas.</span>
+                        </div>
+                        <div class="success-check-item">
+                            <span class="check-icon">✓</span>
+                            <span>Documentación Inicial: ARL y Contrato/Pasantía validados.</span>
+                        </div>
+                    </div>
+
+                    <div class="success-next-steps">
+                        <h4>📊 Próximos pasos en tu proceso de certificación</h4>
+                        <ol>
+                            <li><strong>Revisión del Coordinador:</strong> validará que no tengas pendientes administrativos con el centro (como devolución de libros de biblioteca o herramientas).</li>
+                            <li><strong>Generación de Paz y Salvo:</strong> se cargará tu paz y salvo firmado directamente aquí en KRONOS.</li>
+                            <li><strong>Notificación de Cierre:</strong> te llegará una alerta al correo cuando tu estado cambie a Certificado para que puedas proceder con los trámites de grado en Sofía Plus.</li>
+                        </ol>
+                    </div>
+                </th:block>
+
+                <!-- Variante 2: CERTIFICADO — el Gestor de Etapa ya dio la aprobación final -->
+                <th:block th:if="${etapaCertificada}">
+                    <span class="success-card-badge success-card-badge-gold">🏆 ESTADO: CERTIFICADA</span>
+                    <h2>🥳 ¡ALERTA DE MILAGRO: ESTÁS CERTIFICADO(A)!</h2>
+                    <p class="success-lead">
+                        Respira hondo... siente el aire fresco. Tu expediente digital ha sido aprobado y firmado
+                        por la Coordinación Académica. ¡Oficialmente has terminado tu etapa práctica!
+                    </p>
+
+                    <ul class="success-done-list">
+                        <li>❌ No más bitácoras quincenales.</li>
+                        <li>❌ No más llamadas del instructor de seguimiento preguntando por el Formato 023.</li>
+                        <li>❌ No más alertas de KRONOS a la 1:00 a.m.</li>
+                    </ul>
+
+                    <p class="success-closing">
+                        Tu paz y salvo final ya está cargado en el sistema. Ahora ve a presumir ese logro,
+                        descansa y prepárate para los trámites de grado en Sofía Plus (cruza los dedos para que
+                        la plataforma no esté caída hoy). ¡Muchos éxitos en tu vida profesional!
+                    </p>
+                </th:block>
+            </div>
+
+            <!-- Desaparece mientras el aprendiz está en POR_CERTIFICAR; reaparece si ya está CERTIFICADO
+                 (para permitirle radicar una nueva Etapa Práctica, justo debajo de la tarjeta de éxito)
+                 y vuelve a su forma normal en cuanto el Gestor de Etapa le registre la nueva etapa. -->
+            <div id="mis-formatos" class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ') and (!mostrarCertificacion or etapaCertificada)}" style="grid-column: 1 / -1; margin-top: 10px;">
                 <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
                     <span>🎓 Mi Solicitud de Etapa Práctica</span>
                 </h3>
@@ -173,7 +221,11 @@
                     <button type="submit" class="btn-login" style="margin-top: 0;">Radicar Solicitud</button>
                 </form>
 
-                <div class="inner-status-card" th:if="${solicitudActual != null}" style="margin-top: 20px;">
+                <!-- No se muestra si la solicitud es la del ciclo anterior ya CERTIFICADO (sería
+                     información obsoleta: modalidad/estado de una etapa que ya no existe). -->
+                <div class="inner-status-card"
+                     th:if="${solicitudActual != null and !(solicitudActual.estado.name() == 'APROBADO_EN_ETAPA' and etapaCertificada)}"
+                     style="margin-top: 20px;">
                     <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600;">Ya tienes una solicitud en curso</p>
                     <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;" th:text="'Modalidad del contrato: ' + ${solicitudActual.seccionFormato.nombreSeccion}">Modalidad del contrato: Pasantía</p>
                     <p style="font-size: 15px; color: var(--text-dark); font-weight: 700; margin-top: 4px;" th:text="'Modalidad: ' + ${solicitudActual.modalidadSolicitada}">Modalidad: REMOTO</p>
@@ -234,11 +286,41 @@
                     </form>
                 </div>
 
-                <!-- Estado 5: APROBADO_EN_ETAPA -->
-                <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}"
+                <!-- Estado 5a: APROBADO_EN_ETAPA sobre una etapa aún vigente (no certificada) -->
+                <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA' and !etapaCertificada}"
                    style="margin-top: 16px; font-size: 13px; color: var(--verde-sena); font-weight: 700;">
                     🎉 ¡Tu Etapa Práctica ya fue activada!
                 </p>
+
+                <!-- Estado 5b: la etapa de esa solicitud ya fue CERTIFICADA — puede radicar una nueva -->
+                <div th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA' and etapaCertificada}" style="margin-top: 20px;">
+                    <p style="font-size: 13px; color: var(--verde-sena); font-weight: 700; margin-bottom: 14px;">
+                        🏆 Ya certificaste tu Etapa Práctica anterior. Si necesitas iniciar una nueva, radícala aquí:
+                    </p>
+                    <form th:action="@{/aprendiz/solicitar}" method="post" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
+                            <label for="idSeccionFormatoNueva">Modalidad del contrato</label>
+                            <div class="input-container">
+                                <select id="idSeccionFormatoNueva" name="idSeccionFormato" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
+                            <label for="modalidadNueva">Modalidad</label>
+                            <div class="input-container">
+                                <select id="modalidadNueva" name="modalidad" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option value="PRESENCIAL">Presencial</option>
+                                    <option value="HIBRIDO">Híbrido</option>
+                                    <option value="REMOTO">Remoto</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-login" style="margin-top: 0;">Radicar Nueva Solicitud</button>
+                    </form>
+                </div>
 
             </div>
 
@@ -496,12 +578,92 @@
                 </div>
             </div>
 
-            <div class="dashboard-panel" th:if="${usuario.roles.contains('INSTRUCTOR_TECNICO')}" style="grid-column: 1 / -1; margin-top: 10px;">
+            <!-- 🛠️ Panel del Instructor Técnico (líder de ficha): dashboard de sus aprendices -->
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('INSTRUCTOR_TECNICO') and dashTecnico != null}" style="grid-column: 1 / -1; margin-top: 10px;">
                 <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
-                    <span>🛠️ Fichas en Revisión Técnica</span>
+                    <span>🛠️ Mis Fichas — Panel del Líder</span>
+                    <a th:href="@{/instructor/tecnico}"
+                       style="margin-left: auto; background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 700; text-decoration: none;">
+                        Ver mis aprendices →
+                    </a>
                 </h3>
 
-                <div style="overflow-x: auto; margin-top: 20px;">
+                <!-- 🔢 Números clave -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--verde-sena);" th:text="${dashTecnico.totalAprendices}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En etapa práctica</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #057015;" th:text="${dashTecnico.enEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Sin etapa práctica</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #D97706;" th:text="${dashTecnico.sinEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Por certificar</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #2563EB;" th:text="${dashTecnico.porCertificar}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Certificados · Fichas</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--text-dark);">
+                            <span th:text="${dashTecnico.certificados}">0</span>
+                            <span style="color: var(--text-muted); font-weight: 600;">·</span>
+                            <span th:text="${dashTecnico.totalFichas}">0</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 📊 Gráficas -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 24px;">
+
+                    <!-- Dona: distribución por situación del aprendiz -->
+                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px;">
+                        <p style="margin: 0 0 16px 0; font-size: 13px; font-weight: 700; color: var(--text-dark);">Situación de mis aprendices</p>
+                        <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap;">
+                            <div th:style="'background: ' + ${dashTecnico.donutGradient} + '; width: 150px; height: 150px; border-radius: 50%; position: relative; flex-shrink: 0;'">
+                                <div style="position: absolute; inset: 26px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <span style="font-size: 26px; font-weight: 800; color: var(--text-dark);" th:text="${dashTecnico.totalAprendices}">0</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">aprendices</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 9px;">
+                                <div th:each="seg : ${dashTecnico.segmentosSituacion}" style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                    <span th:style="'width: 12px; height: 12px; border-radius: 3px; background: ' + ${seg.color} + ';'"></span>
+                                    <span style="color: var(--text-dark); font-weight: 600;" th:text="${seg.etiqueta}">Situación</span>
+                                    <span style="color: var(--text-muted);" th:text="${seg.cantidad} + ' (' + ${seg.porcentaje} + '%)'">0</span>
+                                </div>
+                                <div th:if="${#lists.isEmpty(dashTecnico.segmentosSituacion)}" style="color: var(--text-muted); font-size: 13px;">
+                                    Aún no hay aprendices matriculados en tus fichas.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barras: aprendices por ficha -->
+                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px;">
+                        <p style="margin: 0 0 16px 0; font-size: 13px; font-weight: 700; color: var(--text-dark);">Aprendices por ficha</p>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div th:each="barra : ${dashTecnico.aprendicesPorFicha}">
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                                    <span style="font-weight: 700; color: var(--text-dark);" th:text="${barra.etiqueta}">2555228</span>
+                                    <span style="color: var(--text-muted);" th:text="${barra.cantidad}">0</span>
+                                </div>
+                                <div style="background: #EEF2F1; border-radius: 8px; height: 10px; overflow: hidden;">
+                                    <div th:style="'width: ' + ${barra.porcentaje} + '%; height: 100%; background: var(--verde-sena); border-radius: 8px;'"></div>
+                                </div>
+                            </div>
+                            <div th:if="${#lists.isEmpty(dashTecnico.aprendicesPorFicha)}" style="color: var(--text-muted); font-size: 13px;">
+                                Sin fichas por mostrar.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📋 Fichas a mi cargo -->
+                <div style="overflow-x: auto; margin-top: 24px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
@@ -519,7 +681,7 @@
 
                             <tr th:if="${#lists.isEmpty(fichasTecnico)}">
                                 <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
-                                    Aún no tienes fichas asignadas para revisión técnica.
+                                    Aún no tienes fichas asignadas.
                                 </td>
                             </tr>
                         </tbody>
@@ -527,20 +689,82 @@
                 </div>
             </div>
 
-            <div class="dashboard-panel" th:if="${usuario.roles.contains('ADMINISTRADOR')}" style="grid-column: 1 / -1; margin-top: 10px; display: flex; gap: 25px; flex-wrap: wrap;">
-                <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Totales</p>
-                    <p style="font-size: 32px; font-weight: 800; color: var(--text-dark); margin-top: 8px;" th:text="${totalUsuarios}">0</p>
+            <!-- 🛠️ Panel de Control del Administrador: vista general del sistema -->
+            <th:block th:if="${usuario.roles.contains('ADMINISTRADOR')}">
+
+                <!-- Indicadores principales -->
+                <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                    <h3 class="panel-header-title" style="margin: 0 0 16px 0;">📊 Vista General del Sistema</h3>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="inner-status-card" style="flex: 1; min-width: 170px; text-align: center;">
+                            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">🎓 Aprendices Activos</p>
+                            <p style="font-size: 32px; font-weight: 800; color: var(--text-dark); margin-top: 8px;" th:text="${adminAprendicesActivos}">0</p>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 170px; text-align: center;">
+                            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">💼 En Etapa Práctica</p>
+                            <p style="font-size: 32px; font-weight: 800; color: var(--verde-sena); margin-top: 8px;" th:text="${adminEnEtapaPractica}">0</p>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 170px; text-align: center;">
+                            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">⏳ Sin Etapa Práctica</p>
+                            <p style="font-size: 32px; font-weight: 800; color: #F59E0B; margin-top: 8px;" th:text="${adminSinEtapaPractica}">0</p>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 170px; text-align: center;">
+                            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">📋 Fichas Registradas</p>
+                            <p style="font-size: 32px; font-weight: 800; color: var(--text-dark); margin-top: 8px;" th:text="${adminFichasRegistradas}">0</p>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 170px; text-align: center;">
+                            <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">👨‍🏫 Instructores Asignados</p>
+                            <p style="font-size: 32px; font-weight: 800; color: var(--text-dark); margin-top: 8px;" th:text="${adminInstructoresAsignados}">0</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Activos</p>
-                    <p style="font-size: 32px; font-weight: 800; color: var(--verde-sena); margin-top: 8px;" th:text="${usuariosActivos}">0</p>
+
+                <!-- Usuarios del sistema -->
+                <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px; display: flex; gap: 25px; flex-wrap: wrap;">
+                    <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
+                        <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Totales</p>
+                        <p style="font-size: 32px; font-weight: 800; color: var(--text-dark); margin-top: 8px;" th:text="${totalUsuarios}">0</p>
+                    </div>
+                    <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
+                        <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Activos</p>
+                        <p style="font-size: 32px; font-weight: 800; color: var(--verde-sena); margin-top: 8px;" th:text="${usuariosActivos}">0</p>
+                    </div>
+                    <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
+                        <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Inactivos</p>
+                        <p style="font-size: 32px; font-weight: 800; color: #EF4444; margin-top: 8px;" th:text="${usuariosInactivos}">0</p>
+                    </div>
                 </div>
-                <div class="inner-status-card" style="flex: 1; min-width: 180px; text-align: center;">
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Usuarios Inactivos</p>
-                    <p style="font-size: 32px; font-weight: 800; color: #EF4444; margin-top: 8px;" th:text="${usuariosInactivos}">0</p>
+
+                <!-- Estado de los servidores -->
+                <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                    <h3 class="panel-header-title" style="margin: 0 0 16px 0;">🖥️ Estado de los Servidores</h3>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 8px #22C55E;"></span>
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Aplicación KRONOS</p>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">En línea · Activa hace <span th:text="${adminUptime}">0 min</span></p>
+                            </div>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
+                            <span th:style="'width: 12px; height: 12px; border-radius: 50%; background: ' + (${adminBdEnLinea} ? '#22C55E; box-shadow: 0 0 8px #22C55E;' : '#DC2626; box-shadow: 0 0 8px #DC2626;')"></span>
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Base de Datos Oracle</p>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;"
+                                   th:text="${adminBdEnLinea} ? 'Conectada y respondiendo' : 'Sin respuesta ⚠️'">Conectada</p>
+                            </div>
+                        </div>
+                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
+                            <span th:style="'width: 12px; height: 12px; border-radius: 50%; background: ' + (${adminCorreoHabilitado} ? '#22C55E; box-shadow: 0 0 8px #22C55E;' : '#F59E0B; box-shadow: 0 0 8px #F59E0B;')"></span>
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Servidor de Correo (SMTP)</p>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;"
+                                   th:text="${adminCorreoHabilitado} ? 'Habilitado para envío de alertas' : 'Sin configurar (alertas solo internas)'">Habilitado</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </th:block>
 
         </section>
     </main>

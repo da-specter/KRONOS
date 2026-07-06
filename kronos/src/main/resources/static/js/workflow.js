@@ -97,14 +97,14 @@ function habilitarFormatosGestor(idSolicitud) {
         }
     })
     .then(response => {
+        // No parseamos el cuerpo: solo nos interesa si la operación fue exitosa.
+        // (La entidad devuelta trae relaciones JPA que Jackson no siempre serializa limpio.)
         if (response.ok) {
-            return response.json();
+            alert('Su habilitación ha sido exitosa.');
+            window.location.reload();
+            return;
         }
         throw new Error('Hubo un error al habilitar las plantillas en el servidor.');
-    })
-    .then(() => {
-        alert('¡Plantillas habilitadas! El aprendiz ya puede descargarlas y resubirlas firmadas.');
-        window.location.reload();
     })
     .catch(error => {
         console.error(error);

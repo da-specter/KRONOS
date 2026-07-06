@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Configuración Global</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/admin/config')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>⚙️ Configuración Global</h1>
+                <p>Variables del sistema ajustables en caliente: aplican de inmediato sin reiniciar.</p>
+            </div>
+            <div class="header-controls">
+                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
+                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
+                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">AD</div>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+
+                <div th:if="${exito}" style="margin-bottom: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${exito}">OK</div>
+                <div th:if="${error}" style="margin-bottom: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;" th:text="${error}">Error</div>
+
+                <!-- 🚧 Banner de mantenimiento activo -->
+                <div th:if="${modoMantenimiento}" style="margin-bottom: 20px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); color: #B45309; padding: 14px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;">
+                    🚧 EL PORTAL ESTÁ EN MODO MANTENIMIENTO: solo los Administradores pueden iniciar sesión.
+                    Cambia MODO_MANTENIMIENTO a "NO" para reabrir el acceso.
+                </div>
+
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0 0 6px 0;">
+                    <span>🎛️ Variables del Sistema</span>
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 16px 0;">
+                    DIAS_ALERTA_INSTRUCTOR y DIAS_ALERTA_APRENDIZ controlan la anticipación del job de la 1:00 a.m.
+                    MODO_MANTENIMIENTO acepta SI/NO.
+                </p>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Variable</th>
+                                <th style="padding: 14px 16px;">Descripción</th>
+                                <th style="padding: 14px 16px;">Valor Actual</th>
+                                <th style="padding: 14px 16px;">Última Actualización</th>
+                                <th style="padding: 14px 16px;">Nuevo Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="config : ${configuraciones}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                                <td style="padding: 14px 16px; font-weight: 800; color: var(--text-dark); white-space: nowrap;" th:text="${config.clave}">CLAVE</td>
+                                <td style="padding: 14px 16px; color: var(--text-muted); font-size: 12px;" th:text="${config.descripcion}">Descripción</td>
+                                <td style="padding: 14px 16px;">
+                                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                                          th:text="${config.valor}">valor</span>
+                                </td>
+                                <td style="padding: 14px 16px; color: var(--text-muted); font-size: 12px;"
+                                    th:text="${#temporals.format(config.fechaActualizacion, 'dd/MM/yyyy HH:mm')}">01/01</td>
+                                <td style="padding: 14px 16px;">
+                                    <form th:action="@{/admin/config/actualizar}" method="post" style="display: flex; gap: 8px; margin: 0;">
+                                        <input type="hidden" name="idConfiguracion" th:value="${config.idConfiguracion}">
+                                        <input type="text" name="valor" th:value="${config.valor}" required
+                                               style="padding: 8px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; width: 200px;">
+                                        <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">💾 Aplicar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(configuraciones)}">
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    No hay variables de configuración registradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+</body>
+</html>

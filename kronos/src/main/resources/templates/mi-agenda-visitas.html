@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Mi Agenda de Visitas</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/instructor/visitas')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>📋 Mi Agenda de Visitas</h1>
+                <p>Visitas de seguimiento pasadas, pendientes de hoy y futuras.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <!-- 📋 Agenda: pasadas / pendientes / futuras -->
+            <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="margin: 0 0 16px 0;"><span>📋 Mi agenda de visitas</span></h3>
+
+                <div th:if="${exito}" style="margin-bottom: 16px; background: rgba(5, 112, 21, 0.08); border: 1px solid rgba(5, 112, 21, 0.25); color: var(--verde-sena); padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${exito}">Actualizado.</div>
+                <div th:if="${error}" style="margin-bottom: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
+                     th:text="${error}">Ocurrió un error.</div>
+
+                <input type="text" id="buscadorAgenda" onkeyup="filtrarAgendaVisitas()"
+                       placeholder="🔎 Buscar por nombre o ficha del aprendiz..."
+                       style="width: 100%; max-width: 420px; padding: 11px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; outline-color: var(--verde-sena); box-sizing: border-box;">
+
+                <div style="display: flex; flex-direction: column; gap: 26px; margin-top: 20px;">
+
+                    <div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                            <p style="margin: 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                                <span style="width: 10px; height: 10px; border-radius: 50%; background: #6B7280; display: inline-block;"></span>
+                                Pasadas
+                                <span style="background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agenda.pasadas)}">0</span>
+                            </p>
+                            <div style="display: flex; gap: 8px;">
+                                <a th:href="@{/instructor/visitas/exportar(formato='excel')}"
+                                   style="text-decoration: none; background: var(--verde-sena); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;">
+                                    📊 Excel
+                                </a>
+                                <a th:href="@{/instructor/visitas/exportar(formato='pdf')}"
+                                   style="text-decoration: none; background: #DC2626; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;">
+                                    📄 PDF
+                                </a>
+                            </div>
+                        </div>
+                        <div id="tablaPasadas" th:insert="~{fragments/visitas :: tablaVisitas(${agenda.pasadas}, 'No hay visitas pasadas.', true)}"></div>
+                        <p id="sinResultadosPasadas" style="display: none; text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">Ningún resultado coincide con la búsqueda.</p>
+                    </div>
+
+                    <div>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #D97706; display: inline-block;"></span>
+                            Pendientes (hoy)
+                            <span style="background: rgba(217,119,6,0.12); color: #D97706; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agenda.pendientes)}">0</span>
+                        </p>
+                        <div id="tablaPendientes" th:insert="~{fragments/visitas :: tablaVisitas(${agenda.pendientes}, 'No tienes visitas programadas para hoy.', true)}"></div>
+                        <p id="sinResultadosPendientes" style="display: none; text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">Ningún resultado coincide con la búsqueda.</p>
+                    </div>
+
+                    <div>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--verde-sena); display: inline-block;"></span>
+                            Futuras
+                            <span style="background: rgba(5,112,21,0.1); color: var(--verde-sena); font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;" th:text="${#lists.size(agenda.futuras)}">0</span>
+                        </p>
+                        <div id="tablaFuturas" th:insert="~{fragments/visitas :: tablaVisitas(${agenda.futuras}, 'No hay visitas futuras agendadas.', true)}"></div>
+                        <p id="sinResultadosFuturas" style="display: none; text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">Ningún resultado coincide con la búsqueda.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ✋ Modal para cancelar/aplazar una visita, con novedad obligatoria -->
+    <div id="modalGestionarVisita" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 420px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 id="tituloGestionarVisita" style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">Cancelar visita</h3>
+            <p style="margin: 0 0 14px 0; font-size: 13px; color: var(--text-muted);">Escribe la novedad (motivo). Se le notificará al aprendiz.</p>
+
+            <textarea id="novedadGestionar" rows="3" maxlength="500" placeholder="Motivo..."
+                      style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+            <p id="errorGestionar" style="display: none; margin: 8px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+
+            <form id="formGestionarVisita" th:action="@{/instructor/visitas/gestionar}" method="post" style="margin: 0;">
+                <input type="hidden" name="idVisita" id="idVisitaGestionar">
+                <input type="hidden" name="accion" id="accionGestionar">
+                <input type="hidden" name="novedad" id="novedadGestionarOculto">
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+                    <button type="button" onclick="cerrarModalGestionar()"
+                            style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnConfirmarGestionar" onclick="confirmarGestionarVisita()"
+                            style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        // 🔎 Filtra las 3 tablas de la agenda (Pasadas/Pendientes/Futuras) por nombre o ficha del aprendiz
+        function filtrarFilasVisita(idContenedor, idSinResultados, criterio) {
+            const filas = document.querySelectorAll('#' + idContenedor + ' .fila-visita');
+            let visibles = 0;
+            filas.forEach(function (fila) {
+                const coincide = fila.textContent.toLowerCase().includes(criterio);
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+            const sinResultados = document.getElementById(idSinResultados);
+            if (sinResultados) sinResultados.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+
+        function filtrarAgendaVisitas() {
+            const criterio = document.getElementById('buscadorAgenda').value.trim().toLowerCase();
+            filtrarFilasVisita('tablaPasadas', 'sinResultadosPasadas', criterio);
+            filtrarFilasVisita('tablaPendientes', 'sinResultadosPendientes', criterio);
+            filtrarFilasVisita('tablaFuturas', 'sinResultadosFuturas', criterio);
+        }
+
+        // Cancelar / Aplazar: los botones vienen del fragmento tablaVisitas (delegación de eventos)
+        let idVisitaActual = null;
+        let accionActual = null;
+
+        document.addEventListener('click', function (evento) {
+            const boton = evento.target.closest('.btn-gestionar-visita');
+            if (!boton) return;
+            idVisitaActual = boton.dataset.idvisita;
+            accionActual = boton.dataset.accion;
+            document.getElementById('tituloGestionarVisita').textContent =
+                accionActual === 'CANCELAR' ? 'Cancelar visita' : 'Aplazar visita';
+            document.getElementById('novedadGestionar').value = '';
+            document.getElementById('errorGestionar').style.display = 'none';
+            document.getElementById('modalGestionarVisita').style.display = 'flex';
+        });
+
+        function cerrarModalGestionar() {
+            document.getElementById('modalGestionarVisita').style.display = 'none';
+        }
+
+        function confirmarGestionarVisita() {
+            const novedad = document.getElementById('novedadGestionar').value.trim();
+            const error = document.getElementById('errorGestionar');
+            if (!novedad) {
+                error.textContent = 'Debes escribir una novedad indicando el motivo.';
+                error.style.display = 'block';
+                return;
+            }
+            document.getElementById('idVisitaGestionar').value = idVisitaActual;
+            document.getElementById('accionGestionar').value = accionActual;
+            document.getElementById('novedadGestionarOculto').value = novedad;
+            document.getElementById('formGestionarVisita').submit();
+        }
+    </script>
+</body>
+</html>

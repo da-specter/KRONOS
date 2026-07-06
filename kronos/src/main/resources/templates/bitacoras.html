@@ -18,40 +18,7 @@
                 <p>Formato de Planeación y Bitácoras de seguimiento de tu Etapa Productiva.</p>
             </div>
 
-            <div class="header-controls" style="position: relative;">
-                <div class="bell-btn-circle" style="position: relative; cursor: pointer;" onclick="toggleNotificaciones()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" th:stroke="${#lists.isEmpty(notificacionesNoLeidas)} ? 'currentColor' : '#DC2626'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span th:if="${!#lists.isEmpty(notificacionesNoLeidas)}"
-                          style="position: absolute; top: -4px; right: -4px; background: #DC2626; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px;"
-                          th:text="${notificacionesNoLeidas.size()}">3</span>
-                </div>
-
-                <div id="panelNotificaciones" style="display: none; position: absolute; top: 46px; right: 46px; width: 320px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; overflow: hidden;">
-                    <div style="padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-weight: 700; font-size: 13px; color: var(--text-dark); display: flex; justify-content: space-between; align-items: center;">
-                        <span>Notificaciones</span>
-                        <form th:action="@{/notificaciones/marcar-leidas}" method="post" th:if="${!#lists.isEmpty(notificacionesNoLeidas)}">
-                            <button type="submit" style="border: none; background: none; color: var(--verde-sena); font-size: 12px; font-weight: 600; cursor: pointer;">Marcar leídas</button>
-                        </form>
-                    </div>
-                    <div style="max-height: 280px; overflow-y: auto;">
-                        <div th:each="notificacion : ${notificacionesNoLeidas}" style="padding: 12px 16px; border-bottom: 1px solid var(--card-border); font-size: 13px; color: var(--text-dark);">
-                            <p th:text="${notificacion.mensaje}" style="margin: 0;">Mensaje</p>
-                            <span style="font-size: 11px; color: var(--text-muted);" th:text="${#temporals.format(notificacion.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
-                        </div>
-                        <p th:if="${#lists.isEmpty(notificacionesNoLeidas)}" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">No tienes notificaciones nuevas.</p>
-                    </div>
-                </div>
-
-                <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
-                     th:src="@{${usuario.fotoPerfil}}" alt="Foto de perfil" class="user-avatar-glow" style="object-fit:cover;">
-                <div th:unless="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
-                     class="user-avatar-glow" th:text="${#strings.substring(usuario.nombre,0,1) + #strings.substring(usuario.apellido,0,1)}">
-                    DM
-                </div>
-            </div>
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
         </header>
 
         <section class="dashboard-grid">
@@ -69,13 +36,27 @@
                 </h3>
 
                 <div th:if="${formatoPlaneacion != null}" class="inner-status-card" style="margin-top: 16px;">
-                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">Ya radicaste tu Formato de Planeación</p>
-                    <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;" th:text="'Asunto: ' + ${formatoPlaneacion.asunto}">Asunto: Plan de trabajo inicial</p>
-                    <p style="font-size: 13px; color: var(--verde-sena); font-weight: 600; margin-top: 4px;"
-                       th:text="'Subido: ' + ${#temporals.format(formatoPlaneacion.fechaHoraSubida, 'dd/MM/yyyy HH:mm')}">Subido: 01/01/2026 10:00</p>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">Ya radicaste tu Formato de Planeación</p>
+                            <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;" th:text="'Asunto: ' + ${formatoPlaneacion.asunto}">Asunto: Plan de trabajo inicial</p>
+                            <p style="font-size: 13px; color: var(--verde-sena); font-weight: 600; margin-top: 4px;"
+                               th:text="'Subido: ' + ${#temporals.format(formatoPlaneacion.fechaHoraSubida, 'dd/MM/yyyy HH:mm')}">Subido: 01/01/2026 10:00</p>
+                        </div>
+                        <span th:text="${evaluacionPlaneacion == null} ? 'EN REVISIÓN' : (${evaluacionPlaneacion.resultado.name() == 'APROBADO'} ? 'APROBADO' : (${evaluacionPlaneacion.resultado.name() == 'CORREGIR'} ? 'PARA CORREGIR' : 'REPROBADO'))"
+                              th:style="${evaluacionPlaneacion == null} ? 'background: #FEF3C7; color: #B45309;' : (${evaluacionPlaneacion.resultado.name() == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${evaluacionPlaneacion.resultado.name() == 'CORREGIR'} ? 'background: rgba(37,99,235,0.1); color: #2563EB;' : 'background: rgba(220,38,38,0.1); color: #DC2626;'))"
+                              style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
+                            EN REVISIÓN
+                        </span>
+                    </div>
+                    <p th:if="${evaluacionPlaneacion != null and evaluacionPlaneacion.observaciones != null}"
+                       style="margin: 12px 0 0 0; font-size: 13px; color: var(--text-dark); background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px;">
+                        <strong>Novedad de tu Instructor Técnico:</strong> <span th:text="${evaluacionPlaneacion.observaciones}">Debe ajustar el cronograma.</span>
+                    </p>
                 </div>
 
-                <form th:if="${formatoPlaneacion == null}" th:action="@{/aprendiz/formato-planeacion}" method="post" enctype="multipart/form-data"
+                <form th:if="${formatoPlaneacion == null or (evaluacionPlaneacion != null and (evaluacionPlaneacion.resultado.name() == 'CORREGIR' or evaluacionPlaneacion.resultado.name() == 'REPROBADO'))}"
+                      th:action="@{/aprendiz/formato-planeacion}" method="post" enctype="multipart/form-data"
                       style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
                     <div class="form-group" style="margin-bottom: 0; min-width: 240px; flex: 1;">
                         <label for="asuntoPlaneacion">Asunto</label>
@@ -95,20 +76,26 @@
                     <span>📓 Bitácora</span>
                 </h3>
 
-                <div th:each="bitacora : ${bitacorasSubidas}" class="inner-status-card" style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                    <div>
-                        <p style="font-size: 14px; color: var(--text-dark); font-weight: 700;"
-                           th:text="'Bitácora N°' + ${bitacora.cronogramaBitacora.numeroBitacora} + ' — ' + ${bitacora.asunto}">Bitácora N°1 — Avance semanal</p>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"
-                           th:text="'Subida: ' + ${#temporals.format(bitacora.fechaHoraSubida, 'dd/MM/yyyy HH:mm')}">Subida: 01/01/2026 10:00</p>
-                    </div>
+                <div th:each="bitacora : ${bitacorasSubidas}" th:with="evaluacion=${ultimaEvaluacionPorBitacora.get(bitacora.idBitacora)}"
+                     class="inner-status-card" style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <p style="font-size: 14px; color: var(--text-dark); font-weight: 700;"
+                               th:text="'Bitácora N°' + ${bitacora.cronogramaBitacora.numeroBitacora} + ' — ' + ${bitacora.asunto}">Bitácora N°1 — Avance semanal</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"
+                               th:text="'Subida: ' + ${#temporals.format(bitacora.fechaHoraSubida, 'dd/MM/yyyy HH:mm')}">Subida: 01/01/2026 10:00</p>
+                        </div>
 
-                    <span th:with="evaluacion=${ultimaEvaluacionPorBitacora.get(bitacora.idBitacora)}"
-                          th:text="${evaluacion == null} ? 'EN REVISIÓN' : (${evaluacion.resultado.name() == 'APROBADO'} ? 'APROBADA' : 'NO APROBADA / CORRECCIÓN')"
-                          th:style="${evaluacion == null} ? 'background: #FEF3C7; color: #B45309;' : (${evaluacion.resultado.name() == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : 'background: rgba(220,38,38,0.1); color: #DC2626;')"
-                          style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
-                        EN REVISIÓN
-                    </span>
+                        <span th:text="${evaluacion == null} ? 'EN REVISIÓN' : (${evaluacion.resultado.name() == 'APROBADO'} ? 'APROBADA' : (${evaluacion.resultado.name() == 'CORREGIR'} ? 'PARA CORREGIR' : 'REPROBADA'))"
+                              th:style="${evaluacion == null} ? 'background: #FEF3C7; color: #B45309;' : (${evaluacion.resultado.name() == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${evaluacion.resultado.name() == 'CORREGIR'} ? 'background: rgba(37,99,235,0.1); color: #2563EB;' : 'background: rgba(220,38,38,0.1); color: #DC2626;'))"
+                              style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
+                            EN REVISIÓN
+                        </span>
+                    </div>
+                    <p th:if="${evaluacion != null and evaluacion.observaciones != null}"
+                       style="margin: 0; font-size: 13px; color: var(--text-dark); background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px;">
+                        <strong>Novedad de tu Instructor Técnico:</strong> <span th:text="${evaluacion.observaciones}">Debe corregir la sección 3.</span>
+                    </p>
                 </div>
 
                 <p th:if="${#lists.isEmpty(bitacorasSubidas)}" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); font-weight: 500;">
