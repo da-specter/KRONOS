@@ -9,4 +9,7 @@ import java.util.Optional;
 public interface TipoContratoRepository extends JpaRepository<TipoContrato, Long> {
     // Evita duplicar el mismo tipo de contrato cuando el Gestor lo escribe libremente en el formulario
     Optional<TipoContrato> findByNombreTipoContratoIgnoreCase(String nombreTipoContrato);
+
+    // Catálogo de modalidades activas para el select de "Tipo de contrato" del Registro de Etapa
+    java.util.List<TipoContrato> findByEstadoTrueOrderByNombreTipoContratoAsc();
 }

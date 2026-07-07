@@ -51,23 +51,23 @@
                     </div>
                     <div style="min-width: 130px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Documento</label>
-                        <input type="text" name="documento" required maxlength="10" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                        <input type="text" name="documento" required maxlength="10" pattern="\d+" inputmode="numeric" title="El documento solo puede contener números." style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
                     </div>
                     <div style="flex: 1; min-width: 140px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Nombre</label>
-                        <input type="text" name="nombre" required maxlength="30" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                        <input type="text" name="nombre" required maxlength="30" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre solo puede contener letras." style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
                     </div>
                     <div style="flex: 1; min-width: 140px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Apellido</label>
-                        <input type="text" name="apellido" required maxlength="30" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                        <input type="text" name="apellido" required maxlength="30" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El apellido solo puede contener letras." style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
                     </div>
                     <div style="flex: 1.5; min-width: 200px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Correo</label>
-                        <input type="email" name="correo" required maxlength="150" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                        <input type="email" name="correo" required maxlength="150" pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: usuario@sena.edu.co)." style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
                     </div>
                     <div style="min-width: 120px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Teléfono</label>
-                        <input type="text" name="telefono" maxlength="11" style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                        <input type="text" name="telefono" maxlength="11" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
                     </div>
                     <div style="min-width: 190px;">
                         <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Rol</label>

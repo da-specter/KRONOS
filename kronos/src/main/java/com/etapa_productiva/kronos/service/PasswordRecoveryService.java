@@ -70,6 +70,8 @@ public class PasswordRecoveryService {
             throw new IllegalArgumentException("El código ingresado ya venció. Solicita uno nuevo.");
         }
 
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarContrasena(nuevaContrasena);
+
         usuario.setPassword(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
 

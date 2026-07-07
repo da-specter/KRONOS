@@ -20,8 +20,20 @@
                     <p th:text="${saludoAdminFrase}">El motor de KRONOS está encendido.</p>
                 </th:block>
 
+                <!-- 👋 Gestor de Etapa: saludo dinámico por franja horaria (mañana/tarde/noche/trasnochador) -->
+                <th:block th:if="${saludoAdminTitulo == null and saludoGestorTitulo != null}">
+                    <h1 th:text="${saludoGestorTitulo}">¡Buenos días, Olga!</h1>
+                    <p th:text="${saludoGestorFrase}">Un buen café y a asegurar el futuro de nuestros aprendices hoy.</p>
+                </th:block>
+
+                <!-- 👋 Instructor de Seguimiento: saludo dinámico por franja horaria (mañana/tarde/noche/trasnochador) -->
+                <th:block th:if="${saludoAdminTitulo == null and saludoGestorTitulo == null and saludoInstructorTitulo != null}">
+                    <h1 th:text="${saludoInstructorTitulo}">¡Buenos días, Instructor!</h1>
+                    <p th:text="${saludoInstructorFrase}">Agenda lista para orientar, evaluar y transformar vidas en el campo de práctica.</p>
+                </th:block>
+
                 <!-- Los demás roles conservan el saludo original -->
-                <th:block th:if="${saludoAdminTitulo == null}">
+                <th:block th:if="${saludoAdminTitulo == null and saludoGestorTitulo == null and saludoInstructorTitulo == null}">
                     <h1 th:text="'¡Hola, ' + ${usuario.nombre} + '!'">¡Hola, Darwin!</h1>
                     <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'APROBADO_EN_ETAPA'}">
                         Éxitos en tu proceso de etapa práctica, <strong>¡Mucho Ánimo Aprendiz SENA!</strong>
@@ -32,7 +44,24 @@
                 </th:block>
             </div>
 
-            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <!-- 🕒 Reloj en vivo: hora local corriendo + día actual (lo actualiza workflow.js cada segundo) -->
+                <div class="reloj-capsula" id="relojKronos" title="Hora local de Colombia">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <div class="reloj-textos">
+                        <div class="reloj-hora">
+                            <span id="relojHora">--:--</span><span class="reloj-seg" id="relojSeg">:--</span>
+                            <span class="reloj-ampm" id="relojAmPm"></span>
+                        </div>
+                        <div class="reloj-fecha" id="relojFecha">Cargando…</div>
+                    </div>
+                </div>
+
+                <div th:replace="~{fragments/notificaciones :: campana}"></div>
+            </div>
         </header>
 
         <section class="dashboard-grid">
@@ -201,7 +230,9 @@
                     <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                         <label for="idSeccionFormato">Modalidad del contrato</label>
                         <div class="input-container">
-                            <select id="idSeccionFormato" name="idSeccionFormato" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                            <select id="idSeccionFormato" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                <option value="">Selecciona la modalidad</option>
+                                <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                 <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                             </select>
                         </div>
@@ -265,7 +296,9 @@
                         <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                             <label for="idSeccionFormatoReenvio">Modalidad del contrato</label>
                             <div class="input-container">
-                                <select id="idSeccionFormatoReenvio" name="idSeccionFormato" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                <select id="idSeccionFormatoReenvio" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option value="">Selecciona la modalidad</option>
+                                    <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                     <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                                 </select>
                             </div>
@@ -301,7 +334,9 @@
                         <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                             <label for="idSeccionFormatoNueva">Modalidad del contrato</label>
                             <div class="input-container">
-                                <select id="idSeccionFormatoNueva" name="idSeccionFormato" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                <select id="idSeccionFormatoNueva" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                    <option value="">Selecciona la modalidad</option>
+                                    <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                     <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                                 </select>
                             </div>
@@ -719,6 +754,84 @@
         </section>
     </main>
 
+    <!-- ✅ Modal de confirmación al enviar la respuesta de una solicitud (reemplaza el alert() nativo) -->
+    <div id="modalRespuestaEnviada" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 32px; width: 92%; max-width: 380px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); text-align: center;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(5, 112, 21, 0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--verde-sena)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 17px; color: var(--text-dark);">Respuesta enviada correctamente</h3>
+            <p style="margin: 0 0 22px 0; font-size: 13px; color: var(--text-muted);">
+                La solicitud del aprendiz fue actualizada con tu evaluación.
+            </p>
+            <button type="button" onclick="cerrarModalRespuestaEnviada()"
+                    style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 28px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                Aceptar
+            </button>
+        </div>
+    </div>
+
+    <!-- ℹ️ Modal informativo: el Contrato de Aprendizaje se gestiona en SGVA, no en KRONOS -->
+    <div id="modalContratoAprendizaje" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 30px; width: 92%; max-width: 480px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <h3 style="margin: 0; font-size: 16px; color: var(--text-dark);">Información sobre Contrato de Aprendizaje</h3>
+            </div>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">Estimado(a) aprendiz:</p>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                Te informamos que las solicitudes y el seguimiento de la modalidad de <strong>Contrato de Aprendizaje</strong>
+                se manejan exclusivamente a través de la plataforma oficial <strong>SGVA</strong> y no desde el sistema KRONOS.
+            </p>
+            <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                Pedimos disculpas por cualquier inconveniente o confusión que esto pueda causarte en tu proceso.
+                Para asegurar el correcto registro de tu etapa productiva, te solicitamos comunicarte a la mayor brevedad
+                posible con el <strong>Líder de Etapa Productiva</strong> de tu centro de formación.
+            </p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                <a href="https://caprendizaje.sena.edu.co/sgva/SGVA_Diseno/pag/login.aspx" target="_blank" rel="noopener"
+                   style="display: inline-block; background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none;">
+                    Ir a la plataforma SGVA
+                </a>
+                <button type="button" onclick="cerrarModalContratoAprendizaje()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        function cerrarModalRespuestaEnviada() {
+            document.getElementById('modalRespuestaEnviada').style.display = 'none';
+            window.location.reload();
+        }
+
+        function cerrarModalContratoAprendizaje() {
+            document.getElementById('modalContratoAprendizaje').style.display = 'none';
+        }
+
+        // Si el aprendiz elige "Contrato Aprendizaje", se le informa que esa modalidad
+        // se gestiona en SGVA y el select vuelve al placeholder (no es radicable en KRONOS).
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.select-modalidad-contrato').forEach(function (select) {
+                select.addEventListener('change', function () {
+                    if (this.value === 'SGVA_CONTRATO_APRENDIZAJE') {
+                        this.value = '';
+                        document.getElementById('modalContratoAprendizaje').style.display = 'flex';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

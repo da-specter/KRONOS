@@ -312,6 +312,57 @@ body {
     gap: 18px;
 }
 
+/* 🕒 Cápsula del reloj en vivo del header (hora corriendo + día actual) */
+.reloj-capsula {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 8px 16px;
+    color: #FFFFFF;
+    user-select: none;
+}
+
+.reloj-capsula svg {
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.reloj-hora {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums; /* evita que la hora "baile" al cambiar los dígitos */
+}
+
+.reloj-hora .reloj-seg {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--verde-neon);
+}
+
+.reloj-hora .reloj-ampm {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-left: 4px;
+    text-transform: uppercase;
+}
+
+.reloj-fecha {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.85;
+    letter-spacing: 0.3px;
+}
+
+@media (max-width: 640px) {
+    .reloj-capsula { display: none; } /* en móvil el header se apila: se oculta para no saturar */
+}
+
 .bell-btn-circle {
     width: 44px;
     height: 44px;

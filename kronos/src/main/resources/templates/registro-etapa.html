@@ -54,11 +54,11 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>NIT</label>
-                            <div class="input-container"><input type="text" name="nit" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="nit" required pattern="\d+" inputmode="numeric" title="El NIT solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Nombre de la empresa</label>
-                            <div class="input-container"><input type="text" name="nombreEmpresa" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre de la empresa solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Dirección</label>
@@ -66,11 +66,11 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Teléfono</label>
-                            <div class="input-container"><input type="text" name="telefonoEmpresa" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="telefonoEmpresa" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Correo</label>
-                            <div class="input-container"><input type="email" name="correoEmpresa" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="email" name="correoEmpresa" pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: contacto@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Departamento</label>
@@ -100,7 +100,14 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Tipo de contrato</label>
-                            <div class="input-container"><input type="text" name="nombreTipoContrato" required placeholder="Ej: Contrato de Aprendizaje" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container">
+                                <select name="nombreTipoContrato" required
+                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                    <option value="">Selecciona la modalidad</option>
+                                    <option th:each="tc : ${tiposContrato}" th:value="${tc.nombreTipoContrato}"
+                                            th:text="${tc.nombreTipoContrato}">Pasantia</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Fecha inicio</label>
@@ -116,15 +123,15 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Nombre</label>
-                            <div class="input-container"><input type="text" name="nombreJefeInmediato" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="nombreJefeInmediato" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Correo</label>
-                            <div class="input-container"><input type="email" name="correoJefeInmediato" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="email" name="correoJefeInmediato" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: jefe@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Teléfono</label>
-                            <div class="input-container"><input type="text" name="telefonoJefeInmediato" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="telefonoJefeInmediato" required pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                     </div>
 
@@ -177,6 +184,29 @@
                 opcion.hidden = opcion.getAttribute('data-dept') !== idDepartamento;
             });
         }
+
+        // ⌨️ Filtro en tiempo real: bloquea los caracteres inválidos mientras se escribe.
+        // Solo números: NIT y teléfonos · Solo letras: nombre de la empresa y del jefe inmediato.
+        document.addEventListener('DOMContentLoaded', function () {
+            const soloNumeros = ['nit', 'telefonoEmpresa', 'telefonoJefeInmediato'];
+            const soloLetras = ['nombreEmpresa', 'nombreJefeInmediato'];
+
+            soloNumeros.forEach(function (nombre) {
+                document.querySelectorAll('input[name="' + nombre + '"]').forEach(function (campo) {
+                    campo.addEventListener('input', function () {
+                        this.value = this.value.replace(/\D/g, '');
+                    });
+                });
+            });
+
+            soloLetras.forEach(function (nombre) {
+                document.querySelectorAll('input[name="' + nombre + '"]').forEach(function (campo) {
+                    campo.addEventListener('input', function () {
+                        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ ]/g, '');
+                    });
+                });
+            });
+        });
 
         // Si el Gestor va a rechazar modalidad o formatos, exige que deje la novedad para notificar al aprendiz
         function validarNovedadRegistro(form) {

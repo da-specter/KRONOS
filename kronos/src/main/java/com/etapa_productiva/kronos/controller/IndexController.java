@@ -137,6 +137,11 @@ public class IndexController {
                     solicitudRepository.findByEstado(EstadoSolicitud.PENDIENTE_REVISION));
             model.addAttribute("documentosPendientes",
                     documentoSolicitudRepository.findByEstadoValidacion(EstadoValidacion.PENDIENTE));
+
+            // 👋 Saludo dinámico del Gestor de Etapa según la franja horaria (mañana/tarde/noche/trasnochador)
+            String[] saludoGestor = saludoGestorEtapa(usuarioLogueado.getNombre());
+            model.addAttribute("saludoGestorTitulo", saludoGestor[0]);
+            model.addAttribute("saludoGestorFrase", saludoGestor[1]);
         } else {
             model.addAttribute("solicitudesPendientes", Collections.emptyList());
             model.addAttribute("documentosPendientes", Collections.emptyList());
@@ -148,6 +153,11 @@ public class IndexController {
             List<com.etapa_productiva.kronos.dto.InstructorAprendizDto> misAprendices =
                     instructorSeguimientoService.listarAprendices(usuarioLogueado.getIdUsuario());
             model.addAttribute("dashInstructor", instructorSeguimientoService.calcularDashboard(misAprendices));
+
+            // 👋 Saludo dinámico del Instructor de Seguimiento según la franja horaria
+            String[] saludoInstructor = saludoInstructorSeguimiento(usuarioLogueado.getNombre());
+            model.addAttribute("saludoInstructorTitulo", saludoInstructor[0]);
+            model.addAttribute("saludoInstructorFrase", saludoInstructor[1]);
         } else {
             model.addAttribute("fichasSeguimiento", Collections.emptyList());
             model.addAttribute("dashInstructor", null);
@@ -496,6 +506,52 @@ public class IndexController {
                         "Modo nocturno activo. Vigilando la estabilidad de la plataforma."}
                 : new String[]{"🌙 ¡Buen descanso, " + nombre + "!",
                         "El sistema se prepara para el corte automático de la 1:00 a.m."};
+    }
+
+    // 👋 Saludo del Gestor de Etapa por franja horaria:
+    //    🌅 Mañana (06:00-11:59) · ☀️ Tarde (12:00-17:59) · 🌙 Noche (18:00-23:59) · 🦉 Trasnochador (00:00-05:59)
+    //    Devuelve [título del h1, frase del subtítulo].
+    private String[] saludoGestorEtapa(String nombre) {
+        int hora = java.time.LocalTime.now().getHour();
+
+        if (hora >= 6 && hora < 12) { // 🌅 Mañana
+            return new String[]{"🌅 ¡Buenos días, " + nombre + "!",
+                    "Un buen café y a asegurar el futuro de nuestros aprendices hoy. ☕"};
+        }
+        if (hora >= 12 && hora < 18) { // ☀️ Tarde
+            return new String[]{"☀️ ¡Buenas tardes, " + nombre + "!",
+                    "El día avanza y el talento en KRONOS no se detiene. ¿Revisamos las solicitudes pendientes? 🚀"};
+        }
+        if (hora >= 18 && hora < 24) { // 🌙 Noche
+            return new String[]{"🌙 ¡Buenas noches, " + nombre + "!",
+                    "El último empujón de la jornada. Gracias por impulsar el proceso formativo hoy. 🌟"};
+        }
+        // 🦉 Trasnochador (00:00 - 05:59): easter egg para quien entra de madrugada
+        return new String[]{"🦉 ¡Hola, " + nombre + "!",
+                "¿Madrugando o trasnochando? KRONOS te acompaña, pero no olvides descansar. 💤"};
+    }
+
+    // 👋 Saludo del Instructor de Seguimiento por franja horaria:
+    //    🌅 Mañana (06:00-11:59) · ☀️ Tarde (12:00-17:59) · 🌙 Noche (18:00-23:59) · 🦉 Trasnochador (00:00-05:59)
+    //    Devuelve [título del h1, frase del subtítulo].
+    private String[] saludoInstructorSeguimiento(String nombre) {
+        int hora = java.time.LocalTime.now().getHour();
+
+        if (hora >= 6 && hora < 12) { // 🌅 Mañana
+            return new String[]{"🌅 ¡Buenos días, " + nombre + "!",
+                    "Agenda lista para orientar, evaluar y transformar vidas en el campo de práctica. ¡Con toda hoy! 📋"};
+        }
+        if (hora >= 12 && hora < 18) { // ☀️ Tarde
+            return new String[]{"☀️ ¡Buenas tardes, " + nombre + "!",
+                    "Las visitas de seguimiento y la revisión de bitácoras avanzan a buen ritmo. ¡Sigamos impulsando el talento! 🚀"};
+        }
+        if (hora >= 18 && hora < 24) { // 🌙 Noche
+            return new String[]{"🌙 ¡Buenas noches, " + nombre + "!",
+                    "Jornada finalizada. Gracias por asegurar la calidad y el éxito en la etapa productiva de nuestros aprendices hoy. 🌟"};
+        }
+        // 🦉 Trasnochador (00:00 - 05:59): easter egg para quien entra de madrugada
+        return new String[]{"🦉 ¡Hola, " + nombre + "!",
+                "¿Calificando bitácoras o reportes a esta hora? El descanso también es parte del éxito. ¡A dormir pronto! 💤"};
     }
 
     // 🩺 Ping real a Oracle para el semáforo de "Estado de los Servidores" del Administrador

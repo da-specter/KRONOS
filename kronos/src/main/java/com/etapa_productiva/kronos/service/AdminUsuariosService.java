@@ -71,6 +71,11 @@ public class AdminUsuariosService {
                 || apellido == null || apellido.isBlank() || correo == null || correo.isBlank()) {
             throw new IllegalArgumentException("Documento, nombre, apellido y correo son obligatorios.");
         }
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarDocumento(documento);
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombre, "El nombre");
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(apellido, "El apellido");
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correo, "El correo");
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefono, "El teléfono");
         if (usuarioRepository.findByDocumento(documento.trim()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un usuario con el documento " + documento.trim() + ".");
         }

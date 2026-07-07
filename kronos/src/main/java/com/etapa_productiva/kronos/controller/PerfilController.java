@@ -80,6 +80,12 @@ public class PerfilController {
         }
 
         try {
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombre, "El nombre");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(apellido, "El apellido");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoElectronico, "El correo");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefono, "El teléfono");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarContrasena(contrasenaNueva);
+
             Usuario usuario = usuarioRepository.findById(usuarioLogueado.getIdUsuario())
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
 

@@ -220,6 +220,30 @@ body {
     box-shadow: 0 0 0 4px rgba(5, 112, 21, 0.1), 0 6px 14px rgba(5, 112, 21, 0.1);
 }
 
+/* ✅ Validación en tiempo real: rojo neón mientras el campo no cumple, verde neón cuando cumple.
+   La clase la pone login-validacion.js sobre .input-container; tiene prioridad sobre el focus. */
+.input-container.input-invalido,
+.input-container.input-invalido:focus-within {
+    border-color: #FF2E4C;
+    box-shadow: 0 0 6px rgba(255, 46, 76, 0.65), 0 0 16px rgba(255, 46, 76, 0.35);
+}
+
+.input-container.input-invalido .icon-svg,
+.input-container.input-invalido:focus-within .icon-svg {
+    color: #FF2E4C;
+}
+
+.input-container.input-valido,
+.input-container.input-valido:focus-within {
+    border-color: #22C55E;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.65), 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+.input-container.input-valido .icon-svg,
+.input-container.input-valido:focus-within .icon-svg {
+    color: #22C55E;
+}
+
 .input-container .icon-svg {
     width: 20px;
     height: 20px;

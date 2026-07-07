@@ -76,6 +76,8 @@
                                name="nuevaContrasena"
                                type="password"
                                placeholder="Introduce tu nueva contraseña"
+                               pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d.*\d)(?=.*[!@#$%]).*"
+                               title="Debe tener al menos una mayúscula, una minúscula, dos números y un carácter especial (! @ # $ %)."
                                required autocomplete="new-password">
                         <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('nuevaContrasena', 'eyeIconShow1', 'eyeIconHide1')" aria-label="Mostrar u ocultar contraseña" tabindex="-1">
                             <svg id="eyeIconShow1" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

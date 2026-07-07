@@ -10,6 +10,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// 🕒 Reloj en vivo del header del index: hora local corriendo (formato 12h) + día actual en español.
+// Solo se activa si la página tiene la cápsula del reloj (#relojKronos).
+document.addEventListener('DOMContentLoaded', function () {
+    const capsula = document.getElementById('relojKronos');
+    if (!capsula) return;
+
+    const elHora = document.getElementById('relojHora');
+    const elSeg = document.getElementById('relojSeg');
+    const elAmPm = document.getElementById('relojAmPm');
+    const elFecha = document.getElementById('relojFecha');
+    const pad = n => String(n).padStart(2, '0');
+
+    function actualizarReloj() {
+        const ahora = new Date();
+        const horas24 = ahora.getHours();
+        const horas12 = horas24 % 12 || 12;
+
+        elHora.textContent = pad(horas12) + ':' + pad(ahora.getMinutes());
+        elSeg.textContent = ':' + pad(ahora.getSeconds());
+        elAmPm.textContent = horas24 < 12 ? 'AM' : 'PM';
+
+        // Ej: "lunes, 6 de julio" (con la inicial en mayúscula)
+        const fecha = ahora.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+        elFecha.textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    }
+
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+});
+
 // Muestra/oculta el desplegable de notificaciones al hacer clic en la campana
 function toggleNotificaciones() {
     const panel = document.getElementById('panelNotificaciones');
@@ -68,17 +98,13 @@ function enviarEvaluacionInicial(idSolicitud) {
         }
     })
     .then(response => {
+        // No parseamos el cuerpo: solo nos interesa si la operación fue exitosa.
+        // (La entidad devuelta trae relaciones JPA que Jackson no siempre serializa limpio.)
         if (response.ok) {
-            return response.json();
+            document.getElementById('modalRespuestaEnviada').style.display = 'flex';
+            return;
         }
         throw new Error('Hubo un error al procesar los requisitos en el servidor.');
-    })
-    .then(solicitudActualizada => {
-        // ÉXITO: El estado cambió en Oracle. Actualizamos la UI con una notificación premium
-        alert(`¡Estado actualizado con éxito! Nuevo estado: ${solicitudActualizada.estado}`);
-
-        // La solicitud ya salió de PENDIENTE_REVISION: recargamos para que la bandeja se actualice
-        window.location.reload();
     })
     .catch(error => {
         console.error(error);
@@ -100,8 +126,7 @@ function habilitarFormatosGestor(idSolicitud) {
         // No parseamos el cuerpo: solo nos interesa si la operación fue exitosa.
         // (La entidad devuelta trae relaciones JPA que Jackson no siempre serializa limpio.)
         if (response.ok) {
-            alert('Su habilitación ha sido exitosa.');
-            window.location.reload();
+            document.getElementById('modalHabilitacionExitosa').style.display = 'flex';
             return;
         }
         throw new Error('Hubo un error al habilitar las plantillas en el servidor.');

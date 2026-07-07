@@ -76,7 +76,7 @@
                                 <td style="padding: 16px; text-align: center;">
                                     <button th:onclick="'habilitarFormatosGestor(' + ${solicitud.idSolicitud} + ')'"
                                             style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
-                                        Habilitar Formatos
+                                        Habilitar a Etapa
                                     </button>
                                 </td>
                             </tr>
@@ -94,6 +94,28 @@
         </section>
     </main>
 
+    <!-- ✅ Modal de confirmación al habilitar la Etapa Práctica de un aprendiz -->
+    <div id="modalHabilitacionExitosa" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">¡Habilitación de Etapa Práctica Exitosa!</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                El aprendiz ha sido habilitado correctamente para iniciar su proceso, debe ir a registro etapa practica.
+            </p>
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalHabilitacionExitosa()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        function cerrarModalHabilitacionExitosa() {
+            document.getElementById('modalHabilitacionExitosa').style.display = 'none';
+            window.location.reload();
+        }
+    </script>
 </body>
 </html>

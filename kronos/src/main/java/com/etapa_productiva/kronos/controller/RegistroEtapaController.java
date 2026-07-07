@@ -43,6 +43,9 @@ public class RegistroEtapaController {
     @Autowired
     private KronosWorkflowService workflowService;
 
+    @Autowired
+    private com.etapa_productiva.kronos.repository.TipoContratoRepository tipoContratoRepository;
+
     @GetMapping("/gestor/registro-etapa")
     public String verRegistroEtapa(HttpSession session, Model model) {
         LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
@@ -71,6 +74,9 @@ public class RegistroEtapaController {
         model.addAttribute("municipios", municipioRepository.findAll().stream()
                 .sorted((a, b) -> a.getNombreMunicipio().compareToIgnoreCase(b.getNombreMunicipio()))
                 .toList());
+
+        // 📄 Catálogo de modalidades de contrato para el select del formulario
+        model.addAttribute("tiposContrato", tipoContratoRepository.findByEstadoTrueOrderByNombreTipoContratoAsc());
 
         return "registro-etapa";
     }
@@ -110,6 +116,14 @@ public class RegistroEtapaController {
         }
 
         try {
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNit(nit);
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombreEmpresa, "El nombre de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoEmpresa, "El teléfono de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoEmpresa, "El correo de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombreJefeInmediato, "El nombre del jefe inmediato");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoJefeInmediato, "El correo del jefe inmediato");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoJefeInmediato, "El teléfono del jefe inmediato");
+
             workflowService.registrarEtapaProductiva(
                     idSolicitud, idAprendizFicha, modalidadOk, formatosOk,
                     nit, nombreEmpresa, direccionEmpresa, telefonoEmpresa, correoEmpresa,
