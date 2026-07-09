@@ -17,8 +17,10 @@ public class Novedad {
     @Column(name = "ID_NOVEDAD", columnDefinition = "NUMBER(19,0)")
     private Long idNovedad;
 
+    // Nullable: las novedades de tipo INFORMATIVO (chat GESTOR_ETAPA <-> REGISTRO) no están
+    // atadas a ninguna Etapa Productiva puntual; las demás (radicadas por un aprendiz) sí.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_ETAPA", referencedColumnName = "ID_ETAPA", columnDefinition = "NUMBER(19,0)", nullable = false)
+    @JoinColumn(name = "ID_ETAPA", referencedColumnName = "ID_ETAPA", columnDefinition = "NUMBER(19,0)")
     private EtapaProductiva etapaProductiva;
 
     @ManyToOne(fetch = FetchType.LAZY)

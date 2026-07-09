@@ -99,12 +99,24 @@ public class AuthService {
                     new MenuDto("Gestión Aprendices", "/gestor/aprendices")
             )));
             menuNavegacion.add(new MenuDto("Asignar Instructores", "/coordinador/asignaciones"));
-            menuNavegacion.add(new MenuDto("Validación de Documentos", "/gestor/documentos"));
-            menuNavegacion.add(new MenuDto("Registro Etapa Productiva", "/gestor/registro-etapa"));
-            // Bandeja de aprendices que ya completaron bitácoras + Formato 023 (estado POR_CERTIFICAR)
-            menuNavegacion.add(new MenuDto("Certificación Aprendiz", "/gestor/certificacion"));
+            menuNavegacion.add(new MenuDto("Calificar Documentos", "/gestor/calificar-documentos"));
             menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
             menuNavegacion.add(new MenuDto("Formatos", "/formatos"));
+        }
+        if (roles.contains("REGISTRO")) {
+            // Módulo del rol Registro: recibe de Gestión Etapa los documentos ya calificados,
+            // los valida y registra formalmente la Etapa Productiva del aprendiz.
+            menuNavegacion.add(new MenuDto("Validación de Documentos", "/registro/documentos"));
+            menuNavegacion.add(new MenuDto("Registro Etapa Productiva", "/registro/registro-etapa"));
+            menuNavegacion.add(new MenuDto("Gestión Aprendices", "/gestor/aprendices"));
+            menuNavegacion.add(new MenuDto("Reporte Aprendiz", "/registro/reporte-aprendiz"));
+            menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
+        }
+        if (roles.contains("COORDINADOR_ACADEMICO")) {
+            // 🎓 Módulo de solo lectura de Coordinación Académica: ve las solicitudes de los
+            // aprendices y los checks del Gestor de Etapa, y tiene su propio chat con él.
+            menuNavegacion.add(new MenuDto("Solicitudes de Aprendices", "/coordinacion/solicitudes"));
+            menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
         }
         if (roles.contains("ADMINISTRADOR")) {
             // 🛠️ Sidebar exclusivo del Administrador: 4 módulos madre desplegables.
@@ -128,6 +140,8 @@ public class AuthService {
                     new MenuDto("Auditoría", "/admin/auditoria"),
                     new MenuDto("Configuración Global", "/admin/config")
             )));
+            // 📋 Evidencia de documentos requisito diligenciados y aprobados, buscable por aprendiz.
+            menuNavegacion.add(new MenuDto("Reporte", "/admin/reporte"));
         }
 
         // Disponible para cualquier rol: ver y editar los datos propios guardados en Usuario
@@ -141,7 +155,25 @@ public class AuthService {
                 .fotoPerfil(usuario.getFotoPerfil())
                 .roles(roles)
                 .menuNavegacion(menuNavegacion)
+                .debeCambiarContrasena(Boolean.TRUE.equals(usuario.getDebeCambiarContrasena()))
                 .build();
+    }
+
+    /**
+     * 🔐 Cambio de contraseña obligatorio del primer ingreso: valida la política de
+     * fortaleza y apaga la bandera DEBE_CAMBIAR_CONTRASENA para que el interceptor deje
+     * de bloquear al usuario en sus próximos requests (tras volver a iniciar sesión).
+     */
+    @Transactional
+    public void cambiarContrasenaInicial(Long idUsuario, String nuevaContrasena) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarContrasena(nuevaContrasena);
+
+        usuario.setPassword(passwordEncoder.encode(nuevaContrasena));
+        usuario.setDebeCambiarContrasena(false);
+        usuarioRepository.save(usuario);
     }
 
     /**

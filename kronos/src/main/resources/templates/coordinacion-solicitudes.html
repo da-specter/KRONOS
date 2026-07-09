@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Solicitudes de Aprendices</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/coordinacion/solicitudes')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>🎓 Solicitudes de Aprendices</h1>
+                <p>Vista de solo lectura: la modalidad que aspira cada aprendiz y los checks que el Gestor de Etapa ya calificó.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="dashboard-panel" style="grid-column: 1 / -1;">
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Aprendiz</th>
+                                <th style="padding: 14px 16px;">Modalidad Aspira</th>
+                                <th style="padding: 14px 16px;">Estado</th>
+                                <th style="padding: 14px 16px;">Cumple Fecha</th>
+                                <th style="padding: 14px 16px;">Competencias Aprobadas</th>
+                                <th style="padding: 14px 16px;">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="solicitud : ${solicitudes}"
+                                style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+
+                                <td style="padding: 16px;">
+                                    <div style="font-weight: 700; color: var(--text-dark);" th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</div>
+                                    <span style="font-size: 11px; color: var(--text-muted);" th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud} + ' · ' + ${solicitud.seccionFormato.nombreSeccion}">Ficha 2555228 · Sol. #102 · Pasantía</span>
+                                </td>
+
+                                <td style="padding: 16px;">
+                                    <span style="background: #E2E8F0; color: var(--text-dark); padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase;" th:text="${solicitud.modalidadSolicitada}">
+                                        REMOTO
+                                    </span>
+                                </td>
+
+                                <td style="padding: 16px;">
+                                    <span th:text="${solicitud.estado}"
+                                          th:style="${solicitud.estado.name() == 'RECHAZADO'} ? 'background: rgba(220,38,38,0.1); color: #DC2626;' : (${solicitud.estado.name() == 'APROBADO_EN_ETAPA'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : 'background: #FEF3C7; color: #B45309;')"
+                                          style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
+                                        PENDIENTE_REVISION
+                                    </span>
+                                </td>
+
+                                <td style="padding: 16px;">
+                                    <span th:if="${solicitud.checkFechaEstipulada}" style="color: var(--verde-sena); font-weight: 700; font-size: 13px;">✅ Sí</span>
+                                    <span th:unless="${solicitud.checkFechaEstipulada}" style="color: var(--text-muted); font-weight: 600; font-size: 13px;">❌ No</span>
+                                </td>
+
+                                <td style="padding: 16px;">
+                                    <span th:if="${solicitud.seccionFormato.esVinculacionLaboral()}" style="font-size: 11px; color: var(--text-muted); font-style: italic;">No aplica (Vinculación Laboral)</span>
+                                    <span th:unless="${solicitud.seccionFormato.esVinculacionLaboral()}">
+                                        <span th:if="${solicitud.checkCompetenciasAprobadas}" style="color: var(--verde-sena); font-weight: 700; font-size: 13px;">✅ Sí</span>
+                                        <span th:unless="${solicitud.checkCompetenciasAprobadas}" style="color: var(--text-muted); font-weight: 600; font-size: 13px;">❌ No</span>
+                                    </span>
+                                </td>
+
+                                <td style="padding: 16px; max-width: 260px;">
+                                    <span style="font-size: 12px; color: var(--text-muted);" th:if="${solicitud.observacionRechazo != null and !#strings.isEmpty(solicitud.observacionRechazo)}" th:text="${solicitud.observacionRechazo}">Observación</span>
+                                    <span style="font-size: 12px; color: var(--text-muted);" th:unless="${solicitud.observacionRechazo != null and !#strings.isEmpty(solicitud.observacionRechazo)}">—</span>
+                                </td>
+                            </tr>
+
+                            <tr th:if="${#lists.isEmpty(solicitudes)}">
+                                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no hay solicitudes radicadas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+</body>
+</html>

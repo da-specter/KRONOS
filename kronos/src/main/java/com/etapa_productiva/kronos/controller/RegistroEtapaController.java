@@ -21,9 +21,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * 🏢 Módulo "Registro Etapa Productiva" del Gestor de Etapa: registra formalmente la
+ * 🏢 Módulo "Registro Etapa Productiva" del rol REGISTRO: registra formalmente la
  * Etapa Productiva (empresa, tipo de contrato, fechas, jefe inmediato) de una solicitud
- * que ya pasó por los filtros y formatos, dejándola en APROBADO_EN_ETAPA.
+ * que ya fue calificada por el Gestor de Etapa y validada por Registro, dejándola en
+ * APROBADO_EN_ETAPA.
  */
 @Controller
 public class RegistroEtapaController {
@@ -46,7 +47,13 @@ public class RegistroEtapaController {
     @Autowired
     private com.etapa_productiva.kronos.repository.TipoContratoRepository tipoContratoRepository;
 
-    @GetMapping("/gestor/registro-etapa")
+    @Autowired
+    private com.etapa_productiva.kronos.repository.UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private com.etapa_productiva.kronos.service.AuthService authService;
+
+    @GetMapping("/registro/registro-etapa")
     public String verRegistroEtapa(HttpSession session, Model model) {
         LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
         if (usuarioLogueado == null) {
@@ -54,7 +61,7 @@ public class RegistroEtapaController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
+        if (roles == null || !roles.contains("REGISTRO")) {
             return "redirect:/index";
         }
 
@@ -65,7 +72,7 @@ public class RegistroEtapaController {
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
 
-        model.addAttribute("solicitudesParaRegistrar", solicitudRepository.findByEstado(EstadoSolicitud.FORMATOS_ENVIADOS));
+        model.addAttribute("solicitudesParaRegistrar", solicitudRepository.findByEstado(EstadoSolicitud.LISTO_PARA_REGISTRO));
 
         // 🗺️ Catálogo de división territorial para los selects de Municipio/Departamento del formulario
         model.addAttribute("departamentos", departamentoRepository.findAll().stream()
@@ -81,12 +88,10 @@ public class RegistroEtapaController {
         return "registro-etapa";
     }
 
-    @PostMapping("/gestor/registro-etapa/{idSolicitud}")
+    @PostMapping("/registro/registro-etapa/{idSolicitud}")
     public String registrarEtapa(
             @PathVariable Long idSolicitud,
             @RequestParam Long idAprendizFicha,
-            @RequestParam(defaultValue = "false") boolean modalidadOk,
-            @RequestParam(defaultValue = "false") boolean formatosOk,
             @RequestParam String nit,
             @RequestParam String nombreEmpresa,
             @RequestParam String direccionEmpresa,
@@ -100,7 +105,7 @@ public class RegistroEtapaController {
             @RequestParam String nombreJefeInmediato,
             @RequestParam String correoJefeInmediato,
             @RequestParam String telefonoJefeInmediato,
-            @RequestParam(required = false) String observacion,
+            @RequestParam String contrasena,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -110,14 +115,23 @@ public class RegistroEtapaController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
-            redirectAttributes.addFlashAttribute("error", "Solo un Gestor de Etapa puede registrar la Etapa Productiva.");
+        if (roles == null || !roles.contains("REGISTRO")) {
+            redirectAttributes.addFlashAttribute("error", "Solo el rol Registro puede registrar la Etapa Productiva.");
             return "redirect:/index";
+        }
+
+        // 🔐 Re-autenticación: antes de registrar se confirma la contraseña del usuario en sesión
+        com.etapa_productiva.kronos.entity.Usuario usuarioActual =
+                usuarioRepository.findById(usuarioLogueado.getIdUsuario()).orElse(null);
+        if (!authService.verificarContrasena(usuarioActual, contrasena)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Contraseña incorrecta: no se registró la Etapa Productiva. Verifícala e inténtalo de nuevo.");
+            return "redirect:/registro/registro-etapa";
         }
 
         try {
             com.etapa_productiva.kronos.util.ValidacionCampos.validarNit(nit);
-            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombreEmpresa, "El nombre de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombreEmpresa(nombreEmpresa, "El nombre de la empresa");
             com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoEmpresa, "El teléfono de la empresa");
             com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoEmpresa, "El correo de la empresa");
             com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombreJefeInmediato, "El nombre del jefe inmediato");
@@ -125,15 +139,15 @@ public class RegistroEtapaController {
             com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoJefeInmediato, "El teléfono del jefe inmediato");
 
             workflowService.registrarEtapaProductiva(
-                    idSolicitud, idAprendizFicha, modalidadOk, formatosOk,
+                    idSolicitud, idAprendizFicha,
                     nit, nombreEmpresa, direccionEmpresa, telefonoEmpresa, correoEmpresa,
                     nombreMunicipio, nombreDepartamento, nombreTipoContrato,
                     fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato,
-                    observacion);
+                    usuarioLogueado.getIdUsuario());
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
-        return "redirect:/gestor/registro-etapa";
+        return "redirect:/registro/registro-etapa";
     }
 }

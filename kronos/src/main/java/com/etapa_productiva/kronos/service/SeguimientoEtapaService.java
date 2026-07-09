@@ -1,5 +1,6 @@
 package com.etapa_productiva.kronos.service;
 
+import com.etapa_productiva.kronos.entity.AsignacionInstructorEtapa;
 import com.etapa_productiva.kronos.entity.Bitacora;
 import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EstadoBitacora;
@@ -8,6 +9,8 @@ import com.etapa_productiva.kronos.entity.EvaluacionBitacora;
 import com.etapa_productiva.kronos.entity.EvaluacionPlaneacion;
 import com.etapa_productiva.kronos.entity.FormatoPlaneacion;
 import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
+import com.etapa_productiva.kronos.entity.Usuario;
+import com.etapa_productiva.kronos.repository.AsignacionInstructorEtapaRepository;
 import com.etapa_productiva.kronos.repository.BitacoraRepository;
 import com.etapa_productiva.kronos.repository.CronogramaBitacorasRepository;
 import com.etapa_productiva.kronos.repository.EvaluacionBitacoraRepository;
@@ -46,6 +49,12 @@ public class SeguimientoEtapaService {
     @Autowired
     private EvaluacionPlaneacionRepository evaluacionPlaneacionRepository;
 
+    @Autowired
+    private AsignacionInstructorEtapaRepository asignacionInstructorEtapaRepository;
+
+    @Autowired
+    private NotificacionService notificacionService;
+
     @Value("${app.upload.root-dir:uploads}")
     private String uploadRootDir;
 
@@ -71,7 +80,12 @@ public class SeguimientoEtapaService {
             existente.setRutaArchivo(guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa()));
             existente.setFechaEntrega(java.time.LocalDate.now());
             existente.setFechaHoraSubida(java.time.LocalDateTime.now());
-            return formatoPlaneacionRepository.save(existente);
+            FormatoPlaneacion corregido = formatoPlaneacionRepository.save(existente);
+
+            notificarInstructorSeguimiento(etapa,
+                    "📋 %s volvió a radicar su Formato de Planeación (023) corregido. Ya puedes evaluarlo en KRONOS.");
+
+            return corregido;
         }
 
         String rutaGuardada = guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa());
@@ -82,7 +96,12 @@ public class SeguimientoEtapaService {
                 .rutaArchivo(rutaGuardada)
                 .build();
 
-        return formatoPlaneacionRepository.save(formato);
+        FormatoPlaneacion radicado = formatoPlaneacionRepository.save(formato);
+
+        notificarInstructorSeguimiento(etapa,
+                "📋 %s radicó su Formato de Planeación (023) (\"" + asunto + "\"). Ya puedes evaluarlo en KRONOS.");
+
+        return radicado;
     }
 
     @Transactional
@@ -92,6 +111,14 @@ public class SeguimientoEtapaService {
 
         if (!cronograma.getEtapaProductiva().getIdEtapa().equals(etapa.getIdEtapa())) {
             throw new IllegalArgumentException("Ese cupo de bitácora no pertenece a tu Etapa Productiva.");
+        }
+
+        // ⏳ Candado de calendario: la bitácora solo se puede radicar desde su fecha de apertura.
+        // Después de la fecha límite sigue permitida (entrega extemporánea), antes de tiempo no.
+        if (java.time.LocalDate.now().isBefore(cronograma.getFechaApertura())) {
+            throw new IllegalStateException("La Bitácora N°" + cronograma.getNumeroBitacora()
+                    + " aún no está habilitada: se abre el "
+                    + cronograma.getFechaApertura().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
         }
 
         // Última bitácora radicada para ese cupo (si existe): solo se permite volver a radicar
@@ -127,7 +154,24 @@ public class SeguimientoEtapaService {
         cronograma.setEstado(EstadoBitacora.ENTREGADA);
         cronogramaBitacorasRepository.save(cronograma);
 
+        notificarInstructorSeguimiento(etapa, "📓 %s subió la Bitácora N°" + cronograma.getNumeroBitacora()
+                + " (\"" + asunto + "\"). Ya puedes evaluarla en KRONOS.");
+
         return guardada;
+    }
+
+    // 🔔 Notifica al Instructor de Seguimiento vigente de la etapa (si ya tiene uno asignado).
+    // El %s del mensaje se reemplaza por el nombre completo del aprendiz.
+    private void notificarInstructorSeguimiento(EtapaProductiva etapa, String plantillaMensaje) {
+        AsignacionInstructorEtapa asignacion = asignacionInstructorEtapaRepository
+                .findByEtapaProductivaIdEtapaAndEstadoAsignacionTrue(etapa.getIdEtapa())
+                .orElse(null);
+        if (asignacion == null) {
+            return; // Sin instructor asignado todavía: no hay a quién notificar
+        }
+        Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
+        notificacionService.crear(asignacion.getInstructor().getUsuario(),
+                plantillaMensaje.replace("%s", aprendiz.getNombre() + " " + aprendiz.getApellido()));
     }
 
     private String guardarArchivo(MultipartFile archivo, String subcarpeta, Long idEtapa) {

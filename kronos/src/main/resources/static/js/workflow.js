@@ -10,6 +10,18 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// 🎓 Anima las barras de "aprendices por ficha" del dashboard de Coordinación Académica (de 0% al % real)
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.coord-bar-fill').forEach(function (barra) {
+        const progreso = barra.getAttribute('data-progreso') || 0;
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                barra.style.width = progreso + '%';
+            });
+        });
+    });
+});
+
 // 🕒 Reloj en vivo del header del index: hora local corriendo (formato 12h) + día actual en español.
 // Solo se activa si la página tiene la cápsula del reloj (#relojKronos).
 document.addEventListener('DOMContentLoaded', function () {
@@ -76,13 +88,19 @@ function toggleDetalleFicha(boton, idFila) {
 // Función para procesar los primeros checks del Coordinador
 function enviarEvaluacionInicial(idSolicitud) {
     // 1. Capturamos el estado real de los checkboxes del HTML
-    const checkFecha = document.getElementById(`checkFecha_${idSolicitud}`).checked;
+    const checkFechaEl = document.getElementById(`checkFecha_${idSolicitud}`);
+    const checkFecha = checkFechaEl.checked;
     const checkCompetencias = document.getElementById(`checkCompetencias_${idSolicitud}`).checked;
     const observacionEl = document.getElementById(`observacion_${idSolicitud}`);
     const observacion = observacionEl ? observacionEl.value.trim() : '';
 
+    // 💼 Vinculación Laboral: el check de competencias no aplica, así que no exige novedad por sí solo
+    const fila = checkFechaEl.closest('tr');
+    const esVinculacionLaboral = fila && fila.dataset.vinculacionLaboral === 'true';
+    const requiereNovedad = esVinculacionLaboral ? !checkFecha : (!checkFecha || !checkCompetencias);
+
     // Si se va a rechazar algún check, la novedad es obligatoria para que el aprendiz sepa el motivo
-    if ((!checkFecha || !checkCompetencias) && !observacion) {
+    if (requiereNovedad && !observacion) {
         alert('Debes escribir una novedad explicando el motivo del rechazo antes de continuar.');
         return;
     }
@@ -112,27 +130,3 @@ function enviarEvaluacionInicial(idSolicitud) {
     });
 }
 
-// Función para que el Gestor de Etapa habilite el panel de plantillas del aprendiz
-function habilitarFormatosGestor(idSolicitud) {
-    const url = `/api/workflow/gestor/habilitar-formatos/${idSolicitud}`;
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        // No parseamos el cuerpo: solo nos interesa si la operación fue exitosa.
-        // (La entidad devuelta trae relaciones JPA que Jackson no siempre serializa limpio.)
-        if (response.ok) {
-            document.getElementById('modalHabilitacionExitosa').style.display = 'flex';
-            return;
-        }
-        throw new Error('Hubo un error al habilitar las plantillas en el servidor.');
-    })
-    .catch(error => {
-        console.error(error);
-        alert(error.message);
-    });
-}

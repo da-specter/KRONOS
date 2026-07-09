@@ -34,6 +34,87 @@ body {
     overflow-x: hidden;
 }
 
+/* ══════════════ 🌠 LLUVIA DE ESTRELLAS FUGACES NEÓN ══════════════
+   Líneas verde neón que caen en diagonal (de arriba-derecha hacia abajo-izquierda)
+   sobre el fondo de micropuntos. Solo anima transform/opacity (GPU) y vive detrás
+   de la tarjeta de login (z-index menor que .main-container). */
+.lluvia-neon {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.estrella {
+    position: absolute;
+    top: -220px;
+    width: 2px;
+    height: var(--largo, 130px);
+    border-radius: 999px;
+    /* Cola que se desvanece arriba y cabeza brillante abajo (el frente de la caída) */
+    background: linear-gradient(to bottom,
+        rgba(11, 244, 46, 0) 0%,
+        rgba(11, 244, 46, 0.35) 45%,
+        rgba(11, 244, 46, 0.95) 82%,
+        #EAFFF0 100%);
+    filter: drop-shadow(0 0 6px rgba(11, 244, 46, 0.85))
+            drop-shadow(0 0 16px rgba(11, 244, 46, 0.35));
+    opacity: 0;
+    animation: caidaNeon var(--dura, 7s) linear infinite;
+    animation-delay: var(--espera, 0s);
+    will-change: transform, opacity;
+}
+
+/* ✨ Cabeza de la estrella: destello blanco-verde en la punta */
+.estrella::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, #FFFFFF 0%, rgba(11, 244, 46, 0.9) 45%, rgba(11, 244, 46, 0) 75%);
+}
+
+/* Cada estrella con su carril, tamaño, velocidad y desfase (delays negativos =
+   algunas ya van a mitad de camino cuando carga la página, nunca se ve vacío) */
+.estrella:nth-child(1) { left: 12%; --largo: 150px; --dura: 6.5s;  --espera: 0s;     --brillo: 0.9; }
+.estrella:nth-child(2) { left: 28%; --largo: 100px; --dura: 8.5s;  --espera: -3.2s;  --brillo: 0.55; }
+.estrella:nth-child(3) { left: 41%; --largo: 175px; --dura: 5.6s;  --espera: -1.4s;  --brillo: 1; }
+.estrella:nth-child(4) { left: 55%; --largo: 90px;  --dura: 9.5s;  --espera: -6.1s;  --brillo: 0.45; }
+.estrella:nth-child(5) { left: 66%; --largo: 140px; --dura: 7.2s;  --espera: -2.6s;  --brillo: 0.8; }
+.estrella:nth-child(6) { left: 78%; --largo: 115px; --dura: 8.2s;  --espera: -4.8s;  --brillo: 0.6; }
+.estrella:nth-child(7) { left: 90%; --largo: 160px; --dura: 6.1s;  --espera: -0.9s;  --brillo: 0.95; }
+.estrella:nth-child(8) { left: 99%; --largo: 125px; --dura: 7.8s;  --espera: -5.5s;  --brillo: 0.7; }
+.estrella:nth-child(9) { left: 20%; --largo: 80px;  --dura: 10.5s; --espera: -8.3s;  --brillo: 0.35; }
+
+/* La línea se inclina 45° y viaja por ese mismo eje: abajo-izquierda, estilo estrella
+   fugaz. Aparece suave, cruza la pantalla y se apaga antes de reiniciar. */
+@keyframes caidaNeon {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(45deg);
+        opacity: 0;
+    }
+    6% {
+        opacity: var(--brillo, 0.8);
+    }
+    82% {
+        opacity: var(--brillo, 0.8);
+    }
+    100% {
+        transform: translate3d(-115vh, 115vh, 0) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+/* ♿ Accesibilidad: si el usuario pidió menos movimiento, la lluvia se desactiva */
+@media (prefers-reduced-motion: reduce) {
+    .estrella { animation: none; opacity: 0; }
+}
+
 /* AJUSTE EN LA TARJETA PRINCIPAL PARA DARLE EFECTO FLOTANTE PREMIUM */
 .main-container {
     background: var(--white);

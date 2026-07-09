@@ -50,11 +50,25 @@ public class CronogramaBitacoras {
     @Column(name = "ESTADO", columnDefinition = "VARCHAR2(10) DEFAULT 'PENDIENTE'", nullable = false)
     private EstadoBitacora estado;
 
+    // Banderas de dedup del job diario de alertas de atraso (mismo patrón que VisitaSeguimiento):
+    // se encienden una sola vez, cuando FECHA_LIMITE ya pasó y el cupo sigue PENDIENTE.
+    @Column(name = "ALERTA_INSTRUCTOR_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean alertaInstructorEnviada;
+
+    @Column(name = "ALERTA_APRENDIZ_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean alertaAprendizEnviada;
+
     // Interceptor automático: Setea el estado inicial como PENDIENTE justo antes del INSERT en Oracle
     @PrePersist
     protected void onPrePersist() {
         if (this.estado == null) {
             this.estado = EstadoBitacora.PENDIENTE;
+        }
+        if (this.alertaInstructorEnviada == null) {
+            this.alertaInstructorEnviada = false;
+        }
+        if (this.alertaAprendizEnviada == null) {
+            this.alertaAprendizEnviada = false;
         }
     }
 }

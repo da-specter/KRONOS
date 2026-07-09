@@ -5,15 +5,14 @@ import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
 import com.etapa_productiva.kronos.entity.EstadoEtapa;
 import com.etapa_productiva.kronos.entity.EstadoSolicitud;
 import com.etapa_productiva.kronos.entity.EstadoValidacion;
-import com.etapa_productiva.kronos.entity.AccionAuditoria;
 import com.etapa_productiva.kronos.entity.AccionRealizada;
 import com.etapa_productiva.kronos.entity.AprendizFicha;             // Entidades de tus relaciones
 import com.etapa_productiva.kronos.entity.AsignacionInstructorEtapa;
-import com.etapa_productiva.kronos.entity.Auditoria;
 import com.etapa_productiva.kronos.entity.Departamento;
 import com.etapa_productiva.kronos.entity.DocumentoSolicitud;
 import com.etapa_productiva.kronos.entity.Empresa;
 import com.etapa_productiva.kronos.entity.EstadoFiltro;
+import com.etapa_productiva.kronos.entity.Ficha;
 import com.etapa_productiva.kronos.entity.HistorialNovedad;
 import com.etapa_productiva.kronos.entity.InstructorSeguimiento;
 import com.etapa_productiva.kronos.entity.Municipio;
@@ -27,7 +26,6 @@ import com.etapa_productiva.kronos.repository.SolicitudRepository;
 import com.etapa_productiva.kronos.repository.EtapaProductivaRepository;
 import com.etapa_productiva.kronos.repository.AprendizFichaRepository;
 import com.etapa_productiva.kronos.repository.AsignacionInstructorEtapaRepository;
-import com.etapa_productiva.kronos.repository.AuditoriaRepository;
 import com.etapa_productiva.kronos.repository.DepartamentoRepository;
 import com.etapa_productiva.kronos.repository.DocumentoSolicitudRepository;
 import com.etapa_productiva.kronos.repository.EmpresaRepository;
@@ -87,9 +85,6 @@ public class KronosWorkflowService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private AuditoriaRepository auditoriaRepository;
-
-    @Autowired
     private NotificacionService notificacionService;
 
     @Autowired
@@ -116,6 +111,12 @@ public class KronosWorkflowService {
     @Value("${app.upload.dir:uploads/documentos-solicitud}")
     private String uploadDir;
 
+    @Value("${app.upload.mensajes-registro-dir:uploads/mensajes-registro}")
+    private String mensajesRegistroDir;
+
+    private static final List<String> EXTENSIONES_PERMITIDAS_CHAT = List.of(
+            ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx");
+
     /**
      * 👨‍🎓 PASO 1: El Aprendiz inicia el proceso creando su solicitud en el sistema.
      * Ahora utiliza de forma segura el Enum para la modalidad que aspira.
@@ -129,6 +130,24 @@ public class KronosWorkflowService {
         SeccionFormato seccionFormato = seccionFormatoRepository.findById(idSeccionFormato)
                 .orElseThrow(() -> new RuntimeException("Modalidad de contrato no encontrada con ID: " + idSeccionFormato));
 
+        // 📅 Defensa de servidor (espejo del gate de /index): sin importar la duración de la
+        // ficha, la Etapa Práctica solo habilita 6 meses antes de que termine. Evita que se
+        // radique una solicitud saltándose el formulario con un POST directo.
+        // 💼 Excepción: Vinculación Laboral habilita 3 meses antes que las demás (9 meses antes
+        // del fin de la ficha), por el tiempo que toma formalizar un contrato laboral.
+        Ficha ficha = aprendizFicha.getFicha();
+        boolean habilitada = seccionFormato.esVinculacionLaboral()
+                ? ficha.isVinculacionLaboralHabilitada()
+                : ficha.isEtapaPracticaHabilitada();
+        if (!habilitada) {
+            LocalDate fechaHabilitacion = seccionFormato.esVinculacionLaboral()
+                    ? ficha.getFechaHabilitacionVinculacionLaboral()
+                    : ficha.getFechaHabilitacionEtapaPractica();
+            throw new IllegalStateException("Tu ficha aún está en Etapa Lectiva: la modalidad "
+                    + seccionFormato.getNombreSeccion() + " se habilita el "
+                    + fechaHabilitacion.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+        }
+
         Optional<SolicitudEtapaPractica> solicitudExistente = solicitudRepository.findByAprendizFichaIdAprendizFicha(idAprendizFicha);
 
         SolicitudEtapaPractica solicitud;
@@ -136,12 +155,12 @@ public class KronosWorkflowService {
             solicitud = solicitudExistente.get();
 
             // Además del reenvío tras un RECHAZADO, también se permite radicar una nueva
-            // solicitud si la Etapa Productiva de la anterior ya fue CERTIFICADA (el aprendiz
+            // solicitud si la Etapa Productiva de la anterior ya quedó TERMINADA (el aprendiz
             // terminó su ciclo anterior y quiere iniciar uno nuevo).
             boolean rechazada = solicitud.getEstado() == EstadoSolicitud.RECHAZADO;
             boolean cicloCertificado = solicitud.getEstado() == EstadoSolicitud.APROBADO_EN_ETAPA
                     && etapaProductivaRepository.findByAprendizIdUsuario(aprendizFicha.getUsuario().getIdUsuario())
-                            .map(e -> e.getEstadoEtapa() == EstadoEtapa.CERTIFICADO)
+                            .map(e -> e.getEstadoEtapa() == EstadoEtapa.TERMINADO)
                             .orElse(false);
 
             if (!rechazada && !cicloCertificado) {
@@ -181,6 +200,10 @@ public class KronosWorkflowService {
      * 👨‍💼 PASO 2 y 3: El Coordinador evalúa el primer filtro (Bandeja de entrada).
      * Digita los checks de Fecha Estipulada y Competencias Aprobadas en la interfaz.
      * Si rechaza algún check, deja una novedad (observación) que se notifica al aprendiz.
+     *
+     * 💼 Excepción exclusiva de Vinculación Laboral: el check de Competencias Aprobadas no la
+     * bloquea. Si el Gestor de Etapa lo deja sin marcar mientras la fecha sí cumple, la
+     * solicitud avanza igual a FORMATOS_HABILITADOS (el aprendiz puede ver sus formatos).
      */
     @Transactional
     public SolicitudEtapaPractica coordinadorEvaluarPrimerFiltro(Long idSolicitud, boolean fechaOk, boolean competenciasOk, String observacion) {
@@ -194,8 +217,10 @@ public class KronosWorkflowService {
         solicitud.setCheckFechaEstipulada(fechaOk);
         solicitud.setCheckCompetenciasAprobadas(competenciasOk);
 
-        // Si cumple ambos requisitos iniciales, se le habilita el módulo de formatos
-        if (fechaOk && competenciasOk) {
+        boolean competenciasAplican = !solicitud.getSeccionFormato().esVinculacionLaboral();
+
+        // Si cumple fecha (y competencias, salvo en Vinculación Laboral), se habilita el módulo de formatos
+        if (fechaOk && (competenciasOk || !competenciasAplican)) {
             solicitud.setEstado(EstadoSolicitud.FORMATOS_HABILITADOS);
             solicitud.setObservacionRechazo(null);
         } else {
@@ -295,49 +320,27 @@ public class KronosWorkflowService {
             }
 
             solicitud.setEstado(EstadoSolicitud.FORMATOS_ENVIADOS); // Viaja a la bandeja del Gestor de Etapa
+            // El panel de descarga/resubida de plantillas se habilita de inmediato: el Gestor de
+            // Etapa ya no tiene un paso manual aparte, solo califica al final (gestorCalificarDocumentos).
+            solicitud.setPlantillasHabilitadas(true);
             solicitud.setFechaActualizacion(LocalDateTime.now());
 
-            return solicitudRepository.save(solicitud);
+            SolicitudEtapaPractica guardada = solicitudRepository.save(solicitud);
+
+            notificacionService.crear(guardada.getAprendizFicha().getUsuario(),
+                    "📄 Recibimos tus formatos. Ya puedes descargar, diligenciar y firmar tus plantillas para subirlas.");
+
+            Usuario aprendizFormatos = guardada.getAprendizFicha().getUsuario();
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                notificacionService.crear(gestor, "📨 " + aprendizFormatos.getNombre() + " " + aprendizFormatos.getApellido()
+                        + " (ficha " + guardada.getAprendizFicha().getFicha().getNumeroFicha()
+                        + ") envió sus documentos requisitos diligenciados para tu revisión.");
+            }
+
+            return guardada;
         } catch (IOException e) {
             throw new RuntimeException("No se pudo guardar el archivo en el servidor: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * 🗂️ PASO ADICIONAL: El Gestor de Etapa habilita el panel de descarga/resubida de
-     * plantillas para el aprendiz, una vez que ya envió sus formatos iniciales.
-     * No reemplaza ni altera el ESTADO de la solicitud: es una bandera independiente.
-     */
-    @Transactional
-    public SolicitudEtapaPractica gestorHabilitarFormatos(Long idSolicitud, Long idUsuarioGestor) {
-        SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (solicitud.getEstado() != EstadoSolicitud.FORMATOS_ENVIADOS) {
-            throw new IllegalStateException("Acción denegada: La solicitud aún no ha enviado sus formatos iniciales.");
-        }
-
-        if (solicitud.isPlantillasHabilitadas()) {
-            throw new IllegalStateException("Las plantillas de esta solicitud ya fueron habilitadas.");
-        }
-
-        solicitud.setPlantillasHabilitadas(true);
-        solicitud.setFechaActualizacion(LocalDateTime.now());
-        SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
-
-        Usuario gestor = usuarioRepository.findById(idUsuarioGestor).orElse(null);
-        Auditoria auditoria = Auditoria.builder()
-                .usuario(gestor)
-                .descripcion("Habilitó las plantillas de la solicitud #" + idSolicitud)
-                .accion(AccionAuditoria.UPDATE)
-                .build();
-        auditoriaRepository.save(auditoria);
-
-        Usuario aprendizDestino = actualizada.getAprendizFicha().getUsuario();
-        notificacionService.crear(aprendizDestino,
-                "¡Tus plantillas ya están habilitadas! Descárgalas, diligéncialas y firmarlas para resubirlas.");
-
-        return actualizada;
     }
 
     /**
@@ -388,21 +391,142 @@ public class KronosWorkflowService {
             documento.setEstadoValidacion(EstadoValidacion.PENDIENTE);
             documento.setFechaSubida(LocalDateTime.now());
 
-            return documentoSolicitudRepository.save(documento);
+            DocumentoSolicitud guardado = documentoSolicitudRepository.save(documento);
+
+            Usuario aprendizPlantilla = solicitud.getAprendizFicha().getUsuario();
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                notificacionService.crear(gestor, "📨 " + aprendizPlantilla.getNombre() + " " + aprendizPlantilla.getApellido()
+                        + " (ficha " + solicitud.getAprendizFicha().getFicha().getNumeroFicha()
+                        + ") subió la plantilla firmada \"" + plantilla.getNombreDocumento() + "\".");
+            }
+
+            return guardado;
         } catch (IOException e) {
             throw new RuntimeException("No se pudo guardar el archivo en el servidor: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 👨‍💼 PASO 5 y 6: El Coordinador evalúa y califica los formatos, completa los checks finales,
-     * cierra la solicitud e inyecta la información en TU entidad real usando el patrón Builder.
+     * 👨‍💼 Único punto de control del Gestor de Etapa sobre los documentos/plantillas firmadas
+     * que subió el aprendiz: aprueba o rechaza modalidad y formatos. Si aprueba ambos, la
+     * solicitud viaja a la bandeja del rol REGISTRO para su propia validación (ya NO crea la
+     * Etapa Productiva aquí). Si rechaza, vuelve a la bandeja del aprendiz (FORMATOS_HABILITADOS)
+     * para que corrija y reenvíe sus documentos, sin tener que radicar una solicitud nueva.
      */
     @Transactional
-    public EtapaProductiva coordinadorHabilitarYAsignarEtapa(
+    public SolicitudEtapaPractica gestorCalificarDocumentos(Long idSolicitud, boolean modalidadOk, boolean formatosOk, String observacion) {
+        SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+        if (solicitud.getEstado() != EstadoSolicitud.FORMATOS_ENVIADOS) {
+            throw new IllegalStateException("Acción denegada: La solicitud no se encuentra en estado de calificación de documentos.");
+        }
+
+        solicitud.setCheckModalidadAprobada(modalidadOk);
+        solicitud.setCheckFormatosRadicados(formatosOk);
+
+        if (!modalidadOk || !formatosOk) {
+            if (observacion == null || observacion.isBlank()) {
+                throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
+            }
+            solicitud.setEstado(EstadoSolicitud.FORMATOS_HABILITADOS);
+            solicitud.setObservacionRechazo(observacion);
+            solicitud.setFechaActualizacion(LocalDateTime.now());
+            SolicitudEtapaPractica devuelta = solicitudRepository.save(solicitud);
+
+            notificacionService.crear(solicitud.getAprendizFicha().getUsuario(),
+                    "❌ El Gestor de Etapa rechazó tus documentos. Corrige y vuelve a enviarlos. Novedad: " + observacion);
+
+            return devuelta;
+        }
+
+        solicitud.setObservacionRechazo(null);
+        solicitud.setEstado(EstadoSolicitud.EN_VALIDACION_REGISTRO);
+        solicitud.setFechaActualizacion(LocalDateTime.now());
+        SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
+
+        Usuario aprendiz = actualizada.getAprendizFicha().getUsuario();
+        for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
+            notificacionService.crear(registro, "📄 El Gestor de Etapa calificó los documentos de "
+                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ": ya están listos para tu validación.");
+        }
+
+        notificacionService.crear(aprendiz,
+                "✅ El Gestor de Etapa aprobó tu modalidad y tus formatos. Tus documentos pasaron a validación del área de Registro.");
+
+        return actualizada;
+    }
+
+    /**
+     * 👨‍💼 PASO 6: El rol REGISTRO valida los documentos que el Gestor de Etapa ya calificó.
+     * Si aprueba, la solicitud queda lista para registrar la Etapa Productiva. Si rechaza,
+     * vuelve a la bandeja del Gestor de Etapa (FORMATOS_ENVIADOS) con la novedad de Registro,
+     * para que decida si corrige y reenvía o rechaza definitivamente al aprendiz.
+     */
+    @Transactional
+    public SolicitudEtapaPractica registroValidarDocumentos(Long idSolicitud, boolean aprobado, String observacion) {
+        SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+        if (solicitud.getEstado() != EstadoSolicitud.EN_VALIDACION_REGISTRO) {
+            throw new IllegalStateException("Acción denegada: La solicitud no se encuentra en validación de Registro.");
+        }
+
+        Usuario aprendiz = solicitud.getAprendizFicha().getUsuario();
+
+        if (aprobado) {
+            solicitud.setObservacionRechazo(null);
+            solicitud.setEstado(EstadoSolicitud.LISTO_PARA_REGISTRO);
+            solicitud.setFechaActualizacion(LocalDateTime.now());
+            SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
+
+            // 📋 Este es el punto en que KRONOS considera "cerrado" el expediente de documentos:
+            // marca APROBADO cada DocumentoSolicitud de la solicitud (formatos diligenciados y
+            // plantillas firmadas). Antes de esto el campo nacía en PENDIENTE y nunca se tocaba,
+            // lo que inflaba para siempre el widget "Documentos Pendientes de Validación" del
+            // Gestor y dejaba vacío el Reporte Aprendiz (que solo busca documentos APROBADO).
+            List<DocumentoSolicitud> documentos = documentoSolicitudRepository.findBySolicitudIdSolicitud(idSolicitud);
+            documentos.forEach(documento -> documento.setEstadoValidacion(EstadoValidacion.APROBADO));
+            documentoSolicitudRepository.saveAll(documentos);
+
+            notificacionService.crear(aprendiz,
+                    "✅ Registro validó tus documentos. Tu Etapa Productiva será registrada en breve.");
+
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                notificacionService.crear(gestor, "✅ Registro validó los documentos de "
+                        + aprendiz.getNombre() + " " + aprendiz.getApellido()
+                        + ": la solicitud quedó lista para registrar la Etapa Productiva.");
+            }
+
+            return actualizada;
+        }
+
+        if (observacion == null || observacion.isBlank()) {
+            throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
+        }
+
+        solicitud.setCheckModalidadAprobada(false);
+        solicitud.setCheckFormatosRadicados(false);
+        solicitud.setEstado(EstadoSolicitud.FORMATOS_ENVIADOS);
+        solicitud.setObservacionRechazo(observacion);
+        solicitud.setFechaActualizacion(LocalDateTime.now());
+        SolicitudEtapaPractica devuelta = solicitudRepository.save(solicitud);
+
+        for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+            notificacionService.crear(gestor, "↩️ Registro devolvió la solicitud de "
+                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ". Novedad: " + observacion);
+        }
+
+        return devuelta;
+    }
+
+    /**
+     * 🏢 Módulo "Registro Etapa Productiva" (rol REGISTRO): inyecta la información en la
+     * entidad real usando el patrón Builder, dejando trazabilidad de qué usuario la registró.
+     */
+    @Transactional
+    public EtapaProductiva crearEtapaProductivaDesdeSolicitud(
             Long idSolicitud,
-            boolean modalidadOk,
-            boolean formatosOk,
             Long idAprendizFicha,              // ID de la relación ManyToOne (se resuelve contra la BD, no se confía en el body)
             Long idEmpresa,                    // ID de la relación ManyToOne
             Long idTipoContrato,                // ID de la relación ManyToOne
@@ -411,14 +535,17 @@ public class KronosWorkflowService {
             String nombreJefeInmediato,        // Columna NOMBRE_JEFE_INMEDIATO (Imagen 3)
             String correoJefeInmediato,        // Columna CORREO_JEFE_INMEDIATO (Imagen 3)
             String telefonoJefeInmediato,       // Columna TELEFONO_JEFE_INMEDIATO (Imagen 3)
-            String observacion) {               // Novedad que deja el Gestor si rechaza modalidad/formatos
+            Long idUsuarioRegistro) {           // Usuario del rol REGISTRO que realiza el registro
+
+        // 0. Vigencia reglamentaria: fin posterior al inicio y máximo 6 meses de duración
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarRangoEtapa(fechaInicio, fechaFin);
 
         // 1. Validar y cerrar la solicitud intermedia del flujo de trabajo
         SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
-        if (solicitud.getEstado() != EstadoSolicitud.FORMATOS_ENVIADOS) {
-            throw new IllegalStateException("Acción denegada: La solicitud no se encuentra en estado de revisión final de formatos.");
+        if (solicitud.getEstado() != EstadoSolicitud.LISTO_PARA_REGISTRO) {
+            throw new IllegalStateException("Acción denegada: La solicitud aún no fue validada por Registro.");
         }
 
         if (!solicitud.getAprendizFicha().getIdAprendizFicha().equals(idAprendizFicha)) {
@@ -432,26 +559,11 @@ public class KronosWorkflowService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + idEmpresa));
         TipoContrato tipoContrato = tipoContratoRepository.findById(idTipoContrato)
                 .orElseThrow(() -> new RuntimeException("Tipo de contrato no encontrado con ID: " + idTipoContrato));
+        Usuario usuarioRegistro = usuarioRepository.findById(idUsuarioRegistro)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioRegistro));
 
-        solicitud.setCheckModalidadAprobada(modalidadOk);
-        solicitud.setCheckFormatosRadicados(formatosOk);
-
-        if (!modalidadOk || !formatosOk) {
-            if (observacion == null || observacion.isBlank()) {
-                throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
-            }
-            solicitud.setEstado(EstadoSolicitud.RECHAZADO);
-            solicitud.setObservacionRechazo(observacion);
-            solicitudRepository.save(solicitud);
-
-            notificacionService.crear(solicitud.getAprendizFicha().getUsuario(),
-                    "❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion);
-
-            throw new RuntimeException("No se puede dar de alta la etapa: Los requisitos finales fueron rechazados.");
-        }
-
-        solicitud.setObservacionRechazo(null);
         solicitud.setEstado(EstadoSolicitud.APROBADO_EN_ETAPA);
+        solicitud.setFechaActualizacion(LocalDateTime.now());
         solicitudRepository.save(solicitud);
 
         // 3. 🚀 CREACIÓN DE TU ENTIDAD REAL CON EL PATRÓN BUILDER DE LOMBOK
@@ -465,6 +577,7 @@ public class KronosWorkflowService {
                 .nombreJefeInmediato(nombreJefeInmediato)
                 .correoJefeInmediato(correoJefeInmediato)
                 .telefonoJefeInmediato(telefonoJefeInmediato)
+                .usuarioRegistro(usuarioRegistro)
                 .build();                                      // estadoEtapa se auto-inicializa gracias a tu @PrePersist
 
         // Guardar definitivamente en Oracle mediante tu repositorio oficial
@@ -477,11 +590,17 @@ public class KronosWorkflowService {
         notificacionService.crear(aprendizDestino,
                 "🎉 ¡Tu Etapa Productiva ya fue registrada y está activa! Ya puedes subir tus bitácoras y tu formato de planeación.");
 
+        for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+            notificacionService.crear(gestor, "🏢 Registro registró la Etapa Productiva de "
+                    + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido()
+                    + " en " + empresa.getNombreEmpresa() + " (del " + fechaInicio + " al " + fechaFin + ").");
+        }
+
         return etapaGuardada;
     }
 
     /**
-     * 🏢 Módulo "Registro Etapa Productiva": el Gestor de Etapa digita libremente los datos
+     * 🏢 Módulo "Registro Etapa Productiva": el rol REGISTRO digita libremente los datos
      * de la empresa, el municipio/departamento y el tipo de contrato (sin catálogos previos).
      * Resuelve o crea cada catálogo por su clave natural y delega en el registro ya probado.
      */
@@ -489,8 +608,6 @@ public class KronosWorkflowService {
     public EtapaProductiva registrarEtapaProductiva(
             Long idSolicitud,
             Long idAprendizFicha,
-            boolean modalidadOk,
-            boolean formatosOk,
             String nit,
             String nombreEmpresa,
             String direccionEmpresa,
@@ -504,7 +621,7 @@ public class KronosWorkflowService {
             String nombreJefeInmediato,
             String correoJefeInmediato,
             String telefonoJefeInmediato,
-            String observacion) {
+            Long idUsuarioRegistro) {
 
         Departamento departamento = departamentoRepository.findByNombreDepartamentoIgnoreCase(nombreDepartamento)
                 .orElseGet(() -> departamentoRepository.save(
@@ -530,10 +647,83 @@ public class KronosWorkflowService {
                 .orElseGet(() -> tipoContratoRepository.save(
                         TipoContrato.builder().nombreTipoContrato(nombreTipoContrato).build()));
 
-        return coordinadorHabilitarYAsignarEtapa(
-                idSolicitud, modalidadOk, formatosOk, idAprendizFicha,
+        return crearEtapaProductivaDesdeSolicitud(
+                idSolicitud, idAprendizFicha,
                 empresa.getIdEmpresa(), tipoContrato.getIdTipoContrato(),
-                fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato, observacion);
+                fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato, idUsuarioRegistro);
+    }
+
+    /**
+     * ✏️ El rol REGISTRO corrige los datos de una Etapa Productiva ya registrada (empresa,
+     * contrato, fechas, jefe inmediato y estado). Resuelve o crea cada catálogo por su clave
+     * natural, igual que al registrar, y guarda los cambios directamente en la entidad real.
+     */
+    @Transactional
+    public EtapaProductiva editarEtapaProductiva(
+            Long idEtapa,
+            String nit,
+            String nombreEmpresa,
+            String direccionEmpresa,
+            String telefonoEmpresa,
+            String correoEmpresa,
+            String nombreMunicipio,
+            String nombreDepartamento,
+            String nombreTipoContrato,
+            LocalDate fechaInicio,
+            LocalDate fechaFin,
+            String nombreJefeInmediato,
+            String correoJefeInmediato,
+            String telefonoJefeInmediato,
+            EstadoEtapa estadoEtapa) {
+
+        EtapaProductiva etapa = etapaProductivaRepository.findById(idEtapa)
+                .orElseThrow(() -> new RuntimeException("Etapa Productiva no encontrada con ID: " + idEtapa));
+
+        com.etapa_productiva.kronos.util.ValidacionCampos.validarRangoEtapa(fechaInicio, fechaFin);
+
+        Departamento departamento = departamentoRepository.findByNombreDepartamentoIgnoreCase(nombreDepartamento)
+                .orElseGet(() -> departamentoRepository.save(
+                        Departamento.builder().nombreDepartamento(nombreDepartamento).build()));
+
+        Municipio municipio = municipioRepository
+                .findByNombreMunicipioIgnoreCaseAndDepartamentoIdDepartamento(nombreMunicipio, departamento.getIdDepartamento())
+                .orElseGet(() -> municipioRepository.save(
+                        Municipio.builder().nombreMunicipio(nombreMunicipio).departamento(departamento).build()));
+
+        Empresa empresa = empresaRepository.findByNit(nit)
+                .orElseGet(() -> empresaRepository.save(
+                        Empresa.builder()
+                                .nit(nit)
+                                .nombreEmpresa(nombreEmpresa)
+                                .direccion(direccionEmpresa)
+                                .telefono(telefonoEmpresa)
+                                .correo(correoEmpresa)
+                                .municipio(municipio)
+                                .build()));
+
+        TipoContrato tipoContrato = tipoContratoRepository.findByNombreTipoContratoIgnoreCase(nombreTipoContrato)
+                .orElseGet(() -> tipoContratoRepository.save(
+                        TipoContrato.builder().nombreTipoContrato(nombreTipoContrato).build()));
+
+        etapa.setEmpresa(empresa);
+        etapa.setTipoContrato(tipoContrato);
+        etapa.setFechaInicio(fechaInicio);
+        etapa.setFechaFin(fechaFin);
+        etapa.setNombreJefeInmediato(nombreJefeInmediato);
+        etapa.setCorreoJefeInmediato(correoJefeInmediato);
+        etapa.setTelefonoJefeInmediato(telefonoJefeInmediato);
+        etapa.setEstadoEtapa(estadoEtapa);
+
+        EtapaProductiva editada = etapaProductivaRepository.save(etapa);
+
+        Usuario aprendizEditado = editada.getAprendizFicha().getUsuario();
+        for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+            notificacionService.crear(gestor, "✏️ Registro actualizó la Etapa Productiva de "
+                    + aprendizEditado.getNombre() + " " + aprendizEditado.getApellido()
+                    + " (empresa " + empresa.getNombreEmpresa() + ", estado " + estadoEtapa + ").");
+        }
+
+        return editada;
     }
 
     /**
@@ -581,7 +771,7 @@ public class KronosWorkflowService {
      * Seguimiento asignado o al Gestor de Etapa. Notifica al destinatario de inmediato.
      */
     @Transactional
-    public Novedad reportarNovedad(Long idUsuarioAprendiz, Long idEtapa, TipoNovedad tipoNovedad, String descripcion, String destinatarioTipo) {
+    public Novedad reportarNovedad(Long idUsuarioAprendiz, Long idEtapa, TipoNovedad tipoNovedad, String descripcion, String destinatarioTipo, MultipartFile archivo) {
         EtapaProductiva etapa = etapaProductivaRepository.findById(idEtapa)
                 .orElseThrow(() -> new RuntimeException("Etapa Productiva no encontrada con ID: " + idEtapa));
 
@@ -609,6 +799,7 @@ public class KronosWorkflowService {
                 .destinatarioAc(destinatario)
                 .tipoNovedad(tipoNovedad)
                 .descripcion(descripcion)
+                .urlSoporte(guardarAdjuntoNovedad(archivo))
                 .build();
 
         Novedad guardada = novedadRepository.save(novedad);
@@ -621,20 +812,72 @@ public class KronosWorkflowService {
     }
 
     /**
+     * 💬 El Instructor de Seguimiento inicia una conversación en Novedades con uno de sus
+     * aprendices asignados (asignación vigente): queda guardada como Novedad tipo OTRO sobre
+     * la Etapa Productiva del aprendiz, con adjunto opcional, y se le notifica de inmediato.
+     */
+    @Transactional
+    public Novedad instructorEnviarNovedadAprendiz(Long idUsuarioInstructor, Long idEtapa, String mensaje, MultipartFile archivo) {
+        Usuario remitente = usuarioRepository.findById(idUsuarioInstructor)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioInstructor));
+
+        AsignacionInstructorEtapa asignacion = asignacionInstructorEtapaRepository
+                .findByEtapaProductivaIdEtapaAndEstadoAsignacionTrue(idEtapa)
+                .orElseThrow(() -> new IllegalStateException("Esa Etapa Productiva no tiene un Instructor de Seguimiento asignado."));
+
+        if (!asignacion.getInstructor().getUsuario().getIdUsuario().equals(idUsuarioInstructor)) {
+            throw new IllegalArgumentException("Solo puedes enviar mensajes a los aprendices que tienes asignados.");
+        }
+
+        if ((mensaje == null || mensaje.isBlank()) && (archivo == null || archivo.isEmpty())) {
+            throw new IllegalArgumentException("Debes escribir un mensaje o adjuntar un archivo.");
+        }
+
+        EtapaProductiva etapa = asignacion.getEtapaProductiva();
+        Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
+
+        Novedad novedad = Novedad.builder()
+                .etapaProductiva(etapa)
+                .remitente(remitente)
+                .destinatarioAc(aprendiz)
+                .tipoNovedad(TipoNovedad.OTRO)
+                .descripcion(mensaje == null ? "" : mensaje)
+                .urlSoporte(guardarAdjuntoNovedad(archivo))
+                .build();
+        Novedad guardada = novedadRepository.save(novedad);
+
+        notificacionService.crear(aprendiz,
+                "💬 Tu Instructor de Seguimiento " + remitente.getNombre() + " " + remitente.getApellido()
+                        + " te escribió en Novedades: " + (mensaje == null || mensaje.isBlank() ? "(adjunto)" : mensaje));
+
+        return guardada;
+    }
+
+    /**
      * 💬 El Instructor de Seguimiento o el Gestor de Etapa responde una Novedad dirigida a él,
      * dejando trazabilidad en HISTORIAL_NOVEDAD y notificando la respuesta de vuelta al aprendiz.
+     * Excepción: las novedades INFORMATIVO (chat GESTOR_ETAPA ↔ REGISTRO) no tienen un
+     * destinatario fijo — puede responder cualquier usuario activo de esos dos roles.
      */
     @Transactional
     public HistorialNovedad responderNovedad(Long idNovedad, Long idUsuarioAccion, String comentarioRespuesta, AccionRealizada accionRealizada) {
         Novedad novedad = novedadRepository.findById(idNovedad)
                 .orElseThrow(() -> new RuntimeException("Novedad no encontrada con ID: " + idNovedad));
 
-        if (!novedad.getDestinatarioAc().getIdUsuario().equals(idUsuarioAccion)) {
-            throw new IllegalArgumentException("Esta novedad no está dirigida a ti.");
-        }
-
         Usuario usuarioAccion = usuarioRepository.findById(idUsuarioAccion)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioAccion));
+
+        if (novedad.getTipoNovedad() == TipoNovedad.INFORMATIVO || novedad.getTipoNovedad() == TipoNovedad.COORD_ACADEMICO) {
+            List<String> rolesAccion = usuarioAccion.getUsuarioRoles().stream()
+                    .map(ur -> ur.getRol().getNombreRol())
+                    .toList();
+            String rolContraparte = novedad.getTipoNovedad() == TipoNovedad.INFORMATIVO ? "REGISTRO" : "COORDINADOR_ACADEMICO";
+            if (!rolesAccion.contains("GESTOR_ETAPA") && !rolesAccion.contains(rolContraparte)) {
+                throw new IllegalArgumentException("No tienes permisos para responder en este canal.");
+            }
+        } else if (!novedad.getDestinatarioAc().getIdUsuario().equals(idUsuarioAccion)) {
+            throw new IllegalArgumentException("Esta novedad no está dirigida a ti.");
+        }
 
         HistorialNovedad historial = HistorialNovedad.builder()
                 .novedad(novedad)
@@ -655,14 +898,167 @@ public class KronosWorkflowService {
         }
         novedadRepository.save(novedad);
 
-        notificacionService.crear(novedad.getRemitente(),
-                "💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta);
+        if (novedad.getTipoNovedad() == TipoNovedad.INFORMATIVO) {
+            String texto = "💬 " + usuarioAccion.getNombre() + " " + usuarioAccion.getApellido()
+                    + " respondió en Novedades: " + comentarioRespuesta;
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                if (!gestor.getIdUsuario().equals(idUsuarioAccion)) {
+                    notificacionService.crear(gestor, texto);
+                }
+            }
+            for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
+                if (!registro.getIdUsuario().equals(idUsuarioAccion)) {
+                    notificacionService.crear(registro, texto);
+                }
+            }
+        } else if (novedad.getTipoNovedad() == TipoNovedad.COORD_ACADEMICO) {
+            String texto = "💬 " + usuarioAccion.getNombre() + " " + usuarioAccion.getApellido()
+                    + " respondió en Novedades: " + comentarioRespuesta;
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                if (!gestor.getIdUsuario().equals(idUsuarioAccion)) {
+                    notificacionService.crear(gestor, texto);
+                }
+            }
+            for (Usuario coordinador : usuarioRepository.findAllCoordinacionAcademicaActivos()) {
+                if (!coordinador.getIdUsuario().equals(idUsuarioAccion)) {
+                    notificacionService.crear(coordinador, texto);
+                }
+            }
+        } else {
+            notificacionService.crear(novedad.getRemitente(),
+                    "💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta);
+        }
 
         return guardado;
+    }
+
+    /**
+     * 💬 Chat de Novedades GESTOR_ETAPA ↔ REGISTRO: un mensaje informativo (con adjunto
+     * opcional) que cualquier usuario de uno de estos dos roles puede radicar, guardado como
+     * Novedad tipo INFORMATIVO (sin Etapa Productiva asociada). Visible para todos los usuarios
+     * de ambos roles a través del mismo módulo "Novedades" que ya usa el Gestor de Etapa.
+     */
+    @Transactional
+    public Novedad enviarNovedadInformativa(Long idUsuarioRemitente, String descripcion, MultipartFile archivo) {
+        Usuario remitente = usuarioRepository.findById(idUsuarioRemitente)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioRemitente));
+
+        List<String> rolesRemitente = remitente.getUsuarioRoles().stream()
+                .map(ur -> ur.getRol().getNombreRol())
+                .toList();
+        boolean esGestor = rolesRemitente.contains("GESTOR_ETAPA");
+        boolean esRegistro = rolesRemitente.contains("REGISTRO");
+        if (!esGestor && !esRegistro) {
+            throw new IllegalArgumentException("Solo el Gestor de Etapa o el rol Registro pueden enviar mensajes en este canal.");
+        }
+
+        if ((descripcion == null || descripcion.isBlank()) && (archivo == null || archivo.isEmpty())) {
+            throw new IllegalArgumentException("Debes escribir un mensaje o adjuntar un archivo.");
+        }
+
+        Usuario destinatario = esGestor
+                ? usuarioRepository.findPrimerRegistroActivo()
+                        .orElseThrow(() -> new IllegalStateException("No hay ningún usuario del rol Registro activo disponible."))
+                : usuarioRepository.findPrimerGestorEtapaActivo()
+                        .orElseThrow(() -> new IllegalStateException("No hay ningún Gestor de Etapa activo disponible."));
+
+        Novedad novedad = Novedad.builder()
+                .etapaProductiva(null)
+                .remitente(remitente)
+                .destinatarioAc(destinatario)
+                .tipoNovedad(TipoNovedad.INFORMATIVO)
+                .descripcion(descripcion == null ? "" : descripcion)
+                .urlSoporte(guardarAdjuntoNovedad(archivo))
+                .build();
+        Novedad guardada = novedadRepository.save(novedad);
+
+        String textoNotificacion = "💬 Nuevo mensaje de " + remitente.getNombre() + " " + remitente.getApellido() + " en Novedades.";
+        for (Usuario u : esGestor ? usuarioRepository.findAllRegistroActivos() : usuarioRepository.findAllGestoresEtapaActivos()) {
+            if (!u.getIdUsuario().equals(idUsuarioRemitente)) {
+                notificacionService.crear(u, textoNotificacion);
+            }
+        }
+
+        return guardada;
+    }
+
+    /**
+     * 💬 Chat de Novedades GESTOR_ETAPA ↔ COORDINADOR_ACADEMICO: mismo mecanismo que el chat con
+     * Registro (Novedad tipo COORD_ACADEMICO, sin Etapa Productiva asociada, canal separado del
+     * de Registro para que ningún rol vea los mensajes del otro).
+     */
+    @Transactional
+    public Novedad enviarNovedadCoordinacion(Long idUsuarioRemitente, String descripcion, MultipartFile archivo) {
+        Usuario remitente = usuarioRepository.findById(idUsuarioRemitente)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioRemitente));
+
+        List<String> rolesRemitente = remitente.getUsuarioRoles().stream()
+                .map(ur -> ur.getRol().getNombreRol())
+                .toList();
+        boolean esGestor = rolesRemitente.contains("GESTOR_ETAPA");
+        boolean esCoordinador = rolesRemitente.contains("COORDINADOR_ACADEMICO");
+        if (!esGestor && !esCoordinador) {
+            throw new IllegalArgumentException("Solo el Gestor de Etapa o Coordinación Académica pueden enviar mensajes en este canal.");
+        }
+
+        if ((descripcion == null || descripcion.isBlank()) && (archivo == null || archivo.isEmpty())) {
+            throw new IllegalArgumentException("Debes escribir un mensaje o adjuntar un archivo.");
+        }
+
+        Usuario destinatario = esGestor
+                ? usuarioRepository.findPrimerCoordinacionAcademicaActivo()
+                        .orElseThrow(() -> new IllegalStateException("No hay ningún usuario de Coordinación Académica activo disponible."))
+                : usuarioRepository.findPrimerGestorEtapaActivo()
+                        .orElseThrow(() -> new IllegalStateException("No hay ningún Gestor de Etapa activo disponible."));
+
+        Novedad novedad = Novedad.builder()
+                .etapaProductiva(null)
+                .remitente(remitente)
+                .destinatarioAc(destinatario)
+                .tipoNovedad(TipoNovedad.COORD_ACADEMICO)
+                .descripcion(descripcion == null ? "" : descripcion)
+                .urlSoporte(guardarAdjuntoNovedad(archivo))
+                .build();
+        Novedad guardada = novedadRepository.save(novedad);
+
+        String textoNotificacion = "💬 Nuevo mensaje de " + remitente.getNombre() + " " + remitente.getApellido() + " en Novedades.";
+        for (Usuario u : esGestor ? usuarioRepository.findAllCoordinacionAcademicaActivos() : usuarioRepository.findAllGestoresEtapaActivos()) {
+            if (!u.getIdUsuario().equals(idUsuarioRemitente)) {
+                notificacionService.crear(u, textoNotificacion);
+            }
+        }
+
+        return guardada;
     }
 
     // Convierte una ruta física local (con separadores de Windows) en una URL servible por WebConfig (/uploads/**)
     private String rutaWeb(Path destino) {
         return "/" + destino.toString().replace('\\', '/');
+    }
+
+    // 📎 Guarda el adjunto opcional de una Novedad (chat de staff o novedad radicada por el
+    // aprendiz): valida la extensión contra la allowlist, lo guarda con nombre aleatorio y
+    // devuelve la URL servible por WebConfig. Null si no se adjuntó ningún archivo.
+    private String guardarAdjuntoNovedad(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            return null;
+        }
+        String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo";
+        int puntoIdx = nombreOriginal.lastIndexOf('.');
+        String extension = puntoIdx >= 0 ? nombreOriginal.substring(puntoIdx).toLowerCase() : "";
+        if (!EXTENSIONES_PERMITIDAS_CHAT.contains(extension)) {
+            throw new IllegalArgumentException("Solo se aceptan imágenes, PDF, Word o Excel.");
+        }
+
+        try {
+            Path directorio = Paths.get(mensajesRegistroDir);
+            Files.createDirectories(directorio);
+            String nombreArchivo = java.util.UUID.randomUUID() + extension;
+            Path destino = directorio.resolve(nombreArchivo);
+            archivo.transferTo(destino);
+            return rutaWeb(destino);
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo guardar el archivo en el servidor: " + e.getMessage(), e);
+        }
     }
 }

@@ -56,10 +56,24 @@ public class VisitaSeguimiento {
     @Column(name = "RUTA_EVIDENCIA", columnDefinition = "VARCHAR2(500)")
     private String rutaEvidencia;
 
+    // 🔔 Banderas del job de alertas (VisitaAlertaService): evitan tanto reenviar la misma
+    // alerta como perderla si el job no corrió justo el día exacto en que faltaban N días.
+    @Column(name = "ALERTA_INSTRUCTOR_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean alertaInstructorEnviada;
+
+    @Column(name = "ALERTA_APRENDIZ_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean alertaAprendizEnviada;
+
     @PrePersist
     protected void onPrePersist() {
         if (this.estadoVisita == null) {
             this.estadoVisita = EstadoVisita.PLANEADA;
+        }
+        if (this.alertaInstructorEnviada == null) {
+            this.alertaInstructorEnviada = false;
+        }
+        if (this.alertaAprendizEnviada == null) {
+            this.alertaAprendizEnviada = false;
         }
     }
 }

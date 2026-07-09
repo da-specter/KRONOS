@@ -43,4 +43,10 @@ public interface SolicitudRepository extends JpaRepository<SolicitudEtapaPractic
      * aún no ha sido habilitado (paso adicional, no reemplaza el flujo del Coordinador).
      */
     List<SolicitudEtapaPractica> findByEstadoAndPlantillasHabilitadas(EstadoSolicitud estado, boolean plantillasHabilitadas);
+
+    /**
+     * 🎓 ÚTIL PARA COORDINACIÓN ACADÉMICA:
+     * Todas las solicitudes, más recientes primero, para su panel de solo lectura.
+     */
+    List<SolicitudEtapaPractica> findAllByOrderByFechaActualizacionDesc();
 }

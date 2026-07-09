@@ -55,6 +55,12 @@ private TipoDocumento tipoDocumento;
     @Column(name = "ESTADO", columnDefinition = "NUMBER(1,0) DEFAULT 1", nullable = false)
     private Boolean estado;
 
+    // 🔐 Todo usuario nuevo arranca con contraseña = su documento; esta bandera obliga a
+    // cambiarla en el primer login (ver CambioContrasenaInterceptor). Por defecto en FALSE
+    // para no afectar cuentas existentes: solo se enciende explícitamente al crear el usuario.
+    @Column(name = "DEBE_CAMBIAR_CONTRASENA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean debeCambiarContrasena;
+
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UsuarioRol> usuarioRoles;
 
@@ -62,6 +68,9 @@ private TipoDocumento tipoDocumento;
     protected void onPrePersist() {  // se ejecuta antes de insertar un nuevo registro
         if (this.estado == null) {
             this.estado = true;
+        }
+        if (this.debeCambiarContrasena == null) {
+            this.debeCambiarContrasena = false;
         }
     }
 }

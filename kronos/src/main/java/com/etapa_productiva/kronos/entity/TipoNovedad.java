@@ -7,6 +7,9 @@ public enum TipoNovedad {
     DESERCION, CAMBIO_ALT, RECLAMO, 
     OTRO,
     CAMBIO_EMPRESA,
-    SOLICITUD_ETAPA
+    SOLICITUD_ETAPA,
+    INFORMATIVO,
+    // Chat GESTOR_ETAPA <-> COORDINADOR_ACADEMICO, mismo patrón que INFORMATIVO pero en canal aparte
+    COORD_ACADEMICO
 
 }

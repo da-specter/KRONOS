@@ -149,12 +149,16 @@ public class BitacorasController {
                     .filter(c -> !cronogramasBloqueados.contains(c.getIdCronograma()))
                     .collect(Collectors.toList());
             model.addAttribute("cronogramaPendiente", cronogramaPendiente);
+
+            // ⏳ Para que la vista bloquee los cupos que aún no llegan a su fecha de apertura
+            model.addAttribute("hoy", java.time.LocalDate.now());
         } else {
             model.addAttribute("formatoPlaneacion", null);
             model.addAttribute("evaluacionPlaneacion", null);
             model.addAttribute("bitacorasSubidas", Collections.emptyList());
             model.addAttribute("ultimaEvaluacionPorBitacora", Collections.emptyMap());
             model.addAttribute("cronogramaPendiente", Collections.emptyList());
+            model.addAttribute("hoy", java.time.LocalDate.now());
         }
 
         return "bitacoras";

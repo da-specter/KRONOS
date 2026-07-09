@@ -31,7 +31,7 @@
                               th:text="${#lists.size(aprendices)} + ' aprendices'">0 aprendices</span>
                     </h3>
 
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div th:unless="${soloLectura}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <button type="button" onclick="abrirModalExportar('excel')"
                                 style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             📊 Exportar Excel
@@ -48,16 +48,48 @@
                 <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
                      th:text="${error}">Ocurrió un error.</div>
 
-                <div style="margin-top: 20px;">
-                    <input type="text" id="buscadorAprendices" onkeyup="filtrarAprendices()"
-                           placeholder="🔎 Buscar por nombre, apellido, documento, tipo contrato, municipio, departamento, ficha, instructor, programa..."
-                           style="width: 100%; max-width: 640px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                <!-- 🚦 Leyenda del semáforo de Etapa Práctica (formato SENA). El color siempre
+                     significa lo mismo; el texto de cada fila nombra la modalidad real que
+                     escogió ese aprendiz (Pasantía, Vínculo Laboral, Monitoría, etc.). -->
+                <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding: 14px 18px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #DC2626; display: inline-block;"></span>
+                        Terminó su modalidad de contrato
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #D97706; display: inline-block;"></span>
+                        A un mes o menos de terminarla
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #CA8A04; display: inline-block;"></span>
+                        En Etapa Práctica (en curso)
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #16A34A; display: inline-block;"></span>
+                        Inicia Etapa Práctica en un mes o menos
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #86EFAC; display: inline-block;"></span>
+                        A más de un mes para iniciar Etapa Práctica
+                    </div>
                 </div>
 
-                <div style="overflow-x: auto; margin-top: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 2200px;">
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="buscadorAprendices" onkeyup="filtrarAprendices()"
+                           placeholder="🔎 Buscar por nombre, apellido, documento, tipo contrato, municipio, departamento, ficha, instructor, programa..."
+                           style="flex: 1; min-width: 260px; max-width: 640px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                    <select id="filtroMesRegistro" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option value="">📅 Todos los meses</option>
+                        <option th:each="mes : ${mesesRegistro}" th:value="${mes.clave}" th:text="${mes.etiqueta}">Julio 2026</option>
+                    </select>
+                </div>
+
+                <!-- 📌 El encabezado queda fijo (sticky) y solo se desplazan los registros -->
+                <div style="overflow: auto; max-height: 62vh; margin-top: 20px;">
+                    <table class="tabla-sticky" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 2560px;">
                         <thead>
-                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                            <tr style="color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
                                 <!-- 1️⃣ Instructor -->
                                 <th style="padding: 12px 14px;">Instructor Seguimiento</th>
                                 <!-- 2️⃣ Aprendiz y su programa -->
@@ -81,10 +113,14 @@
                                 <th style="padding: 12px 14px;">Contrato Inicio</th>
                                 <th style="padding: 12px 14px;">Contrato Fin</th>
                                 <th style="padding: 12px 14px;">ARL</th>
+                                <th style="padding: 12px 14px;">Registrado por</th>
+                                <th style="padding: 12px 14px;">Registrada el</th>
+                                <th style="padding: 12px 14px;">Estado Etapa Práctica</th>
                             </tr>
                         </thead>
                         <tbody id="tablaAprendices">
-                            <tr th:each="aprendiz : ${aprendices}" class="fila-aprendiz" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                            <th:block th:each="aprendiz : ${aprendices}">
+                            <tr class="fila-aprendiz" th:attr="data-mes-registro=${aprendiz.mesRegistro}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.instructorSeguimiento}">Instructor</td>
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.tipoDocumento}">CC</td>
                                 <td style="padding: 12px 14px; font-weight: 600;" th:text="${aprendiz.documento}">1234567890</td>
@@ -115,8 +151,8 @@
                                         <a th:if="${aprendiz.arlRuta != null}" th:href="@{${aprendiz.arlRuta}}" target="_blank"
                                            title="Ver archivo ARL" style="text-decoration: none; font-size: 15px;">👁</a>
 
-                                        <!-- 📎 Subir/reemplazar el soporte (solo si ya tiene Etapa Productiva) -->
-                                        <form th:if="${aprendiz.idEtapa != null}" th:action="@{/gestor/aprendices/arl}" method="post"
+                                        <!-- 📎 Subir/reemplazar el soporte (solo si ya tiene Etapa Productiva; permiso exclusivo de Registro) -->
+                                        <form th:if="${aprendiz.idEtapa != null and puedeSubirArl}" th:action="@{/gestor/aprendices/arl}" method="post"
                                               enctype="multipart/form-data" style="margin: 0; display: inline;">
                                             <input type="hidden" name="idEtapa" th:value="${aprendiz.idEtapa}">
                                             <label th:title="${aprendiz.arlRuta != null} ? 'Reemplazar archivo ARL' : 'Subir archivo ARL'"
@@ -127,10 +163,158 @@
                                         </form>
                                     </div>
                                 </td>
+                                <td style="padding: 12px 14px;" th:text="${aprendiz.registradoPor}">Registro</td>
+                                <td style="padding: 12px 14px; font-size: 12px; color: var(--text-muted); white-space: nowrap;" th:text="${aprendiz.fechaRegistro}">01/01/2026 10:00</td>
+                                <td style="padding: 12px 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;" th:switch="${aprendiz.estadoEtapa.name()}">
+                                        <span th:case="'TERMINO_CONTRATO'" th:text="'🔴 ' + ${aprendiz.estadoEtapaTexto}"
+                                              style="background: rgba(220, 38, 38, 0.12); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700; white-space: nowrap;">Estado</span>
+                                        <span th:case="'EP_POR_TERMINAR'" th:text="'🟠 ' + ${aprendiz.estadoEtapaTexto}"
+                                              style="background: rgba(217, 119, 6, 0.15); color: #B45309; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700; white-space: nowrap;">Estado</span>
+                                        <span th:case="'EN_EP'" th:text="'🟡 ' + ${aprendiz.estadoEtapaTexto}"
+                                              style="background: rgba(202, 138, 4, 0.15); color: #854D0E; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700; white-space: nowrap;">Estado</span>
+                                        <span th:case="'INICIA_EP_PRONTO'" th:text="'🟢 ' + ${aprendiz.estadoEtapaTexto}"
+                                              style="background: rgba(22, 163, 74, 0.15); color: #16A34A; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700; white-space: nowrap;">Estado</span>
+                                        <span th:case="*" th:text="'🟩 ' + ${aprendiz.estadoEtapaTexto}"
+                                              style="background: rgba(134, 239, 172, 0.35); color: #15803D; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700; white-space: nowrap;">Estado</span>
+
+                                        <!-- ✏️ Solo el rol Registro puede corregir los datos de la Etapa Productiva -->
+                                        <button th:if="${puedeEditarEtapa and aprendiz.idEtapa != null}" type="button"
+                                                th:onclick="'toggleEditarEtapa(' + ${aprendiz.idEtapa} + ')'"
+                                                title="Editar Etapa Productiva"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid var(--card-border); background: #fff; border-radius: 8px; cursor: pointer; color: var(--verde-sena); flex-shrink: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                                <path d="m15 5 4 4"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
 
+                            <!-- ✏️ Fila de edición de la Etapa Productiva (rol Registro), oculta hasta que se pulsa el lápiz -->
+                            <tr th:if="${puedeEditarEtapa and aprendiz.idEtapa != null}" th:id="'fila-editar-etapa-' + ${aprendiz.idEtapa}" style="display: none;">
+                                <td colspan="23" style="padding: 20px 24px; background: #F8FAF9; border-bottom: 1px solid var(--card-border);">
+                                    <form th:action="@{/gestor/aprendices/etapa/editar}" method="post" style="margin: 0;">
+                                        <input type="hidden" name="idEtapa" th:value="${aprendiz.idEtapa}">
+
+                                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Datos de la empresa</p>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>NIT</label>
+                                                <div class="input-container"><input type="text" name="nit" th:value="${aprendiz.nitEmpresa}" required pattern="\d+" inputmode="numeric" style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Nombre de la empresa</label>
+                                                <div class="input-container"><input type="text" name="nombreEmpresa" th:value="${aprendiz.razonSocial}" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Dirección</label>
+                                                <div class="input-container"><input type="text" name="direccionEmpresa" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Teléfono</label>
+                                                <div class="input-container"><input type="text" name="telefonoEmpresa" th:value="${aprendiz.telefonoEmpresa}" pattern="\d+" inputmode="numeric" style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Correo</label>
+                                                <div class="input-container"><input type="email" name="correoEmpresa" th:value="${aprendiz.correoEmpresa}" style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Departamento</label>
+                                                <div class="input-container">
+                                                    <select name="nombreDepartamento" required th:onchange="'filtrarMunicipiosEtapa(this, ' + ${aprendiz.idEtapa} + ')'"
+                                                            style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                                                        <option value="">Selecciona un departamento</option>
+                                                        <option th:each="d : ${departamentos}" th:value="${d.nombreDepartamento}"
+                                                                th:text="${d.nombreDepartamento}" th:attr="data-id=${d.idDepartamento}"
+                                                                th:selected="${d.nombreDepartamento == aprendiz.departamentoEmpresa}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Municipio</label>
+                                                <div class="input-container">
+                                                    <select name="nombreMunicipio" required
+                                                            style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                                                        <option value="">Selecciona un municipio</option>
+                                                        <option th:each="m : ${municipios}" th:value="${m.nombreMunicipio}"
+                                                                th:text="${m.nombreMunicipio}" th:attr="data-dept=${m.departamento.idDepartamento}"
+                                                                th:selected="${m.nombreMunicipio == aprendiz.municipioEmpresa}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Contrato y vigencia</p>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Tipo de contrato</label>
+                                                <div class="input-container">
+                                                    <select name="nombreTipoContrato" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                                                        <option th:each="tc : ${tiposContrato}" th:value="${tc.nombreTipoContrato}"
+                                                                th:text="${tc.nombreTipoContrato}"
+                                                                th:selected="${tc.nombreTipoContrato == aprendiz.modalidadContrato}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Fecha inicio</label>
+                                                <div class="input-container"><input type="date" name="fechaInicio" th:value="${aprendiz.contratoInicioIso}" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Fecha fin</label>
+                                                <div class="input-container"><input type="date" name="fechaFin" th:value="${aprendiz.contratoFinIso}" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Estado de la Etapa</label>
+                                                <div class="input-container">
+                                                    <select name="estadoEtapa" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                                                        <option th:each="estado : ${estadosEtapa}" th:value="${estado}" th:text="${estado}"
+                                                                th:selected="${estado.name() == aprendiz.estadoEtapaEtapa}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Jefe inmediato</p>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Nombre</label>
+                                                <div class="input-container"><input type="text" name="nombreJefeInmediato" th:value="${aprendiz.jefeNombre}" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Correo</label>
+                                                <div class="input-container"><input type="email" name="correoJefeInmediato" th:value="${aprendiz.jefeCorreo}" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label>Teléfono</label>
+                                                <div class="input-container"><input type="text" name="telefonoJefeInmediato" th:value="${aprendiz.jefeTelefono}" required pattern="\d+" inputmode="numeric" style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;"></div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; gap: 10px;">
+                                            <button type="submit" title="Guardar cambios"
+                                                    style="display: inline-flex; align-items: center; gap: 8px; background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path>
+                                                    <path d="M17 21v-8H7v8"></path>
+                                                    <path d="M7 3v5h8"></path>
+                                                </svg>
+                                                Guardar
+                                            </button>
+                                            <button type="button" th:onclick="'toggleEditarEtapa(' + ${aprendiz.idEtapa} + ')'"
+                                                    style="background: #fff; color: var(--text-muted); border: 1px solid var(--card-border); padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                            </th:block>
+
                             <tr th:if="${#lists.isEmpty(aprendices)}">
-                                <td colspan="20" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                <td colspan="23" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
                                     No hay aprendices registrados todavía.
                                 </td>
                             </tr>
@@ -175,20 +359,44 @@
 
     <script th:src="@{/js/workflow.js}"></script>
     <script>
-        // 🔎 Filtra las filas de la tabla según el texto del buscador (todos los campos)
+        // 🔎 Filtra las filas de la tabla según el texto del buscador y el mes de registro elegido
         function filtrarAprendices() {
             const criterio = document.getElementById('buscadorAprendices').value.trim().toLowerCase();
+            const mesElegido = document.getElementById('filtroMesRegistro').value;
             const filas = document.querySelectorAll('#tablaAprendices .fila-aprendiz');
             let visibles = 0;
 
             filas.forEach(function (fila) {
-                const coincide = fila.textContent.toLowerCase().includes(criterio);
+                const coincideTexto = fila.textContent.toLowerCase().includes(criterio);
+                const coincideMes = !mesElegido || fila.dataset.mesRegistro === mesElegido;
+                const coincide = coincideTexto && coincideMes;
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
             });
 
             const sinResultados = document.getElementById('sinResultados');
             if (sinResultados) sinResultados.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+
+        // ✏️ Muestra/oculta la fila de edición de la Etapa Productiva (rol Registro)
+        function toggleEditarEtapa(idEtapa) {
+            const fila = document.getElementById('fila-editar-etapa-' + idEtapa);
+            if (!fila) return;
+            fila.style.display = fila.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        // Filtra el select de Municipio de la fila de edición según el Departamento elegido
+        function filtrarMunicipiosEtapa(selectDepartamento, idEtapa) {
+            const opcionElegida = selectDepartamento.options[selectDepartamento.selectedIndex];
+            const idDepartamento = opcionElegida ? opcionElegida.getAttribute('data-id') : '';
+            const fila = document.getElementById('fila-editar-etapa-' + idEtapa);
+            const selectMunicipio = fila ? fila.querySelector('select[name="nombreMunicipio"]') : null;
+            if (!selectMunicipio) return;
+            selectMunicipio.value = '';
+            Array.from(selectMunicipio.options).forEach(function (opcion) {
+                if (!opcion.value) return;
+                opcion.hidden = opcion.getAttribute('data-dept') !== idDepartamento;
+            });
         }
 
         // 📥 Exportación con re-autenticación

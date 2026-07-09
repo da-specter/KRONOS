@@ -213,6 +213,38 @@ public class InstructorTecnicoService {
                 .build();
     }
 
+    // ─────────────────────────────── Exportación ───────────────────────────────
+
+    private static final String[] TITULOS_EXPORTACION = {
+            "Nombres", "Apellidos", "Tipo Doc.", "Documento", "Teléfono", "Correo",
+            "Ficha", "Programa", "Estado Académico", "Situación", "Empresa",
+            "Modalidad Contrato", "Modalidad", "Inicio Etapa", "Fin Etapa", "Estado Etapa"
+    };
+
+    private List<String[]> filasExportacion(List<TecnicoAprendizDto> aprendices) {
+        List<String[]> filas = new ArrayList<>();
+        for (TecnicoAprendizDto a : aprendices) {
+            filas.add(new String[]{
+                    a.getNombres(), a.getApellidos(), a.getTipoDocumento(), a.getDocumento(),
+                    a.getTelefono(), a.getCorreoElectronico(), a.getFicha(), a.getProgramaFormacion(),
+                    a.getEstadoAcademico(), a.getSituacion(), a.getEmpresa(),
+                    a.getModalidadContrato(), a.getModalidad(), a.getEtapaInicio(), a.getEtapaFin(), a.getEstadoEtapa()
+            });
+        }
+        return filas;
+    }
+
+    /** 📊 Libro Excel (.xlsx) con los aprendices de las fichas del instructor. */
+    public byte[] generarExcel(List<TecnicoAprendizDto> aprendices) throws IOException {
+        return ExportacionUtil.excel("Mis Aprendices", TITULOS_EXPORTACION, filasExportacion(aprendices));
+    }
+
+    /** 📄 PDF apaisado con los aprendices de las fichas del instructor. */
+    public byte[] generarPdf(List<TecnicoAprendizDto> aprendices) {
+        return ExportacionUtil.pdf("KRONOS - Aprendices de Mis Fichas (Instructor Técnico)",
+                TITULOS_EXPORTACION, filasExportacion(aprendices));
+    }
+
     // ─────────────────────────────── Añadir aprendiz ───────────────────────────────
 
     /**
@@ -371,6 +403,7 @@ public class InstructorTecnicoService {
                     .telefono(recortar(telefono, 11))
                     .correoElectronico(recortar(correoFinal, 150))
                     .password(passwordEncoder.encode(documento.trim()))
+                    .debeCambiarContrasena(true) // obliga a cambiarla en su primer ingreso
                     .estado(true)
                     .usuarioRoles(new ArrayList<>())
                     .build();

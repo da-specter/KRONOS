@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/gestor/registro-etapa')}"></aside>
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/registro/registro-etapa')}"></aside>
 
     <main class="main-content">
 
@@ -44,8 +44,7 @@
                 </div>
 
                 <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
-                      th:action="@{'/gestor/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
-                      onsubmit="return validarNovedadRegistro(this)"
+                      th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
                       style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
 
                     <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
@@ -58,7 +57,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Nombre de la empresa</label>
-                            <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre de la empresa solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+( [a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+)*" title="El nombre de la empresa puede contener letras, números y los signos . , & - #." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Dirección</label>
@@ -111,10 +110,10 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Fecha inicio</label>
-                            <div class="input-container"><input type="date" name="fechaInicio" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            <div class="input-container"><input type="date" name="fechaInicio" required onchange="ajustarRangoFechaFin(this)" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label>Fecha fin</label>
+                            <label>Fecha fin <span style="font-weight: 500; color: var(--text-muted); font-size: 11px;">(máx. 6 meses)</span></label>
                             <div class="input-container"><input type="date" name="fechaFin" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                     </div>
@@ -135,24 +134,14 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 24px; margin-bottom: 20px;">
-                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
-                            <input type="checkbox" name="modalidadOk" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer; margin-right: 8px;">
-                            Modalidad aprobada
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
-                            <input type="checkbox" name="formatosOk" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer; margin-right: 8px;">
-                            Formatos aprobados
-                        </label>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Novedad (obligatoria si rechazas modalidad o formatos)</label>
-                        <div class="input-container">
-                            <textarea name="observacion" rows="2" placeholder="Escribe el motivo del rechazo para notificar al aprendiz..."
-                                      style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0; resize: vertical;"></textarea>
+                    <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                        <div class="form-group" style="margin-bottom: 0; max-width: 320px;">
+                            <label>Tu contraseña</label>
+                            <div class="input-container"><input type="password" name="contrasena" required autocomplete="current-password" placeholder="Confírmala para registrar" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                         </div>
                     </div>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: -8px 0 14px 0;">Por seguridad, el registro solo se confirma si tu contraseña es correcta.</p>
 
                     <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Registro</button>
                 </form>
@@ -185,11 +174,28 @@
             });
         }
 
+        // 📅 Al elegir la fecha de inicio, acota el calendario de la fecha fin de ese mismo
+        // formulario: mínimo el día siguiente y máximo 6 meses después (regla reglamentaria).
+        function ajustarRangoFechaFin(campoInicio) {
+            const campoFin = campoInicio.closest('form').querySelector('input[name="fechaFin"]');
+            if (!campoFin || !campoInicio.value) return;
+            const inicio = new Date(campoInicio.value + 'T00:00:00');
+            const minimo = new Date(inicio); minimo.setDate(minimo.getDate() + 1);
+            const maximo = new Date(inicio); maximo.setMonth(maximo.getMonth() + 6);
+            campoFin.min = minimo.toISOString().slice(0, 10);
+            campoFin.max = maximo.toISOString().slice(0, 10);
+            if (campoFin.value && (campoFin.value < campoFin.min || campoFin.value > campoFin.max)) {
+                campoFin.value = '';
+            }
+        }
+
         // ⌨️ Filtro en tiempo real: bloquea los caracteres inválidos mientras se escribe.
-        // Solo números: NIT y teléfonos · Solo letras: nombre de la empresa y del jefe inmediato.
+        // Solo números: NIT y teléfonos · Solo letras: nombre del jefe inmediato ·
+        // Alfanumérico (letras, números y . , & - #): nombre de la empresa.
         document.addEventListener('DOMContentLoaded', function () {
             const soloNumeros = ['nit', 'telefonoEmpresa', 'telefonoJefeInmediato'];
-            const soloLetras = ['nombreEmpresa', 'nombreJefeInmediato'];
+            const soloLetras = ['nombreJefeInmediato'];
+            const alfanumericos = ['nombreEmpresa'];
 
             soloNumeros.forEach(function (nombre) {
                 document.querySelectorAll('input[name="' + nombre + '"]').forEach(function (campo) {
@@ -206,20 +212,34 @@
                     });
                 });
             });
+
+            alfanumericos.forEach(function (nombre) {
+                document.querySelectorAll('input[name="' + nombre + '"]').forEach(function (campo) {
+                    campo.addEventListener('input', function () {
+                        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#\- ]/g, '');
+                    });
+                });
+            });
+
+            // ✅ Cinturón y tirantes: valida el rango de 6 meses también al enviar el formulario
+            document.querySelectorAll('form[id^="form-registro-"]').forEach(function (form) {
+                form.addEventListener('submit', function (evento) {
+                    const inicio = form.querySelector('input[name="fechaInicio"]').value;
+                    const fin = form.querySelector('input[name="fechaFin"]').value;
+                    if (!inicio || !fin) return;
+                    const fechaInicio = new Date(inicio + 'T00:00:00');
+                    const fechaFin = new Date(fin + 'T00:00:00');
+                    const maximo = new Date(fechaInicio); maximo.setMonth(maximo.getMonth() + 6);
+                    if (fechaFin <= fechaInicio) {
+                        evento.preventDefault();
+                        alert('La fecha de fin debe ser posterior a la fecha de inicio.');
+                    } else if (fechaFin > maximo) {
+                        evento.preventDefault();
+                        alert('La Etapa Productiva no puede durar más de 6 meses. La fecha fin máxima para ese inicio es ' + maximo.toISOString().slice(0, 10) + '.');
+                    }
+                });
+            });
         });
-
-        // Si el Gestor va a rechazar modalidad o formatos, exige que deje la novedad para notificar al aprendiz
-        function validarNovedadRegistro(form) {
-            const modalidadOk = form.querySelector('input[name="modalidadOk"]').checked;
-            const formatosOk = form.querySelector('input[name="formatosOk"]').checked;
-            const observacion = form.querySelector('textarea[name="observacion"]').value.trim();
-
-            if ((!modalidadOk || !formatosOk) && !observacion) {
-                alert('Debes escribir una novedad explicando el motivo del rechazo antes de continuar.');
-                return false;
-            }
-            return true;
-        }
     </script>
     <script th:src="@{/js/workflow.js}"></script>
 </body>

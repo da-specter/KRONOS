@@ -79,16 +79,22 @@
                 <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
                      th:text="${error}">Ocurrió un error.</div>
 
-                <div style="margin-top: 20px;">
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="buscador" onkeyup="filtrarTabla()"
                            placeholder="🔎 Buscar por nombre, documento, ficha, empresa, estado..."
-                           style="width: 100%; max-width: 560px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                           style="flex: 1; min-width: 240px; max-width: 560px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                    <select id="filtroMesAsignacion" onchange="filtrarTabla()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option value="">📅 Todos los meses</option>
+                        <option th:each="mes : ${mesesAsignacion}" th:value="${mes.clave}" th:text="${mes.etiqueta}">Julio 2026</option>
+                    </select>
                 </div>
 
-                <div style="overflow-x: auto; margin-top: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1400px;">
+                <!-- 📌 El encabezado queda fijo (sticky) y solo se desplazan los registros -->
+                <div class="tabla-scroll-sticky" style="overflow: auto; max-height: 62vh; margin-top: 20px;">
+                    <table class="tabla-sticky" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1600px;">
                         <thead>
-                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                            <tr style="color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
                                 <th style="padding: 12px 14px;">Nombres</th>
                                 <th style="padding: 12px 14px;">Apellidos</th>
                                 <th style="padding: 12px 14px;">Tipo Doc.</th>
@@ -98,14 +104,17 @@
                                 <th style="padding: 12px 14px;">Ficha</th>
                                 <th style="padding: 12px 14px;">Programa</th>
                                 <th style="padding: 12px 14px;">Empresa</th>
+                                <th style="padding: 12px 14px;">Jefe Inmediato</th>
+                                <th style="padding: 12px 14px;">Tel. Jefe</th>
                                 <th style="padding: 12px 14px;">Modalidad</th>
                                 <th style="padding: 12px 14px;">Inicio Etapa</th>
                                 <th style="padding: 12px 14px;">Fin Etapa</th>
                                 <th style="padding: 12px 14px;">Estado Etapa</th>
+                                <th style="padding: 12px 14px;">Asignado Desde</th>
                             </tr>
                         </thead>
                         <tbody id="tablaAprendices">
-                            <tr th:each="a : ${aprendices}" class="fila" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                            <tr th:each="a : ${aprendices}" class="fila" th:attr="data-mes-asignacion=${a.mesAsignacion}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
                                 <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.nombres}">Nombres</td>
                                 <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.apellidos}">Apellidos</td>
                                 <td style="padding: 12px 14px;" th:text="${a.tipoDocumento}">CC</td>
@@ -115,6 +124,8 @@
                                 <td style="padding: 12px 14px;" th:text="${a.ficha}">2555228</td>
                                 <td style="padding: 12px 14px;" th:text="${a.programaFormacion}">ADSO</td>
                                 <td style="padding: 12px 14px;" th:text="${a.razonSocial}">Empresa</td>
+                                <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.jefeNombre}">Jefe Inmediato</td>
+                                <td style="padding: 12px 14px;" th:text="${a.jefeTelefono}">3000000000</td>
                                 <td style="padding: 12px 14px;" th:text="${a.modalidadContrato}">Contrato de Aprendizaje</td>
                                 <td style="padding: 12px 14px;" th:text="${a.etapaInicio}">01/01/2026</td>
                                 <td style="padding: 12px 14px;" th:text="${a.etapaFin}">30/06/2026</td>
@@ -125,9 +136,10 @@
                                                    : (${a.estadoEtapa == 'REPROBADO'} ? 'background: rgba(220,38,38,0.1); color: #DC2626; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'
                                                    : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'))">Estado</span>
                                 </td>
+                                <td style="padding: 12px 14px; font-size: 12px; color: var(--text-muted); white-space: nowrap;" th:text="${a.asignadoDesde}">01/01/2026 10:00</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(aprendices)}">
-                                <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                <td colspan="16" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
                                     Aún no tienes aprendices asignados para seguimiento.
                                 </td>
                             </tr>
@@ -166,10 +178,13 @@
     <script>
         function filtrarTabla() {
             const criterio = document.getElementById('buscador').value.trim().toLowerCase();
+            const mesElegido = document.getElementById('filtroMesAsignacion').value;
             const filas = document.querySelectorAll('#tablaAprendices .fila');
             let visibles = 0;
             filas.forEach(function (fila) {
-                const coincide = fila.textContent.toLowerCase().includes(criterio);
+                const coincideTexto = fila.textContent.toLowerCase().includes(criterio);
+                const coincideMes = !mesElegido || fila.dataset.mesAsignacion === mesElegido;
+                const coincide = coincideTexto && coincideMes;
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
             });

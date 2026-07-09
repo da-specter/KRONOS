@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Calificar Documentos</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/gestor/calificar-documentos')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>🗂️ Calificar Documentos</h1>
+                <p>Revisa los formatos/plantillas firmadas del aprendiz. Si apruebas, la solicitud pasa al rol Registro; si rechazas, vuelve al aprendiz para que corrija y reenvíe.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="alert-success" th:if="${exito}" th:text="${exito}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+            <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+
+            <div th:each="solicitud : ${solicitudesParaCalificar}"
+                 style="grid-column: 1 / -1; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <p style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;"
+                           th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
+                           th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud} + ' · ' + ${solicitud.seccionFormato.nombreSeccion}">
+                            Ficha 2555228 · Sol. #2 · Pasantía
+                        </p>
+                    </div>
+                    <button type="button" th:onclick="'toggleCalificarForm(' + ${solicitud.idSolicitud} + ')'"
+                            style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                        Calificar
+                    </button>
+                </div>
+
+                <div style="margin-top: 14px;" th:if="${not #lists.isEmpty(documentosPorSolicitud.get(solicitud.idSolicitud))}">
+                    <p style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">Documentos radicados</p>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <a th:each="doc : ${documentosPorSolicitud.get(solicitud.idSolicitud)}"
+                           th:href="${doc.rutaArchivoLleno}" target="_blank"
+                           style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none; font-size: 12px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span th:text="${doc.asunto}">Asunto del archivo</span>
+                        </a>
+                    </div>
+                </div>
+
+                <form th:id="'form-calificar-' + ${solicitud.idSolicitud}"
+                      th:action="@{'/gestor/calificar-documentos/' + ${solicitud.idSolicitud}}" method="post"
+                      onsubmit="return validarNovedadCalificacion(this)"
+                      style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
+
+                    <div style="display: flex; gap: 24px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
+                            <input type="checkbox" name="modalidadOk" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer; margin-right: 8px;">
+                            Modalidad aprobada
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
+                            <input type="checkbox" name="formatosOk" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer; margin-right: 8px;">
+                            Formatos aprobados
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Novedad (obligatoria si rechazas modalidad o formatos; el aprendiz podrá corregir y reenviar)</label>
+                        <div class="input-container">
+                            <textarea name="observacion" rows="2" placeholder="Escribe qué debe corregir el aprendiz antes de reenviar..."
+                                      style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Calificación</button>
+                </form>
+            </div>
+
+            <p th:if="${#lists.isEmpty(solicitudesParaCalificar)}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                🎉 No hay solicitudes pendientes de calificar.
+            </p>
+
+        </section>
+    </main>
+
+    <script>
+        function toggleCalificarForm(idSolicitud) {
+            const form = document.getElementById('form-calificar-' + idSolicitud);
+            if (!form) return;
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Si el Gestor va a rechazar modalidad o formatos, exige que deje la novedad para notificar al aprendiz
+        function validarNovedadCalificacion(form) {
+            const modalidadOk = form.querySelector('input[name="modalidadOk"]').checked;
+            const formatosOk = form.querySelector('input[name="formatosOk"]').checked;
+            const observacion = form.querySelector('textarea[name="observacion"]').value.trim();
+
+            if ((!modalidadOk || !formatosOk) && !observacion) {
+                alert('Debes escribir una novedad explicando el motivo del rechazo antes de continuar.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+    <script th:src="@{/js/workflow.js}"></script>
+</body>
+</html>

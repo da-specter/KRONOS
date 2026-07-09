@@ -1,5 +1,6 @@
 package com.etapa_productiva.kronos.dto;
 
+import com.etapa_productiva.kronos.entity.EstadoEtapaAprendiz;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,8 +43,27 @@ public class AprendizGestionDto {
     private String contratoInicio;
     private String contratoFin;
     private String arl;
+    private String registradoPor; // Usuario del rol Registro que dio de alta la Etapa Productiva
+    private String fechaRegistro; // Momento real en que se confirmó el registro (auditoría), no la fecha contractual
+    private String mesRegistro;   // Clave "yyyy-MM" de fechaRegistro, para el filtro "por mes" (null si no tiene etapa)
+
+    // Valores "crudos" (sin formatear) que alimentan el formulario de edición del rol Registro
+    private String nitEmpresa;
+    private String jefeNombre;
+    private String jefeCorreo;
+    private String jefeTelefono;
+    private String estadoEtapaEtapa;   // nombre real del enum EtapaProductiva.estadoEtapa
+    private String contratoInicioIso;  // yyyy-MM-dd, para precargar <input type="date">
+    private String contratoFinIso;
 
     // Soporte del cuadro ARL en la vista (no se exportan)
     private String arlRuta;   // ruta del archivo subido, para verlo
     private Long idEtapa;     // habilita la subida solo si el aprendiz ya tiene etapa
+
+    // 🚦 Clasificación semáforo (formato SENA) según dónde está el aprendiz en la línea de
+    // tiempo de su Etapa Práctica: antes de iniciar, en curso, o después de terminar.
+    // El texto ya trae nombrada la modalidad real que escogió el aprendiz (Pasantía,
+    // Vínculo Laboral, Monitoría, etc.), no un genérico "contrato de aprendizaje".
+    private EstadoEtapaAprendiz estadoEtapa;
+    private String estadoEtapaTexto;
 }

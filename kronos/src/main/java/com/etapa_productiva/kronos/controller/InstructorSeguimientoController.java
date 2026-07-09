@@ -74,6 +74,15 @@ public class InstructorSeguimientoController {
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuario.getIdUsuario()));
         model.addAttribute("aprendices", aprendices);
         model.addAttribute("dashInstructor", instructorSeguimientoService.calcularDashboard(aprendices));
+        // 📅 Filtro "por mes": meses en los que realmente tiene una asignación vigente,
+        // más reciente primero (ver FechaUtil / columna "Asignado Desde").
+        model.addAttribute("mesesAsignacion", aprendices.stream()
+                .map(InstructorAprendizDto::getMesAsignacion)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted(java.util.Comparator.reverseOrder())
+                .map(clave -> new com.etapa_productiva.kronos.dto.MesOpcion(clave, com.etapa_productiva.kronos.util.FechaUtil.etiquetaMes(clave)))
+                .toList());
 
         return "mis-aprendices";
     }

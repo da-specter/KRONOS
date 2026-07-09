@@ -15,7 +15,7 @@
         <header class="top-header-capsule">
             <div class="welcome-info">
                 <h1>✏️ Agendar Citas</h1>
-                <p>Programa las visitas de seguimiento a tus aprendices asignados.</p>
+                <p>Programa la primera visita de seguimiento a tus aprendices asignados. KRONOS agenda automáticamente las otras 2, bien distribuidas hasta el fin de la Etapa Productiva.</p>
             </div>
 
             <div th:replace="~{fragments/notificaciones :: campana}"></div>
@@ -56,17 +56,6 @@
                         <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Fecha de la visita</label>
                         <input type="date" name="fecha" required
                                style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; box-sizing: border-box;">
-                    </div>
-
-                    <div>
-                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Tipo de visita</label>
-                        <select name="tipoVisita" required
-                                style="width: 100%; padding: 11px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; box-sizing: border-box;">
-                            <option value="" disabled selected>Selecciona el tipo</option>
-                            <option value="INICIAL">Inicial</option>
-                            <option value="PARCIAL">Parcial</option>
-                            <option value="FINAL">Final</option>
-                        </select>
                     </div>
 
                     <div>

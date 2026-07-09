@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Cambio de Contraseña Obligatorio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+
+    <div class="bg-watermark">KRONOS</div>
+
+    <div class="main-container">
+
+        <div class="visual-side">
+            <div class="logo-container">
+                <img th:src="@{/images/LOGO KRONOS.png}" alt="Logo KRONOS">
+            </div>
+        </div>
+
+        <div class="form-side">
+
+            <div class="mobile-logo-wrapper">
+                <img th:src="@{/images/LOGO KRONOS.png}" alt="Logo KRONOS Móvil">
+            </div>
+
+            <div class="form-header">
+                <div class="user-avatar-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h2>Cambia tu Contraseña</h2>
+            </div>
+
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 22px; margin-top: -10px;">
+                Hola <strong th:text="${nombre}">Aprendiz</strong>, por seguridad debes cambiar tu contraseña
+                inicial (tu número de documento) antes de continuar. Elige una nueva contraseña que cumpla
+                con las reglas de abajo.
+            </p>
+
+            <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
+
+            <form th:action="@{/auth/cambiar-contrasena-inicial}" method="post" style="display: flex; flex-direction: column;">
+
+                <div class="form-group">
+                    <label for="nuevaContrasena">Nueva Contraseña</label>
+                    <div class="input-container">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <input id="nuevaContrasena"
+                               name="nuevaContrasena"
+                               type="password"
+                               placeholder="Introduce tu nueva contraseña"
+                               pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d.*\d)(?=.*[!@#$%]).*"
+                               title="Debe tener al menos una mayúscula, una minúscula, dos números y un carácter especial (! @ # $ %)."
+                               required autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('nuevaContrasena', 'eyeIconShow1', 'eyeIconHide1')" aria-label="Mostrar u ocultar contraseña" tabindex="-1">
+                            <svg id="eyeIconShow1" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg id="eyeIconHide1" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmarContrasena">Confirmar Nueva Contraseña</label>
+                    <div class="input-container">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <input id="confirmarContrasena"
+                               name="confirmarContrasena"
+                               type="password"
+                               placeholder="Repite tu nueva contraseña"
+                               required autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('confirmarContrasena', 'eyeIconShow2', 'eyeIconHide2')" aria-label="Mostrar u ocultar contraseña" tabindex="-1">
+                            <svg id="eyeIconShow2" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg id="eyeIconHide2" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-muted); margin: -6px 0 18px 0;">
+                    Mínimo una mayúscula, una minúscula, dos números y un carácter especial (! @ # $ %).
+                </p>
+
+                <button type="submit" class="btn-login">Cambiar Contraseña</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script th:src="@{/js/toggle-password.js}"></script>
+    <script th:src="@{/js/cambiar-contrasena-validacion.js}"></script>
+</body>
+</html>

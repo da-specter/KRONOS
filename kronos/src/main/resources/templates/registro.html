@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Crear Cuenta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+
+    <!-- 🌠 Misma lluvia de estrellas neón del login, para que todo el flujo de acceso se vea consistente -->
+    <div class="lluvia-neon" aria-hidden="true">
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+    </div>
+
+    <div class="bg-watermark">KRONOS</div>
+
+    <div class="main-container">
+
+        <div class="visual-side">
+            <div class="logo-container">
+                <img th:src="@{/images/LOGO KRONOS.png}" alt="Logo KRONOS">
+            </div>
+        </div>
+
+        <div class="form-side">
+
+            <div class="mobile-logo-wrapper">
+                <img th:src="@{/images/LOGO KRONOS.png}" alt="Logo KRONOS Móvil">
+            </div>
+
+            <div class="form-header">
+                <div class="user-avatar-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                </div>
+                <h2>Crear Cuenta</h2>
+            </div>
+
+            <div class="alert-success" th:if="${exito}" th:text="${exito}"></div>
+            <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
+
+            <!-- 🔀 Selector de tipo de cuenta: decide cuál de los dos formularios se muestra -->
+            <div class="metodo-recuperacion-opciones">
+                <button type="button" id="tabAprendiz" class="metodo-opcion" onclick="mostrarPanel('aprendiz')" style="border: 1.5px solid #E2E8F0; background: none; cursor: pointer; text-align: left;">
+                    <span>🎓 Soy Aprendiz</span>
+                </button>
+                <button type="button" id="tabInstructor" class="metodo-opcion" onclick="mostrarPanel('instructor')" style="border: 1.5px solid #E2E8F0; background: none; cursor: pointer; text-align: left;">
+                    <span>👨‍🏫 Soy Instructor / Personal SENA</span>
+                </button>
+            </div>
+
+            <!-- ══════════════ Panel Aprendiz ══════════════ -->
+            <form id="panelAprendiz" th:action="@{/auth/registro/aprendiz}" method="post" style="display: flex; flex-direction: column;">
+
+                <p class="metodo-recuperacion-hint">
+                    Valida tu ingreso con el número de tu ficha: si KRONOS ya la conoce, tu cuenta queda activa de inmediato.
+                </p>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 0.6;">
+                        <label for="tipoDocumentoAprendiz">Tipo Doc.</label>
+                        <div class="input-container">
+                            <select id="tipoDocumentoAprendiz" name="tipoDocumento" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent;">
+                                <option th:each="t : ${tiposDocumento}" th:value="${t}" th:text="${t}">CC</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="documentoAprendiz">Documento</label>
+                        <div class="input-container">
+                            <input id="documentoAprendiz" name="documento" type="text" required maxlength="10"
+                                   pattern="\d+" inputmode="numeric" title="El documento solo puede contener números."
+                                   placeholder="Número de documento">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="nombreAprendiz">Nombre</label>
+                        <div class="input-container">
+                            <input id="nombreAprendiz" name="nombre" type="text" required maxlength="30"
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="Solo letras."
+                                   placeholder="Tus nombres">
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="apellidoAprendiz">Apellido</label>
+                        <div class="input-container">
+                            <input id="apellidoAprendiz" name="apellido" type="text" required maxlength="30"
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="Solo letras."
+                                   placeholder="Tus apellidos">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="correoAprendiz">Correo Electrónico</label>
+                    <div class="input-container">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <input id="correoAprendiz" name="correo" type="email" required maxlength="150"
+                               placeholder="Introduce tu correo institucional" autocomplete="email">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="telefonoAprendiz">Teléfono</label>
+                        <div class="input-container">
+                            <input id="telefonoAprendiz" name="telefono" type="text" maxlength="11"
+                                   pattern="\d+" inputmode="numeric" title="Solo números."
+                                   placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="fichaAprendiz">N.° de Ficha</label>
+                        <div class="input-container">
+                            <input id="fichaAprendiz" name="numeroFicha" type="text" required maxlength="7"
+                                   placeholder="Ej: 2555228">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="contrasenaAprendiz">Contraseña</label>
+                    <div class="input-container">
+                        <input id="contrasenaAprendiz" name="contrasena" type="password" required
+                               placeholder="Crea tu contraseña" autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('contrasenaAprendiz', 'eyeShowApr1', 'eyeHideApr1')" tabindex="-1">
+                            <svg id="eyeShowApr1" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg id="eyeHideApr1" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ✅ Checklist en vivo de la política de contraseña (registro-validacion.js) -->
+                <ul style="list-style: none; padding: 0; margin: 0 0 22px 2px; display: flex; flex-direction: column; gap: 4px;">
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaMayAprendiz" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Una letra mayúscula
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaMinAprendiz" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Una letra minúscula
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaNumAprendiz" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Dos números
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaEspAprendiz" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Un carácter especial (! @ # $ %)
+                    </li>
+                </ul>
+
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label for="confirmarAprendiz">Confirmar Contraseña</label>
+                    <div class="input-container">
+                        <input id="confirmarAprendiz" name="confirmarContrasena" type="password" required placeholder="Repite tu contraseña" autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('confirmarAprendiz', 'eyeShowApr2', 'eyeHideApr2')" tabindex="-1">
+                            <svg id="eyeShowApr2" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg id="eyeHideApr2" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </button>
+                    </div>
+                    <p id="matchAprendiz" style="display: none; font-size: 11.5px; font-weight: 700; margin-top: 6px;"></p>
+                </div>
+
+                <button type="submit" class="btn-login">Crear mi Cuenta</button>
+                <a th:href="@{/auth/login}" class="back-to-login-link">← Volver a Iniciar Sesión</a>
+            </form>
+
+            <!-- ══════════════ Panel Instructor / Personal SENA ══════════════ -->
+            <form id="panelInstructor" th:action="@{/auth/registro/instructor}" method="post" style="display: none; flex-direction: column;">
+
+                <p class="metodo-recuperacion-hint">
+                    KRONOS no tiene un catálogo con el que autovalidarte, así que tu cuenta queda
+                    <strong>pendiente de aprobación</strong>: un Administrador la revisará y te asignará tu
+                    rol antes de que puedas iniciar sesión.
+                </p>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 0.6;">
+                        <label for="tipoDocumentoInstructor">Tipo Doc.</label>
+                        <div class="input-container">
+                            <select id="tipoDocumentoInstructor" name="tipoDocumento" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent;">
+                                <option th:each="t : ${tiposDocumento}" th:value="${t}" th:text="${t}">CC</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="documentoInstructor">Documento</label>
+                        <div class="input-container">
+                            <input id="documentoInstructor" name="documento" type="text" required maxlength="10"
+                                   pattern="\d+" inputmode="numeric" title="El documento solo puede contener números."
+                                   placeholder="Número de documento">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="nombreInstructor">Nombre</label>
+                        <div class="input-container">
+                            <input id="nombreInstructor" name="nombre" type="text" required maxlength="30"
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="Solo letras."
+                                   placeholder="Tus nombres">
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="apellidoInstructor">Apellido</label>
+                        <div class="input-container">
+                            <input id="apellidoInstructor" name="apellido" type="text" required maxlength="30"
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="Solo letras."
+                                   placeholder="Tus apellidos">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="correoInstructor">Correo Electrónico</label>
+                    <div class="input-container">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <input id="correoInstructor" name="correo" type="email" required maxlength="150"
+                               placeholder="Introduce tu correo institucional" autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="telefonoInstructor">Teléfono</label>
+                    <div class="input-container">
+                        <input id="telefonoInstructor" name="telefono" type="text" maxlength="11"
+                               pattern="\d+" inputmode="numeric" title="Solo números." placeholder="Opcional">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="contrasenaInstructor">Contraseña</label>
+                    <div class="input-container">
+                        <input id="contrasenaInstructor" name="contrasena" type="password" required
+                               placeholder="Crea tu contraseña" autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('contrasenaInstructor', 'eyeShowIns1', 'eyeHideIns1')" tabindex="-1">
+                            <svg id="eyeShowIns1" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg id="eyeHideIns1" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ✅ Checklist en vivo de la política de contraseña (registro-validacion.js) -->
+                <ul style="list-style: none; padding: 0; margin: 0 0 22px 2px; display: flex; flex-direction: column; gap: 4px;">
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaMayInstructor" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Una letra mayúscula
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaMinInstructor" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Una letra minúscula
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaNumInstructor" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Dos números
+                    </li>
+                    <li style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; transition: color 0.2s ease;">
+                        <span id="reglaEspInstructor" style="width: 12px; color: #94A3B8; font-weight: 700;">○</span> Un carácter especial (! @ # $ %)
+                    </li>
+                </ul>
+
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label for="confirmarInstructor">Confirmar Contraseña</label>
+                    <div class="input-container">
+                        <input id="confirmarInstructor" name="confirmarContrasena" type="password" required placeholder="Repite tu contraseña" autocomplete="new-password">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('confirmarInstructor', 'eyeShowIns2', 'eyeHideIns2')" tabindex="-1">
+                            <svg id="eyeShowIns2" class="toggle-eye-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg id="eyeHideIns2" class="toggle-eye-svg" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </button>
+                    </div>
+                    <p id="matchInstructor" style="display: none; font-size: 11.5px; font-weight: 700; margin-top: 6px;"></p>
+                </div>
+
+                <button type="submit" class="btn-login">Enviar Solicitud</button>
+                <a th:href="@{/auth/login}" class="back-to-login-link">← Volver a Iniciar Sesión</a>
+            </form>
+
+        </div>
+
+    </div>
+
+    <script th:src="@{/js/toggle-password.js}"></script>
+    <script th:src="@{/js/registro-validacion.js}"></script>
+    <script th:inline="javascript">
+        function mostrarPanel(tipo) {
+            const esAprendiz = tipo === 'aprendiz';
+            document.getElementById('panelAprendiz').style.display = esAprendiz ? 'flex' : 'none';
+            document.getElementById('panelInstructor').style.display = esAprendiz ? 'none' : 'flex';
+
+            const tabAprendiz = document.getElementById('tabAprendiz');
+            const tabInstructor = document.getElementById('tabInstructor');
+            tabAprendiz.style.borderColor = esAprendiz ? 'var(--verde-oscuro)' : '#E2E8F0';
+            tabAprendiz.style.background = esAprendiz ? 'rgba(5, 112, 21, 0.06)' : 'none';
+            tabAprendiz.style.color = esAprendiz ? 'var(--verde-oscuro)' : 'var(--text-dark)';
+            tabInstructor.style.borderColor = esAprendiz ? '#E2E8F0' : 'var(--verde-oscuro)';
+            tabInstructor.style.background = esAprendiz ? 'none' : 'rgba(5, 112, 21, 0.06)';
+            tabInstructor.style.color = esAprendiz ? 'var(--text-dark)' : 'var(--verde-oscuro)';
+        }
+
+        // 🔀 Preselecciona el panel según lo que decidió el servidor (por defecto "aprendiz",
+        // o el panel donde el usuario venía escribiendo si hubo un error de validación)
+        mostrarPanel(/*[[${tipoSeleccionado}]]*/ 'aprendiz');
+    </script>
+</body>
+</html>

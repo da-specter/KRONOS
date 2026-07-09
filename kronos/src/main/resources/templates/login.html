@@ -11,6 +11,20 @@
 </head>
 <body>
 
+    <!-- 🌠 Lluvia de estrellas fugaces neón: líneas verdes cayendo en diagonal sobre los
+         micropuntos del fondo. Capa decorativa pura (CSS), no captura clics ni lectores. -->
+    <div class="lluvia-neon" aria-hidden="true">
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+        <span class="estrella"></span>
+    </div>
+
     <div class="bg-watermark">KRONOS</div>
 
     <div class="main-container">
@@ -87,6 +101,11 @@
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
 
             </form>
+
+            <p style="text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 22px;">
+                ¿No tienes cuenta?
+                <a th:href="@{/auth/registro}" style="color: var(--verde-oscuro); font-weight: 700; text-decoration: none;">Crear cuenta</a>
+            </p>
         </div>
 
     </div>

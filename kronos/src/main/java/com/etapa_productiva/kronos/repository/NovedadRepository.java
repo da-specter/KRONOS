@@ -2,6 +2,7 @@ package com.etapa_productiva.kronos.repository;
 
 import com.etapa_productiva.kronos.entity.Novedad;
 import com.etapa_productiva.kronos.entity.EstadoFiltro;
+import com.etapa_productiva.kronos.entity.TipoNovedad;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
@@ -21,4 +22,7 @@ public interface NovedadRepository extends JpaRepository<Novedad, Long> {
 
     // 📢 Módulo "Novedades" del Instructor de Seguimiento / Gestor de Etapa: todo lo dirigido a él, sin importar el estado
     List<Novedad> findByDestinatarioAcIdUsuarioOrderByFechaCreacionDesc(Long idUsuarioDestinatario);
+
+    // 💬 Chat GESTOR_ETAPA ↔ REGISTRO: visible para todo el rol, no solo para un destinatario fijo
+    List<Novedad> findByTipoNovedadOrderByFechaCreacionAsc(TipoNovedad tipoNovedad);
 }

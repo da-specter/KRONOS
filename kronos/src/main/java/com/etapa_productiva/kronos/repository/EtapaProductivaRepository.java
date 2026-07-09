@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +23,7 @@ public interface EtapaProductivaRepository extends JpaRepository<EtapaProductiva
                    "  SELECT e.* FROM etapa_productiva e " +
                    "  JOIN aprendiz_ficha af ON e.id_aprendiz_ficha = af.id_aprendiz_ficha " +
                    "  WHERE af.id_usuario = :idUsuario " +
-                   "  ORDER BY CASE WHEN e.estado_etapa = 'CERTIFICADO' THEN 1 ELSE 0 END, e.id_etapa DESC" +
+                   "  ORDER BY CASE WHEN e.estado_etapa = 'TERMINADO' THEN 1 ELSE 0 END, e.id_etapa DESC" +
                    ") WHERE ROWNUM = 1", nativeQuery = true)
     Optional<EtapaProductiva> findByAprendizIdUsuario(@Param("idUsuario") Long idUsuario);
 
@@ -37,7 +39,13 @@ public interface EtapaProductivaRepository extends JpaRepository<EtapaProductiva
     // 📊 Dashboard del Administrador: aprendices actualmente en etapa práctica (EN_PROGRESO)
     long countByEstadoEtapa(EstadoEtapa estadoEtapa);
 
-    // 🎓 Bandeja "Certificación Aprendiz" del Gestor de Etapa: aprendices que ya completaron
-    // el 100% de bitácoras + Formato 023 y están a la espera de la firma del paz y salvo
-    List<EtapaProductiva> findByEstadoEtapaOrderByFechaInicioAsc(EstadoEtapa estadoEtapa);
+    // 🎓 Job diario de certificación automática: etapas POR_CERTIFICAR que llevan ahí desde
+    // antes del corte de 3 meses (la certificación final ya no la hace el Gestor de Etapa,
+    // ocurre en Sofía Plus; KRONOS solo refleja el estado tras el plazo).
+    List<EtapaProductiva> findByEstadoEtapaAndFechaPorCertificarBefore(EstadoEtapa estadoEtapa, LocalDateTime corte);
+
+    // ⏰ Job diario de alertas: etapas activas cuya FECHA_INICIO ya superó los días configurados
+    // (15 por defecto) sin que se les haya enviado todavía la alerta de "agenda la primera visita"
+    List<EtapaProductiva> findByEstadoEtapaAndAlertaPrimeraVisitaEnviadaFalseAndFechaInicioLessThanEqual(
+            EstadoEtapa estadoEtapa, LocalDate fecha);
 }

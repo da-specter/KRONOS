@@ -34,12 +34,13 @@ import java.util.Map;
 public class InstructorSeguimientoService {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FORMATO_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String SIN_DATO = "—";
 
     private static final String[] TITULOS = {
             "Nombres", "Apellidos", "Tipo Documento", "Documento", "Teléfono", "Correo Electrónico",
-            "Ficha", "Programa Formación", "Empresa", "Modalidad Contrato",
-            "Inicio Etapa", "Fin Etapa", "Estado Etapa"
+            "Ficha", "Programa Formación", "Empresa", "Jefe Inmediato", "Tel. Jefe", "Modalidad Contrato",
+            "Inicio Etapa", "Fin Etapa", "Estado Etapa", "Asignado Desde"
     };
 
     // Estados de etapa y su color para las gráficas (orden fijo para la leyenda)
@@ -85,10 +86,15 @@ public class InstructorSeguimientoService {
                     .ficha(ficha.getNumeroFicha())
                     .programaFormacion(ficha.getProgramaFormacion().getNombrePrograma())
                     .razonSocial(etapa.getEmpresa().getNombreEmpresa())
+                    .jefeNombre(valor(etapa.getNombreJefeInmediato()))
+                    .jefeTelefono(valor(etapa.getTelefonoJefeInmediato()))
                     .modalidadContrato(etapa.getTipoContrato().getNombreTipoContrato())
                     .etapaInicio(fecha(etapa.getFechaInicio()))
                     .etapaFin(fecha(etapa.getFechaFin()))
                     .estadoEtapa(etapa.getEstadoEtapa() != null ? etapa.getEstadoEtapa().name() : SIN_DATO)
+                    .asignadoDesde(asignacion.getFechaAsignacion() != null
+                            ? asignacion.getFechaAsignacion().format(FORMATO_FECHA_HORA) : SIN_DATO)
+                    .mesAsignacion(com.etapa_productiva.kronos.util.FechaUtil.claveMes(asignacion.getFechaAsignacion()))
                     .build());
         }
 
@@ -171,7 +177,9 @@ public class InstructorSeguimientoService {
             filas.add(new String[]{
                     a.getNombres(), a.getApellidos(), a.getTipoDocumento(), a.getDocumento(),
                     a.getTelefono(), a.getCorreoElectronico(), a.getFicha(), a.getProgramaFormacion(),
-                    a.getRazonSocial(), a.getModalidadContrato(), a.getEtapaInicio(), a.getEtapaFin(), a.getEstadoEtapa()
+                    a.getRazonSocial(), a.getJefeNombre(), a.getJefeTelefono(),
+                    a.getModalidadContrato(), a.getEtapaInicio(), a.getEtapaFin(), a.getEstadoEtapa(),
+                    a.getAsignadoDesde()
             });
         }
         return filas;

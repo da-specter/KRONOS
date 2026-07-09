@@ -414,9 +414,10 @@ public class EvaluacionFormatosService {
 
     /**
      * 🥳 Si la Etapa Productiva completó el 100% de sus bitácoras y el Formato de Planeación
-     * (023) fue aprobado, la pasa automáticamente de EN_PROGRESO a POR_CERTIFICAR, refleja el
-     * mismo estado en la matrícula del aprendiz (AprendizFicha) y notifica al aprendiz y a
-     * todos los Gestores de Etapa activos para que gestionen su certificación final.
+     * (023) fue aprobado, la pasa automáticamente de EN_PROGRESO a TERMINADO (ya no pasa por
+     * POR_CERTIFICAR: la certificación oficial no es un proceso de KRONOS, ocurre en Sofía
+     * Plus), refleja el mismo cierre en la matrícula del aprendiz (AprendizFicha) y notifica
+     * al aprendiz y a todos los Gestores de Etapa activos.
      */
     private void verificarYTransicionarPorCertificar(EtapaProductiva etapa) {
         if (etapa.getEstadoEtapa() != EstadoEtapa.EN_PROGRESO) {
@@ -428,21 +429,24 @@ public class EvaluacionFormatosService {
             return;
         }
 
-        etapa.setEstadoEtapa(EstadoEtapa.POR_CERTIFICAR);
+        etapa.setEstadoEtapa(EstadoEtapa.TERMINADO);
+        etapa.setFechaPorCertificar(java.time.LocalDateTime.now());
         etapaProductivaRepository.save(etapa);
 
         AprendizFicha aprendizFicha = etapa.getAprendizFicha();
-        aprendizFicha.setEstadoAcademico(EstadoAcademico.POR_CERTIFICAR);
+        aprendizFicha.setEstadoAcademico(EstadoAcademico.CERTIFICADO);
         aprendizFichaRepository.save(aprendizFicha);
 
         Usuario aprendiz = aprendizFicha.getUsuario();
         notificacionService.crear(aprendiz,
-                "🥳 ¡Completaste el 100% de tu Etapa Productiva! Tu proceso pasó a estado POR CERTIFICAR. Ingresa a tu dashboard para ver el detalle.");
+                "🎉 ¡Completaste el 100% de tu Etapa Productiva! Tu Instructor de Seguimiento aprobó tus bitácoras "
+                        + "y el Formato 023, así que tu Etapa Productiva ya quedó TERMINADA en KRONOS. Ingresa a tu "
+                        + "dashboard para ver el detalle.");
 
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
             notificacionService.crear(gestor, "🎓 " + aprendiz.getNombre() + " " + aprendiz.getApellido()
                     + " (ficha " + aprendizFicha.getFicha().getNumeroFicha()
-                    + ") completó sus bitácoras y el Formato 023 — su etapa está POR CERTIFICAR.");
+                    + ") completó sus bitácoras y el Formato 023 — su Etapa Productiva quedó TERMINADA.");
         }
     }
 

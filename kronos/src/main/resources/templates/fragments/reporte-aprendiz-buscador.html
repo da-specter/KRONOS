@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- 📋 Buscador + resultados del "Reporte Aprendiz": documentos requisito diligenciados y
+         APROBADOS, filtrables por nombre, apellido, documento, tipo de documento, ficha y
+         modalidad de contrato. Compartido por Registro (/registro/reporte-aprendiz) y por el
+         Administrador (/admin/reporte); ambos alimentan el mismo modelo (fNombre, fApellido,
+         fDocumento, fTipoDocumento, fFicha, fIdSeccionFormato, tiposDocumento, seccionesFormato,
+         resultados, busquedaRealizada). -->
+    <th:block th:fragment="buscador(accionForm)">
+
+        <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
+            <h3 class="panel-header-title" style="margin: 0 0 16px 0;">🔎 Buscar aprendiz</h3>
+            <form th:action="${accionForm}" method="get"
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; align-items: flex-end;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Nombre</label>
+                    <input type="text" name="nombre" th:value="${fNombre}" placeholder="Ej: Camila"
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Apellido</label>
+                    <input type="text" name="apellido" th:value="${fApellido}" placeholder="Ej: Restrepo"
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Documento</label>
+                    <input type="text" name="documento" th:value="${fDocumento}" placeholder="Ej: 4002100210"
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Tipo Documento</label>
+                    <select name="tipoDocumento" style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px; background: #fff;">
+                        <option value="">Todos</option>
+                        <option th:each="tipo : ${tiposDocumento}" th:value="${tipo}" th:text="${tipo}"
+                                th:selected="${fTipoDocumento != null and fTipoDocumento.name() == tipo.name()}">CC</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Ficha</label>
+                    <input type="text" name="ficha" th:value="${fFicha}" placeholder="Ej: 2555228"
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Modalidad de Contrato</label>
+                    <select name="idSeccionFormato" style="width: 100%; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px; background: #fff;">
+                        <option value="">Todas</option>
+                        <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}"
+                                th:selected="${fIdSeccionFormato != null and fIdSeccionFormato == seccion.idSeccionFormato}">Pasantía</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" style="width: 100%; background: var(--verde-sena); color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <p th:unless="${busquedaRealizada}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+            🔎 Usa al menos un filtro para ver los documentos aprobados de un aprendiz.
+        </p>
+
+        <p th:if="${busquedaRealizada and #lists.isEmpty(resultados)}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+            Ningún aprendiz coincide con esos filtros, o aún no tiene documentos aprobados.
+        </p>
+
+        <div th:each="fila : ${resultados}"
+             style="grid-column: 1 / -1; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div class="user-avatar-glow" th:text="${#strings.substring(fila.nombre,0,1) + #strings.substring(fila.apellido,0,1)}">AB</div>
+                    <div>
+                        <p style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin: 0;"
+                           th:text="${fila.nombre} + ' ' + ${fila.apellido}">Nombre Apellido</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
+                           th:text="${fila.tipoDocumento} + ' ' + ${fila.documento} + ' · Ficha ' + ${fila.numeroFicha} + ' · ' + ${fila.programa}">
+                            CC 1001234567 · Ficha 2555228 · ADSO
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="background: #E2E8F0; color: var(--text-dark); padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;" th:text="${fila.modalidadContrato}">Pasantía</span>
+                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;" th:text="${fila.documentos.size()} + ' aprobados'">3 aprobados</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 18px;">
+                <a th:each="doc : ${fila.documentos}" th:href="${doc.rutaArchivo}" target="_blank"
+                   style="display: flex; align-items: center; gap: 10px; text-decoration: none; background: var(--inner-bg); border-radius: 12px; padding: 12px 14px;">
+                    <span style="color: var(--verde-sena); font-size: 16px; flex-shrink: 0;">✅</span>
+                    <span style="flex: 1; min-width: 0;">
+                        <span style="display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-dark);" th:text="${doc.nombreDocumento}">Formato F-08</span>
+                            <span th:if="${doc.asunto != null and !#strings.isEmpty(doc.asunto)}"
+                                  style="font-size: 11px; color: var(--text-muted); font-style: italic;" th:text="'· ' + ${doc.asunto}">· Asunto escrito por el aprendiz</span>
+                        </span>
+                        <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;" th:text="${doc.fechaSubida}">01/01/2026 10:00</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+
+    </th:block>
+
+</body>
+</html>

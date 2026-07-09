@@ -15,7 +15,10 @@
         <header class="top-header-capsule">
             <div class="welcome-info">
                 <h1>📢 Novedades</h1>
-                <p>Novedades radicadas por los aprendices dirigidas a ti.</p>
+                <p th:if="${puedeChatRegistro and puedeChatCoordinacion}">Novedades radicadas por los aprendices dirigidas a ti, más los chats informativos con Registro y con Coordinación Académica.</p>
+                <p th:if="${puedeChatRegistro and !puedeChatCoordinacion}">Novedades radicadas por los aprendices dirigidas a ti, más el chat informativo entre Gestor de Etapa y Registro.</p>
+                <p th:if="${!puedeChatRegistro and puedeChatCoordinacion}">El chat informativo con el Gestor de Etapa.</p>
+                <p th:unless="${puedeChatRegistro or puedeChatCoordinacion}">Novedades radicadas por los aprendices dirigidas a ti, y tus conversaciones con tus aprendices asignados.</p>
             </div>
 
             <div th:replace="~{fragments/notificaciones :: campana}"></div>
@@ -25,16 +28,107 @@
 
             <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
 
+            <!-- 💬 Enviar un mensaje informativo al otro rol (solo GESTOR_ETAPA / REGISTRO) -->
+            <div th:if="${puedeChatRegistro}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3 class="panel-header-title" style="margin: 0 0 14px 0;">💬 Enviar mensaje a Gestor de Etapa / Registro</h3>
+                <form th:action="@{/novedades/informativa}" method="post" enctype="multipart/form-data"
+                      style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; min-width: 220px; flex: 1;">
+                        <label>Mensaje</label>
+                        <div class="input-container">
+                            <input type="text" name="mensaje" maxlength="500"
+                                   style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Adjunto</label>
+                        <div class="input-container">
+                            <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+                                   style="font-size: 12px; padding: 4px 0;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 20px; font-size: 13px;">Enviar</button>
+                </form>
+            </div>
+
+            <!-- 💬 Enviar un mensaje al otro rol del canal de Coordinación Académica (solo GESTOR_ETAPA / COORDINADOR_ACADEMICO) -->
+            <div th:if="${puedeChatCoordinacion}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3 class="panel-header-title" style="margin: 0 0 14px 0;">💬 Enviar mensaje a Gestor de Etapa / Coordinación Académica</h3>
+                <form th:action="@{/novedades/coordinacion}" method="post" enctype="multipart/form-data"
+                      style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; min-width: 220px; flex: 1;">
+                        <label>Mensaje</label>
+                        <div class="input-container">
+                            <input type="text" name="mensaje" maxlength="500"
+                                   style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Adjunto</label>
+                        <div class="input-container">
+                            <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+                                   style="font-size: 12px; padding: 4px 0;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 20px; font-size: 13px;">Enviar</button>
+                </form>
+            </div>
+
+            <!-- 💬 El Instructor de Seguimiento escribe a uno de sus aprendices asignados -->
+            <div th:if="${puedeChatAprendiz}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3 class="panel-header-title" style="margin: 0 0 14px 0;">💬 Enviar mensaje a un aprendiz asignado</h3>
+                <form th:if="${!#lists.isEmpty(aprendicesAsignados)}" th:action="@{/novedades/aprendiz}" method="post" enctype="multipart/form-data"
+                      style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
+                        <label>Aprendiz</label>
+                        <div class="input-container">
+                            <select name="idEtapa" required style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                                <option value="">Selecciona un aprendiz</option>
+                                <option th:each="asignacion : ${aprendicesAsignados}"
+                                        th:value="${asignacion.etapaProductiva.idEtapa}"
+                                        th:text="${asignacion.etapaProductiva.aprendizFicha.usuario.nombre + ' ' + asignacion.etapaProductiva.aprendizFicha.usuario.apellido
+                                                  + ' — Ficha ' + asignacion.etapaProductiva.aprendizFicha.ficha.numeroFicha}">
+                                    Sofia Ramirez — Ficha 2555228
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; min-width: 220px; flex: 1;">
+                        <label>Mensaje</label>
+                        <div class="input-container">
+                            <input type="text" name="mensaje" maxlength="500"
+                                   style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Adjunto</label>
+                        <div class="input-container">
+                            <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+                                   style="font-size: 12px; padding: 4px 0;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 20px; font-size: 13px;">Enviar</button>
+                </form>
+                <p th:if="${#lists.isEmpty(aprendicesAsignados)}" style="font-size: 13px; color: var(--text-muted); font-weight: 500; margin: 0;">
+                    Aún no tienes aprendices con asignación vigente.
+                </p>
+            </div>
+
             <div th:each="novedad : ${novedades}"
                  style="grid-column: 1 / -1; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
 
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <p style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin: 0;"
-                           th:text="${novedad.remitente.nombre} + ' ' + ${novedad.remitente.apellido}">Nombre Aprendiz</p>
+                           th:text="${novedad.remitente.nombre} + ' ' + ${novedad.remitente.apellido}">Nombre</p>
                         <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
                            th:text="${novedad.tipoNovedad} + ' · ' + ${#temporals.format(novedad.fechaCreacion, 'dd/MM/yyyy HH:mm')}">
                             OTRO · 01/01/2026 10:00
+                        </p>
+                        <p th:if="${novedad.remitente.idUsuario == usuario.idUsuario}"
+                           style="font-size: 11px; color: var(--verde-sena); font-weight: 700; margin-top: 3px;"
+                           th:text="'✉️ Enviado por ti a ' + ${novedad.destinatarioAc.nombre} + ' ' + ${novedad.destinatarioAc.apellido}">
+                            ✉️ Enviado por ti a Sofia Ramirez
                         </p>
                     </div>
                     <span th:text="${novedad.estadoFiltro}"
@@ -44,9 +138,14 @@
                     </span>
                 </div>
 
-                <div class="inner-status-card" style="margin-top: 14px;">
+                <div class="inner-status-card" style="margin-top: 14px;" th:if="${novedad.descripcion != null and !#strings.isEmpty(novedad.descripcion)}">
                     <p style="font-size: 13px; color: var(--text-dark);" th:text="${novedad.descripcion}">Descripción de la novedad</p>
                 </div>
+
+                <a th:if="${novedad.urlSoporte != null}" th:href="${novedad.urlSoporte}" target="_blank"
+                   style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none; font-size: 12px; margin-top: 10px;">
+                    📎 Ver adjunto
+                </a>
 
                 <div th:if="${!#lists.isEmpty(historialPorNovedad.get(novedad.idNovedad))}" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
                     <div th:each="historial : ${historialPorNovedad.get(novedad.idNovedad)}"

@@ -47,6 +47,31 @@ public final class ValidacionCampos {
         }
     }
 
+    /** Nombre de empresa: alfanumérico (letras, números, espacios y . , & - #). */
+    public static void validarNombreEmpresa(String valor, String etiqueta) {
+        if (valor == null || valor.isBlank()) return;
+        if (!valor.trim().matches("^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+( [a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+)*$")) {
+            throw new IllegalArgumentException(etiqueta + " solo puede contener letras, números y los signos . , & - #.");
+        }
+    }
+
+    /**
+     * Vigencia de la Etapa Productiva: la fecha fin debe ser posterior a la de inicio
+     * y el rango no puede superar los 6 meses reglamentarios.
+     */
+    public static void validarRangoEtapa(java.time.LocalDate fechaInicio, java.time.LocalDate fechaFin) {
+        if (fechaInicio == null || fechaFin == null) {
+            throw new IllegalArgumentException("Debes indicar la fecha de inicio y la fecha de fin de la Etapa Productiva.");
+        }
+        if (!fechaInicio.isBefore(fechaFin)) {
+            throw new IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha de fin.");
+        }
+        if (fechaFin.isAfter(fechaInicio.plusMonths(6))) {
+            throw new IllegalArgumentException("La Etapa Productiva no puede durar más de 6 meses (del "
+                    + fechaInicio + " la fecha fin máxima es " + fechaInicio.plusMonths(6) + ").");
+        }
+    }
+
     /** Documento de identidad: solo dígitos. */
     public static void validarDocumento(String documento) {
         if (documento == null || documento.isBlank()) return;

@@ -35,12 +35,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 📅 Módulo "Agendar Visitas" del Instructor de Seguimiento: agenda visitas (inicial,
- * parcial o final) a los aprendices que tiene asignados, permite cancelarlas o aplazarlas
- * (con novedad) mientras estén futuras o pendientes de hoy, notifica al aprendiz en cada
- * paso y arma la agenda (pasadas/pendientes/futuras) tanto para el instructor como para el
- * cronograma del propio aprendiz. Las visitas canceladas o aplazadas pasan automáticamente
- * a la franja "Pasadas", sin importar su fecha original.
+ * 📅 Módulo "Agendar Visitas" del Instructor de Seguimiento: agenda visitas de seguimiento a
+ * los aprendices que tiene asignados, permite cancelarlas o aplazarlas (con novedad) mientras
+ * estén futuras o pendientes de hoy, notifica al aprendiz en cada paso y arma la agenda
+ * (pasadas/pendientes/futuras) tanto para el instructor como para el cronograma del propio
+ * aprendiz. Las visitas canceladas o aplazadas pasan automáticamente a la franja "Pasadas",
+ * sin importar su fecha original.
+ *
+ * Cada Etapa Productiva se acompaña con 3 visitas: el instructor solo agenda la primera
+ * (KRONOS lo alerta 15 días después del inicio si aún no lo ha hecho) y el sistema agenda
+ * automáticamente las otras 2, bien distribuidas en el tiempo restante hasta el fin de la etapa.
  */
 @Service
 public class VisitaSeguimientoService {
@@ -102,15 +106,22 @@ public class VisitaSeguimientoService {
                 .toList();
     }
 
+    // La Etapa Productiva se acompaña con exactamente 3 visitas de seguimiento a lo largo de su vigencia.
+    private static final int TOTAL_VISITAS_SEGUIMIENTO = 3;
+
     /**
      * Agenda una nueva visita de seguimiento y notifica de inmediato al aprendiz.
      * Valida que la Etapa Productiva elegida esté realmente asignada a este instructor
      * (evita que un instructor agende visitas a aprendices que no son suyos).
      * La novedad es opcional: información adicional que el instructor quiera dejar registrada.
+     *
+     * 📅 Si esta es la PRIMERA visita que se agenda para la Etapa Productiva, KRONOS agenda
+     * automáticamente las otras 2 restantes, distribuidas en tercios sobre el tiempo que queda
+     * entre esta fecha y el fin de la etapa (ver {@link #autoAgendarVisitasRestantes}).
      */
     @Transactional
     public VisitaSeguimiento agendarVisita(Long idUsuarioInstructor, Long idEtapa, LocalDate fecha,
-                                            String tipoEtiqueta, String modalidadEtiqueta, String novedad) {
+                                            String modalidadEtiqueta, String novedad) {
         var instructor = instructorSeguimientoRepository.findByUsuarioIdUsuario(idUsuarioInstructor)
                 .orElseThrow(() -> new IllegalStateException("Tu perfil de Instructor de Seguimiento no está configurado."));
 
@@ -133,25 +144,87 @@ public class VisitaSeguimientoService {
         Usuario usuarioInstructor = usuarioRepository.findById(idUsuarioInstructor)
                 .orElseThrow(() -> new IllegalStateException("Usuario del instructor no encontrado."));
 
+        boolean esLaPrimeraVisita = !visitaSeguimientoRepository.existsByEtapaProductivaIdEtapa(idEtapa);
+        ModalidadVisita modalidad = mapearModalidad(modalidadEtiqueta);
+
         VisitaSeguimiento visita = visitaSeguimientoRepository.save(VisitaSeguimiento.builder()
                 .etapaProductiva(etapa)
                 .instructor(usuarioInstructor)
                 .fechaVisita(fecha)
-                .tipoVisita(mapearTipo(tipoEtiqueta))
-                .modalidad(mapearModalidad(modalidadEtiqueta))
+                .tipoVisita(TipoVisita.SEGUIMIENTO)
+                .modalidad(modalidad)
                 .estadoVisita(EstadoVisita.PLANEADA)
                 .observaciones(recortarNovedad(novedad))
                 .build());
 
         Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
-        String mensaje = "📅 Tu Instructor de Seguimiento agendó tu visita " + etiquetaLegible(visita.getTipoVisita())
-                + " para el " + fecha.format(FORMATO_FECHA) + ".";
+        String mensaje = "📅 Tu Instructor de Seguimiento agendó tu visita de seguimiento para el " + fecha.format(FORMATO_FECHA) + ".";
         if (novedad != null && !novedad.isBlank()) {
             mensaje += " Novedad: " + novedad.trim();
         }
         notificacionService.crear(aprendiz, mensaje);
 
+        if (esLaPrimeraVisita) {
+            autoAgendarVisitasRestantes(etapa, usuarioInstructor, aprendiz, fecha, modalidad);
+        }
+
         return visita;
+    }
+
+    /**
+     * 🤖 Agenda automáticamente las 2 visitas restantes (de las 3 reglamentarias) apenas se
+     * registra la primera, distribuyéndolas en tercios sobre el tiempo que queda hasta el fin
+     * de la Etapa Productiva: la 2ª al primer tercio del tiempo restante y la 3ª al segundo
+     * tercio, dejando siempre un margen antes de la fecha de fin. Si queda muy poco tiempo
+     * (menos de 4 días) no se auto-agendan: el instructor deberá programarlas manualmente.
+     */
+    private void autoAgendarVisitasRestantes(EtapaProductiva etapa, Usuario usuarioInstructor, Usuario aprendiz,
+                                              LocalDate fechaPrimeraVisita, ModalidadVisita modalidad) {
+        LocalDate fechaFin = etapa.getFechaFin();
+        long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(fechaPrimeraVisita, fechaFin);
+
+        if (diasRestantes < 4) {
+            notificacionService.crear(usuarioInstructor,
+                    "⚠️ Queda poco tiempo hasta el fin de la Etapa Productiva de " + aprendiz.getNombre() + " "
+                            + aprendiz.getApellido() + ": agenda tú mismo las 2 visitas de seguimiento restantes.");
+            return;
+        }
+
+        long tercio = diasRestantes / 3;
+        LocalDate fechaSegunda = fechaPrimeraVisita.plusDays(tercio);
+        LocalDate fechaTercera = fechaPrimeraVisita.plusDays(tercio * 2);
+        if (!fechaTercera.isBefore(fechaFin)) {
+            fechaTercera = fechaFin.minusDays(1);
+        }
+        if (!fechaSegunda.isBefore(fechaTercera)) {
+            fechaSegunda = fechaPrimeraVisita.plusDays(1);
+        }
+
+        visitaSeguimientoRepository.save(VisitaSeguimiento.builder()
+                .etapaProductiva(etapa)
+                .instructor(usuarioInstructor)
+                .fechaVisita(fechaSegunda)
+                .tipoVisita(TipoVisita.SEGUIMIENTO)
+                .modalidad(modalidad)
+                .estadoVisita(EstadoVisita.PLANEADA)
+                .observaciones("Visita 2 de " + TOTAL_VISITAS_SEGUIMIENTO + " — agendada automáticamente por KRONOS.")
+                .build());
+
+        visitaSeguimientoRepository.save(VisitaSeguimiento.builder()
+                .etapaProductiva(etapa)
+                .instructor(usuarioInstructor)
+                .fechaVisita(fechaTercera)
+                .tipoVisita(TipoVisita.SEGUIMIENTO)
+                .modalidad(modalidad)
+                .estadoVisita(EstadoVisita.PLANEADA)
+                .observaciones("Visita 3 de " + TOTAL_VISITAS_SEGUIMIENTO + " — agendada automáticamente por KRONOS.")
+                .build());
+
+        notificacionService.crear(aprendiz, "📅 KRONOS agendó automáticamente tus 2 visitas de seguimiento restantes: "
+                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".");
+        notificacionService.crear(usuarioInstructor, "📅 KRONOS agendó automáticamente las 2 visitas restantes de "
+                + aprendiz.getNombre() + " " + aprendiz.getApellido() + ": "
+                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".");
     }
 
     /**
@@ -330,25 +403,10 @@ public class VisitaSeguimientoService {
                 .build();
     }
 
-    // "Inicial"/"Parcial"/"Final" (lo que ve el usuario) ↔ TipoVisita (lo que ya existía en el esquema)
-    private TipoVisita mapearTipo(String etiqueta) {
-        if (etiqueta == null) {
-            throw new IllegalArgumentException("Debes elegir el tipo de visita.");
-        }
-        return switch (etiqueta.trim().toUpperCase(Locale.ROOT)) {
-            case "INICIAL" -> TipoVisita.CONCERTACION;
-            case "PARCIAL" -> TipoVisita.SEGUIMIENTO;
-            case "FINAL" -> TipoVisita.EVALUACION_FINAL;
-            default -> throw new IllegalArgumentException("Tipo de visita inválido.");
-        };
-    }
-
+    // Único tipo de visita existente: "Seguimiento". El método se mantiene para no romper
+    // los lugares que ya piden una etiqueta legible por TipoVisita (agenda, exportaciones).
     private String etiquetaLegible(TipoVisita tipo) {
-        return switch (tipo) {
-            case CONCERTACION -> "Inicial";
-            case SEGUIMIENTO -> "Parcial";
-            case EVALUACION_FINAL -> "Final";
-        };
+        return "Seguimiento";
     }
 
     // "Presencial"/"Virtual" (lo que elige el instructor) ↔ ModalidadVisita
@@ -372,19 +430,15 @@ public class VisitaSeguimientoService {
     }
 
     /**
-     * Mapeo tolerante de texto libre (Excel institucional) a TipoVisita: a diferencia de
-     * {@link #mapearTipo}, acepta variantes como "SEGUIMIENTO" o "EVALUACIÓN FINAL" en vez
-     * de exigir exactamente "INICIAL"/"PARCIAL"/"FINAL".
+     * Único tipo de visita existente: siempre "Seguimiento", sin importar lo que traiga la
+     * columna "tipo de visita" del Excel institucional (se conserva solo por compatibilidad
+     * con plantillas de importación antiguas que aún incluyen esa columna).
      */
     public TipoVisita mapearTipoFlexible(String texto) {
         if (texto == null || texto.isBlank()) {
             throw new IllegalArgumentException("El tipo de visita está vacío.");
         }
-        String t = texto.trim().toUpperCase(Locale.ROOT);
-        if (t.contains("FINAL")) return TipoVisita.EVALUACION_FINAL;
-        if (t.contains("SEGUIMIENTO") || t.contains("PARCIAL")) return TipoVisita.SEGUIMIENTO;
-        if (t.contains("CONCERT") || t.contains("INICIAL")) return TipoVisita.CONCERTACION;
-        throw new IllegalArgumentException("Tipo de visita no reconocido: \"" + texto + "\".");
+        return TipoVisita.SEGUIMIENTO;
     }
 
     /**

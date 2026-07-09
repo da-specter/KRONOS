@@ -27,4 +27,11 @@ public class SeccionFormato {
     protected void onPrePersist() {
         if (this.estado == null) this.estado = true;
     }
+
+    // 💼 La modalidad Vinculación Laboral tiene reglas propias en el flujo de Etapa Práctica
+    // (habilitación 3 meses más temprana, y el check de competencias no la bloquea).
+    @Transient
+    public boolean esVinculacionLaboral() {
+        return "VINCULACION LABORAL".equalsIgnoreCase(nombreSeccion);
+    }
 }

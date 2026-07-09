@@ -24,6 +24,27 @@
                 </button>
             </div>
 
+            <!-- 👤 Identidad de la sesión: nombre y rol del usuario logueado (se lee directo de la
+                 sesión para que aparezca en TODAS las vistas sin cambiar la firma del fragmento) -->
+            <div th:if="${session.usuarioSesion != null}"
+                 style="margin: 0 4px 18px 4px; padding: 12px 14px; border-radius: 14px;
+                        background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.18);
+                        display: flex; align-items: center; gap: 11px; backdrop-filter: blur(4px);">
+                <div style="width: 36px; height: 36px; border-radius: 50%;
+                            background: linear-gradient(135deg, #FFFFFF, #D9F2DF); color: var(--verde-sena, #057015);
+                            display: flex; align-items: center; justify-content: center; font-weight: 800;
+                            font-size: 13px; flex-shrink: 0; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);"
+                     th:text="${#strings.substring(session.usuarioSesion.nombre, 0, 1) + #strings.substring(session.usuarioSesion.apellido, 0, 1)}">DQ</div>
+                <div style="min-width: 0;">
+                    <p style="margin: 0; font-size: 12.5px; font-weight: 700; color: #FFFFFF;
+                              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                       th:text="${session.usuarioSesion.nombre + ' ' + session.usuarioSesion.apellido}">Nombre Apellido</p>
+                    <p style="margin: 4px 0 0 0; font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px;
+                              text-transform: uppercase; color: #A7E8B5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                       th:text="${session.usuarioSesion.rolesLegibles}">Rol</p>
+                </div>
+            </div>
+
             <nav class="sidebar-menu">
                 <a th:href="@{/index}" class="menu-item" th:classappend="${rutaActiva == '/index'} ? ' active' : ''">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -32,6 +53,19 @@
                     </svg>
                     <span>Inicio</span>
                 </a>
+
+                <!-- 🏷️ Separador "MÓDULOS": ordena visualmente el sidebar distinguiendo el
+                     Inicio fijo de las opciones propias de cada rol. Blanco neón, pequeño y
+                     discreto pero perceptible, con la línea desvaneciéndose hacia la derecha. -->
+                <div th:if="${!#lists.isEmpty(menuOpciones)}"
+                     style="display: flex; align-items: center; gap: 9px; margin: 20px 10px 8px 10px;">
+                    <span style="font-size: 10px; font-weight: 800; letter-spacing: 1.6px; color: #FFFFFF;
+                                 text-shadow: 0 0 6px rgba(255,255,255,0.85), 0 0 14px rgba(255,255,255,0.45);
+                                 white-space: nowrap;">MÓDULOS</span>
+                    <span style="flex: 1; height: 1px;
+                                 background: linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0));
+                                 box-shadow: 0 0 6px rgba(255,255,255,0.6);"></span>
+                </div>
 
                 <th:block th:each="opcion : ${menuOpciones}">
 
@@ -162,13 +196,6 @@
             <path d="M3 21h18"></path>
             <path d="M5 21V7l7-4 7 4v14"></path>
             <path d="M10 21v-4h4v4"></path>
-        </svg>
-
-        <!-- Certificación Aprendiz (Gestor de Etapa): birrete de graduación -->
-        <svg th:case="'Certificación Aprendiz'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
-            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-            <path d="M22 10v6"></path>
         </svg>
 
         <svg th:case="'Validación de Documentos'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

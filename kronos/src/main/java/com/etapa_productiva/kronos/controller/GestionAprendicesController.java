@@ -2,12 +2,17 @@ package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.AprendizGestionDto;
 import com.etapa_productiva.kronos.dto.LoginResponse;
+import com.etapa_productiva.kronos.entity.EstadoEtapa;
 import com.etapa_productiva.kronos.entity.FormatoReporte;
 import com.etapa_productiva.kronos.entity.Usuario;
+import com.etapa_productiva.kronos.repository.DepartamentoRepository;
+import com.etapa_productiva.kronos.repository.MunicipioRepository;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
+import com.etapa_productiva.kronos.repository.TipoContratoRepository;
 import com.etapa_productiva.kronos.repository.UsuarioRepository;
 import com.etapa_productiva.kronos.service.AuthService;
 import com.etapa_productiva.kronos.service.GestionAprendicesService;
+import com.etapa_productiva.kronos.service.KronosWorkflowService;
 import com.etapa_productiva.kronos.service.ReporteService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +56,18 @@ public class GestionAprendicesController {
     @Autowired
     private ReporteService reporteService;
 
+    @Autowired
+    private KronosWorkflowService workflowService;
+
+    @Autowired
+    private DepartamentoRepository departamentoRepository;
+
+    @Autowired
+    private MunicipioRepository municipioRepository;
+
+    @Autowired
+    private TipoContratoRepository tipoContratoRepository;
+
     @GetMapping("/gestor/aprendices")
     public String verAprendices(HttpSession session, Model model) {
         LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
@@ -59,9 +76,13 @@ public class GestionAprendicesController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
+        boolean autorizado = roles != null && (roles.contains("GESTOR_ETAPA") || roles.contains("REGISTRO"));
+        if (!autorizado) {
             return "redirect:/index";
         }
+
+        boolean esGestor = roles.contains("GESTOR_ETAPA");
+        boolean puedeEditarEtapa = roles.contains("REGISTRO");
 
         model.addAttribute("usuario", usuarioLogueado);
         model.addAttribute("notificaciones",
@@ -69,14 +90,98 @@ public class GestionAprendicesController {
 
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
-        model.addAttribute("aprendices", gestionAprendicesService.listarAprendices());
+        List<com.etapa_productiva.kronos.dto.AprendizGestionDto> aprendices = gestionAprendicesService.listarAprendices();
+        model.addAttribute("aprendices", aprendices);
+        // 📅 Filtro "por mes": meses en los que realmente hay una etapa registrada, más
+        // reciente primero (ver FechaUtil / columna "Registrada el").
+        model.addAttribute("mesesRegistro", aprendices.stream()
+                .map(com.etapa_productiva.kronos.dto.AprendizGestionDto::getMesRegistro)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted(java.util.Comparator.reverseOrder())
+                .map(clave -> new com.etapa_productiva.kronos.dto.MesOpcion(clave, com.etapa_productiva.kronos.util.FechaUtil.etiquetaMes(clave)))
+                .toList());
+        // El Gestor de Etapa solo tiene acceso de consulta/exportación; subir ARL y editar la
+        // Etapa Productiva son ahora permisos exclusivos del rol Registro.
+        model.addAttribute("soloLectura", !esGestor);
+        model.addAttribute("puedeEditarEtapa", puedeEditarEtapa);
+        model.addAttribute("puedeSubirArl", puedeEditarEtapa);
+
+        if (puedeEditarEtapa) {
+            model.addAttribute("departamentos", departamentoRepository.findAll().stream()
+                    .sorted((a, b) -> a.getNombreDepartamento().compareToIgnoreCase(b.getNombreDepartamento()))
+                    .toList());
+            model.addAttribute("municipios", municipioRepository.findAll().stream()
+                    .sorted((a, b) -> a.getNombreMunicipio().compareToIgnoreCase(b.getNombreMunicipio()))
+                    .toList());
+            model.addAttribute("tiposContrato", tipoContratoRepository.findByEstadoTrueOrderByNombreTipoContratoAsc());
+            model.addAttribute("estadosEtapa", EstadoEtapa.values());
+        }
 
         return "gestion-aprendices";
     }
 
     /**
+     * ✏️ El rol Registro corrige los datos de una Etapa Productiva ya registrada (empresa,
+     * contrato, fechas, jefe inmediato y estado), desde el lápiz de Gestión Aprendices.
+     */
+    @PostMapping("/gestor/aprendices/etapa/editar")
+    public String editarEtapa(
+            @RequestParam Long idEtapa,
+            @RequestParam String nit,
+            @RequestParam String nombreEmpresa,
+            @RequestParam String direccionEmpresa,
+            @RequestParam(required = false) String telefonoEmpresa,
+            @RequestParam(required = false) String correoEmpresa,
+            @RequestParam String nombreMunicipio,
+            @RequestParam String nombreDepartamento,
+            @RequestParam String nombreTipoContrato,
+            @RequestParam LocalDate fechaInicio,
+            @RequestParam LocalDate fechaFin,
+            @RequestParam String nombreJefeInmediato,
+            @RequestParam String correoJefeInmediato,
+            @RequestParam String telefonoJefeInmediato,
+            @RequestParam com.etapa_productiva.kronos.entity.EstadoEtapa estadoEtapa,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuarioLogueado == null) {
+            return "redirect:/auth/login";
+        }
+
+        List<String> roles = usuarioLogueado.getRoles();
+        if (roles == null || !roles.contains("REGISTRO")) {
+            redirectAttributes.addFlashAttribute("error", "Solo el rol Registro puede editar la Etapa Productiva.");
+            return "redirect:/gestor/aprendices";
+        }
+
+        try {
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNit(nit);
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombreEmpresa(nombreEmpresa, "El nombre de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoEmpresa, "El teléfono de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoEmpresa, "El correo de la empresa");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarNombre(nombreJefeInmediato, "El nombre del jefe inmediato");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarCorreo(correoJefeInmediato, "El correo del jefe inmediato");
+            com.etapa_productiva.kronos.util.ValidacionCampos.validarTelefono(telefonoJefeInmediato, "El teléfono del jefe inmediato");
+
+            workflowService.editarEtapaProductiva(
+                    idEtapa, nit, nombreEmpresa, direccionEmpresa, telefonoEmpresa, correoEmpresa,
+                    nombreMunicipio, nombreDepartamento, nombreTipoContrato,
+                    fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato,
+                    estadoEtapa);
+            redirectAttributes.addFlashAttribute("exito", "Etapa Productiva actualizada correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/gestor/aprendices";
+    }
+
+    /**
      * 📎 Sube (o reemplaza) el soporte de la ARL de un aprendiz desde el cuadro ARL de la tabla.
      * El archivo queda guardado como DocumentoRequisito de su Etapa Productiva.
+     * Permiso exclusivo del rol REGISTRO (antes era del Gestor de Etapa).
      * POST /gestor/aprendices/arl (multipart/form-data)
      */
     @PostMapping(value = "/gestor/aprendices/arl", consumes = "multipart/form-data")
@@ -92,7 +197,7 @@ public class GestionAprendicesController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
+        if (roles == null || !roles.contains("REGISTRO")) {
             return "redirect:/index";
         }
 

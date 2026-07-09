@@ -60,4 +60,25 @@ public class Ficha {
             this.estado = true;
         }
     }
+
+    // 📅 Regla institucional: sin importar cuánto dure la ficha (1 año, 2 años o más), la Etapa
+    // Práctica solo se habilita 6 meses antes de la fecha de finalización de la ficha.
+    public LocalDate getFechaHabilitacionEtapaPractica() {
+        return fechaFin.minusMonths(6);
+    }
+
+    public boolean isEtapaPracticaHabilitada() {
+        return !LocalDate.now().isBefore(getFechaHabilitacionEtapaPractica());
+    }
+
+    // 💼 Excepción exclusiva de la modalidad Vinculación Laboral: por el tiempo que toma
+    // formalizar un contrato laboral con la empresa, esta modalidad se habilita 3 meses antes
+    // que las demás (9 meses antes del fin de la ficha, en vez de 6).
+    public LocalDate getFechaHabilitacionVinculacionLaboral() {
+        return getFechaHabilitacionEtapaPractica().minusMonths(3);
+    }
+
+    public boolean isVinculacionLaboralHabilitada() {
+        return !LocalDate.now().isBefore(getFechaHabilitacionVinculacionLaboral());
+    }
 }

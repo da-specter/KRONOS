@@ -24,8 +24,12 @@ public class InstructorAprendizDto {
     private String ficha;
     private String programaFormacion;
     private String razonSocial;
+    private String jefeNombre;
+    private String jefeTelefono;
     private String modalidadContrato;
     private String etapaInicio;
     private String etapaFin;
     private String estadoEtapa;
+    private String asignadoDesde; // Momento en que el Gestor de Etapa le asignó este aprendiz
+    private String mesAsignacion; // Clave "yyyy-MM" de asignadoDesde, para el filtro "por mes"
 }

@@ -5,10 +5,12 @@ import com.etapa_productiva.kronos.dto.AprendizGestionDto;
 import com.etapa_productiva.kronos.entity.AprendizFicha;
 import com.etapa_productiva.kronos.entity.DocumentoRequisito;
 import com.etapa_productiva.kronos.entity.Empresa;
+import com.etapa_productiva.kronos.entity.EstadoEtapaAprendiz;
 import com.etapa_productiva.kronos.entity.EstadoValidacion;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.Ficha;
 import com.etapa_productiva.kronos.entity.PlantillaFormato;
+import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
 import com.etapa_productiva.kronos.entity.Usuario;
 import com.etapa_productiva.kronos.entity.VisibilidadDocumento;
 import com.etapa_productiva.kronos.repository.AprendizFichaRepository;
@@ -16,6 +18,7 @@ import com.etapa_productiva.kronos.repository.AsignacionInstructorEtapaRepositor
 import com.etapa_productiva.kronos.repository.DocumentoRequisitoRepository;
 import com.etapa_productiva.kronos.repository.EtapaProductivaRepository;
 import com.etapa_productiva.kronos.repository.PlantillaFormatoRepository;
+import com.etapa_productiva.kronos.repository.SolicitudRepository;
 
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
@@ -66,6 +69,7 @@ import java.util.Set;
 public class GestionAprendicesService {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FORMATO_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String SIN_DATO = "—";
     private static final String NOMBRE_PLANTILLA_ARL = "ARL";
     private static final Set<String> EXTENSIONES_ARL = Set.of(".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx");
@@ -76,7 +80,7 @@ public class GestionAprendicesService {
             "Tipo Documento", "Documento", "Apellidos", "Nombres", "Teléfono", "Correo Electrónico",
             "Nivel Formación", "Programa Formación", "Ficha", "Fecha Fin Ficha",
             "Razón Social", "Municipio Empresa", "Departamento Empresa", "Correo Empresa",
-            "Teléfono Empresa", "Modalidad Contrato", "Contrato Inicio", "Contrato Fin", "ARL"
+            "Teléfono Empresa", "Modalidad Contrato", "Contrato Inicio", "Contrato Fin", "ARL", "Registrada el", "Estado Etapa Práctica"
     };
 
     @Autowired
@@ -94,6 +98,9 @@ public class GestionAprendicesService {
     @Autowired
     private PlantillaFormatoRepository plantillaFormatoRepository;
 
+    @Autowired
+    private SolicitudRepository solicitudRepository;
+
     @Value("${app.upload.root-dir:uploads}")
     private String uploadRootDir;
 
@@ -101,7 +108,12 @@ public class GestionAprendicesService {
     public List<AprendizGestionDto> listarAprendices() {
         List<AprendizGestionDto> filas = new ArrayList<>();
 
-        for (AprendizFicha matricula : aprendizFichaRepository.findAll()) {
+        // 🕐 Orden de llegada: la matrícula (APRENDIZ_FICHA) con ID más alto es la más reciente,
+        // así el Gestor ve primero a los aprendices que acaban de ingresar al sistema.
+        List<AprendizFicha> matriculas = new ArrayList<>(aprendizFichaRepository.findAll());
+        matriculas.sort(Comparator.comparing(AprendizFicha::getIdAprendizFicha).reversed());
+
+        for (AprendizFicha matricula : matriculas) {
             Usuario usuario = matricula.getUsuario();
             Ficha ficha = matricula.getFicha();
             EtapaProductiva etapa = etapaProductivaRepository
@@ -119,6 +131,16 @@ public class GestionAprendicesService {
             String contratoFin = SIN_DATO;
             String arl = "Sin etapa";
             String arlRuta = null;
+            String registradoPor = SIN_DATO;
+            String fechaRegistro = SIN_DATO;
+            String mesRegistro = null;
+            String nitEmpresa = null;
+            String jefeNombre = null;
+            String jefeCorreo = null;
+            String jefeTelefono = null;
+            String estadoEtapaEtapa = null;
+            String contratoInicioIso = null;
+            String contratoFinIso = null;
 
             if (etapa != null) {
                 Empresa empresa = etapa.getEmpresa();
@@ -130,6 +152,14 @@ public class GestionAprendicesService {
                 modalidadContrato = etapa.getTipoContrato().getNombreTipoContrato();
                 contratoInicio = formatear(etapa.getFechaInicio());
                 contratoFin = formatear(etapa.getFechaFin());
+
+                nitEmpresa = empresa.getNit();
+                jefeNombre = etapa.getNombreJefeInmediato();
+                jefeCorreo = etapa.getCorreoJefeInmediato();
+                jefeTelefono = etapa.getTelefonoJefeInmediato();
+                estadoEtapaEtapa = etapa.getEstadoEtapa() != null ? etapa.getEstadoEtapa().name() : null;
+                contratoInicioIso = etapa.getFechaInicio() != null ? etapa.getFechaInicio().toString() : null;
+                contratoFinIso = etapa.getFechaFin() != null ? etapa.getFechaFin().toString() : null;
                 instructor = asignacionInstructorEtapaRepository
                         .findByEtapaProductivaIdEtapaAndEstadoAsignacionTrue(etapa.getIdEtapa())
                         .map(a -> a.getInstructor().getUsuario().getNombre() + " " + a.getInstructor().getUsuario().getApellido())
@@ -142,7 +172,18 @@ public class GestionAprendicesService {
                 } else {
                     arl = "Sin cargar";
                 }
+
+                if (etapa.getUsuarioRegistro() != null) {
+                    registradoPor = etapa.getUsuarioRegistro().getNombre() + " " + etapa.getUsuarioRegistro().getApellido();
+                }
+                if (etapa.getFechaCreacion() != null) {
+                    fechaRegistro = etapa.getFechaCreacion().format(FORMATO_FECHA_HORA);
+                    mesRegistro = com.etapa_productiva.kronos.util.FechaUtil.claveMes(etapa.getFechaCreacion());
+                }
             }
+
+            EstadoEtapaAprendiz estadoEtapa = calcularEstadoEtapa(etapa, ficha);
+            String modalidadEtapa = calcularModalidad(etapa, matricula);
 
             filas.add(AprendizGestionDto.builder()
                     .instructorSeguimiento(instructor)
@@ -166,13 +207,94 @@ public class GestionAprendicesService {
                     .contratoFin(contratoFin)
                     .arl(arl)
                     .arlRuta(arlRuta)
+                    .registradoPor(registradoPor)
+                    .fechaRegistro(fechaRegistro)
+                    .mesRegistro(mesRegistro)
+                    .nitEmpresa(nitEmpresa)
+                    .jefeNombre(jefeNombre)
+                    .jefeCorreo(jefeCorreo)
+                    .jefeTelefono(jefeTelefono)
+                    .estadoEtapaEtapa(estadoEtapaEtapa)
+                    .contratoInicioIso(contratoInicioIso)
+                    .contratoFinIso(contratoFinIso)
                     .idEtapa(etapa != null ? etapa.getIdEtapa() : null)
+                    .estadoEtapa(estadoEtapa)
+                    .estadoEtapaTexto(construirTextoEstado(estadoEtapa, modalidadEtapa))
                     .build());
         }
 
-        filas.sort(Comparator.comparing(AprendizGestionDto::getApellidos, String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(AprendizGestionDto::getNombres, String.CASE_INSENSITIVE_ORDER));
+        // Las filas ya vienen en orden de llegada (más reciente → más antiguo); no se reordena.
         return filas;
+    }
+
+    /**
+     * 🚦 Clasificación semáforo (formato SENA): si ya tiene Etapa Productiva, compara su
+     * FECHA_FIN contra hoy (terminada / a un mes o menos de terminar / en progreso). Si aún
+     * no la tiene, usa la fecha de habilitación de la ficha (6 meses antes de su fin) para
+     * saber si está a un mes o menos de poder iniciarla o si todavía le falta más tiempo.
+     */
+    private EstadoEtapaAprendiz calcularEstadoEtapa(EtapaProductiva etapa, Ficha ficha) {
+        LocalDate hoy = LocalDate.now();
+        if (etapa != null) {
+            LocalDate fin = etapa.getFechaFin();
+            if (hoy.isAfter(fin)) {
+                return EstadoEtapaAprendiz.TERMINO_CONTRATO;
+            }
+            return dentroDeUnMes(fin, hoy) ? EstadoEtapaAprendiz.EP_POR_TERMINAR : EstadoEtapaAprendiz.EN_EP;
+        }
+        LocalDate fechaHabilitacion = ficha.getFechaHabilitacionEtapaPractica();
+        return dentroDeUnMes(fechaHabilitacion, hoy) ? EstadoEtapaAprendiz.INICIA_EP_PRONTO : EstadoEtapaAprendiz.FALTA_MAS_DE_UN_MES;
+    }
+
+    private boolean dentroDeUnMes(LocalDate fechaObjetivo, LocalDate hoy) {
+        return !fechaObjetivo.isAfter(hoy.plusMonths(1));
+    }
+
+    /**
+     * 🏷️ El texto del semáforo depende de la modalidad de contrato que el aprendiz eligió:
+     * si ya tiene Etapa Productiva, la modalidad viene de su TipoContrato registrado; si aún
+     * no la tiene, se toma del SeccionFormato de su solicitud (la modalidad a la que aspira).
+     */
+    private String calcularModalidad(EtapaProductiva etapa, AprendizFicha matricula) {
+        if (etapa != null && etapa.getTipoContrato() != null) {
+            return normalizarModalidad(etapa.getTipoContrato().getNombreTipoContrato());
+        }
+        SolicitudEtapaPractica solicitud = solicitudRepository
+                .findByAprendizFichaIdAprendizFicha(matricula.getIdAprendizFicha())
+                .orElse(null);
+        if (solicitud != null && solicitud.getSeccionFormato() != null) {
+            return normalizarModalidad(solicitud.getSeccionFormato().getNombreSeccion());
+        }
+        return "Etapa Práctica";
+    }
+
+    // El catálogo de modalidades no tiene una capitalización consistente ("Pasantia",
+    // "vinculo formativo", "MONITORIA"...), así que se normaliza para verse profesional.
+    private String normalizarModalidad(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return "Etapa Práctica";
+        }
+        String[] palabras = nombre.trim().toLowerCase(Locale.ROOT).split("\\s+");
+        StringBuilder resultado = new StringBuilder();
+        for (String palabra : palabras) {
+            if (!resultado.isEmpty()) {
+                resultado.append(' ');
+            }
+            resultado.append(Character.toUpperCase(palabra.charAt(0))).append(palabra.substring(1));
+        }
+        return resultado.toString();
+    }
+
+    // Arma el texto final del semáforo, nombrando la modalidad real del aprendiz en vez de
+    // un genérico "contrato de aprendizaje" que no aplica igual a pasantías, monitorías, etc.
+    private String construirTextoEstado(EstadoEtapaAprendiz estado, String modalidad) {
+        return switch (estado) {
+            case TERMINO_CONTRATO -> "Terminó " + modalidad;
+            case EP_POR_TERMINAR -> "En " + modalidad + ": termina en ≤1 mes";
+            case EN_EP -> "En " + modalidad;
+            case INICIA_EP_PRONTO -> "Inicia " + modalidad + " en ≤1 mes";
+            case FALTA_MAS_DE_UN_MES -> "A +1 mes de iniciar " + modalidad;
+        };
     }
 
     /**
@@ -341,7 +463,7 @@ public class GestionAprendicesService {
                 a.getProgramaFormacion(), a.getFicha(), a.getFechaFinFicha(),
                 a.getRazonSocial(), a.getMunicipioEmpresa(), a.getDepartamentoEmpresa(),
                 a.getCorreoEmpresa(), a.getTelefonoEmpresa(), a.getModalidadContrato(),
-                a.getContratoInicio(), a.getContratoFin(), a.getArl()
+                a.getContratoInicio(), a.getContratoFin(), a.getArl(), a.getFechaRegistro(), a.getEstadoEtapaTexto()
         };
     }
 

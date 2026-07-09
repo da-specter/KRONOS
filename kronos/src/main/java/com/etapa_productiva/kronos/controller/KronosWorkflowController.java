@@ -102,19 +102,21 @@ public class KronosWorkflowController {
     }
 
     /**
-     * 🗂️ El Gestor de Etapa habilita el panel de descarga/resubida de plantillas del aprendiz.
-     * POST http://localhost:8080/api/workflow/gestor/habilitar-formatos/{idSolicitud}
+     * 👨‍💼 El Gestor de Etapa califica los documentos/plantillas firmadas y los envía a Registro.
+     * PUT http://localhost:8080/api/workflow/gestor/calificar-documentos/{idSolicitud}
      */
-    @PostMapping("/gestor/habilitar-formatos/{idSolicitud}")
-    public ResponseEntity<?> habilitarFormatosGestor(
+    @PutMapping("/gestor/calificar-documentos/{idSolicitud}")
+    public ResponseEntity<?> calificarDocumentos(
             @PathVariable Long idSolicitud,
+            @RequestParam boolean modalidadOk,
+            @RequestParam boolean formatosOk,
+            @RequestParam(required = false) String observacion,
             HttpSession session) {
         ResponseEntity<?> denegado = verificarAcceso(session, "GESTOR_ETAPA");
         if (denegado != null) return denegado;
 
         try {
-            LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
-            SolicitudEtapaPractica solicitud = workflowService.gestorHabilitarFormatos(idSolicitud, usuario.getIdUsuario());
+            SolicitudEtapaPractica solicitud = workflowService.gestorCalificarDocumentos(idSolicitud, modalidadOk, formatosOk, observacion);
             return ResponseEntity.ok(solicitud);
         } catch (Exception e) {
             return manejarExcepcion(e);
@@ -122,25 +124,42 @@ public class KronosWorkflowController {
     }
 
     /**
-     * 👨‍💼 MOMENTO 4: El Coordinador aprueba formatos, digita la info final y activa la Etapa Práctica
-     * POST http://localhost:8080/api/workflow/coordinador/aprobar-final/{idSolicitud}
+     * 👨‍💼 El rol REGISTRO valida los documentos que el Gestor de Etapa ya calificó.
+     * PUT http://localhost:8080/api/workflow/registro/validar-documentos/{idSolicitud}
      */
-    @PostMapping("/coordinador/aprobar-final/{idSolicitud}")
-    public ResponseEntity<?> habilitarYAsignarEtapa(
+    @PutMapping("/registro/validar-documentos/{idSolicitud}")
+    public ResponseEntity<?> validarDocumentosRegistro(
             @PathVariable Long idSolicitud,
-            @RequestParam boolean modalidadOk,
-            @RequestParam boolean formatosOk,
+            @RequestParam boolean aprobado,
             @RequestParam(required = false) String observacion,
-            @Valid @RequestBody FinalizarEtapaDTO datosFinales, // Usamos un DTO para agrupar los objetos relacionales complejos
             HttpSession session) {
-        ResponseEntity<?> denegado = verificarAcceso(session, "GESTOR_ETAPA");
+        ResponseEntity<?> denegado = verificarAcceso(session, "REGISTRO");
         if (denegado != null) return denegado;
 
         try {
-            EtapaProductiva etapaActiva = workflowService.coordinadorHabilitarYAsignarEtapa(
+            SolicitudEtapaPractica solicitud = workflowService.registroValidarDocumentos(idSolicitud, aprobado, observacion);
+            return ResponseEntity.ok(solicitud);
+        } catch (Exception e) {
+            return manejarExcepcion(e);
+        }
+    }
+
+    /**
+     * 🏢 MOMENTO FINAL: El rol REGISTRO digita la info de la empresa/contrato y activa la Etapa Práctica
+     * POST http://localhost:8080/api/workflow/registro/registrar-etapa/{idSolicitud}
+     */
+    @PostMapping("/registro/registrar-etapa/{idSolicitud}")
+    public ResponseEntity<?> registrarEtapa(
+            @PathVariable Long idSolicitud,
+            @Valid @RequestBody FinalizarEtapaDTO datosFinales, // Usamos un DTO para agrupar los objetos relacionales complejos
+            HttpSession session) {
+        ResponseEntity<?> denegado = verificarAcceso(session, "REGISTRO");
+        if (denegado != null) return denegado;
+
+        try {
+            LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
+            EtapaProductiva etapaActiva = workflowService.crearEtapaProductivaDesdeSolicitud(
                     idSolicitud,
-                    modalidadOk,
-                    formatosOk,
                     datosFinales.getIdAprendizFicha(),
                     datosFinales.getIdEmpresa(),
                     datosFinales.getIdTipoContrato(),
@@ -149,7 +168,7 @@ public class KronosWorkflowController {
                     datosFinales.getNombreJefeInmediato(),
                     datosFinales.getCorreoJefeInmediato(),
                     datosFinales.getTelefonoJefeInmediato(),
-                    observacion
+                    usuario.getIdUsuario()
             );
             return ResponseEntity.ok(etapaActiva);
         } catch (Exception e) {

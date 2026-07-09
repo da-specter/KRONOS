@@ -17,6 +17,16 @@ public interface VisitaSeguimientoRepository extends JpaRepository<VisitaSeguimi
     // 📅 Agenda del Aprendiz en su cronograma (visitas de su propia Etapa Productiva)
     List<VisitaSeguimiento> findByEtapaProductivaIdEtapaOrderByFechaVisitaAsc(Long idEtapa);
 
-    // ⏰ Job diario de alertas: visitas aún planeadas que caen exactamente en la fecha objetivo (hoy+3 o hoy+2)
-    List<VisitaSeguimiento> findByEstadoVisitaAndFechaVisita(EstadoVisita estadoVisita, LocalDate fechaVisita);
+    // ⏰ Job diario de alertas: visitas aún planeadas dentro de la ventana [hoy, hoy+N] que
+    // todavía no recibieron su alerta. Usar un rango (no la fecha exacta) permite que el job
+    // se ponga al día si no corrió el día puntual en que faltaban exactamente N días; la
+    // bandera evita reenviar la misma alerta si el job se ejecuta más de una vez.
+    List<VisitaSeguimiento> findByEstadoVisitaAndFechaVisitaBetweenAndAlertaInstructorEnviadaFalse(
+            EstadoVisita estadoVisita, LocalDate desde, LocalDate hasta);
+
+    List<VisitaSeguimiento> findByEstadoVisitaAndFechaVisitaBetweenAndAlertaAprendizEnviadaFalse(
+            EstadoVisita estadoVisita, LocalDate desde, LocalDate hasta);
+
+    // Para saber si una Etapa Productiva ya tiene al menos una visita agendada (primera visita)
+    boolean existsByEtapaProductivaIdEtapa(Long idEtapa);
 }

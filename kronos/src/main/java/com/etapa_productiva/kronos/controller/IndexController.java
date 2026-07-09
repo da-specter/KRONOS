@@ -8,6 +8,7 @@ import com.etapa_productiva.kronos.entity.EstadoEtapa;
 import com.etapa_productiva.kronos.entity.EstadoSolicitud;
 import com.etapa_productiva.kronos.entity.EstadoValidacion;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
+import com.etapa_productiva.kronos.entity.Ficha;
 import com.etapa_productiva.kronos.entity.InstructorSeguimiento;
 import com.etapa_productiva.kronos.entity.InstructorTecnico;
 import com.etapa_productiva.kronos.entity.ModalidadEtapa;
@@ -26,6 +27,7 @@ import com.etapa_productiva.kronos.repository.PlantillaFormatoRepository;
 import com.etapa_productiva.kronos.repository.SeccionFormatoRepository;
 import com.etapa_productiva.kronos.repository.SolicitudRepository;
 import com.etapa_productiva.kronos.repository.UsuarioRepository;
+import com.etapa_productiva.kronos.service.CoordinacionAcademicaService;
 import com.etapa_productiva.kronos.service.KronosWorkflowService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -109,6 +112,9 @@ public class IndexController {
     @Autowired
     private com.etapa_productiva.kronos.service.EvaluacionFormatosService evaluacionFormatosService;
 
+    @Autowired
+    private CoordinacionAcademicaService coordinacionAcademicaService;
+
     @GetMapping("/index")
     public String verIndex(HttpSession session, Model model) {
         // 1. Validar seguridad: Si no hay sesión activa, va para el login
@@ -130,8 +136,8 @@ public class IndexController {
         List<String> roles = usuarioLogueado.getRoles();
 
         // 3 y 4. Bandeja del Gestor de Etapa: absorbe lo que antes era exclusivo del Coordinador
-        //    (solicitudes pendientes) + los documentos por validar (el detalle de "Solicitudes
-        //    para Habilitar Plantillas" vive en /gestor/documentos, módulo Validación de Documentos)
+        //    (solicitudes pendientes) + los documentos por validar (el detalle de calificación
+        //    vive en /gestor/calificar-documentos, único módulo de revisión del Gestor)
         if (roles != null && roles.contains("GESTOR_ETAPA")) {
             model.addAttribute("solicitudesPendientes",
                     solicitudRepository.findByEstado(EstadoSolicitud.PENDIENTE_REVISION));
@@ -175,6 +181,15 @@ public class IndexController {
             model.addAttribute("dashTecnico", null);
         }
 
+        // 6.1 Panel de Coordinación Académica (desglose por ficha) y panel minimalista de
+        //     Registro (dona global): ambos comparten el mismo cálculo de aprendices en/sin
+        //     Etapa Productiva, solo cambia cómo lo pinta cada plantilla.
+        if (roles != null && (roles.contains("COORDINADOR_ACADEMICO") || roles.contains("REGISTRO"))) {
+            model.addAttribute("dashCoordinacion", coordinacionAcademicaService.calcularDashboard());
+        } else {
+            model.addAttribute("dashCoordinacion", null);
+        }
+
         // 7. Panel de Control del Administrador: vista general del sistema
         //    (aprendices activos, en etapa práctica y sin ella, fichas, instructores y servidores)
         if (roles != null && roles.contains("ADMINISTRADOR")) {
@@ -214,6 +229,28 @@ public class IndexController {
             model.addAttribute("solicitudActual", solicitudActual);
             model.addAttribute("seccionesFormato", seccionFormatoRepository.findByEstadoTrue());
 
+            // 📅 Antes de poder radicar su solicitud, la ficha del aprendiz debe haber llegado a
+            // su fecha de habilitación de Etapa Práctica (6 meses antes de que termine la ficha).
+            // Mientras esté en Etapa Lectiva se muestra un panel informativo en vez del formulario.
+            AprendizFicha aprendizFichaActual = aprendizFichaRepository.findByUsuarioIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
+            Ficha fichaActual = aprendizFichaActual != null ? aprendizFichaActual.getFicha() : null;
+            boolean etapaPracticaHabilitada = fichaActual != null && fichaActual.isEtapaPracticaHabilitada();
+            model.addAttribute("etapaPracticaHabilitada", etapaPracticaHabilitada);
+            // 💼 Vinculación Laboral se habilita 3 meses antes que las demás modalidades: mientras
+            // esté en esta ventana intermedia, el formulario aparece pero solo con esa opción.
+            model.addAttribute("vinculacionLaboralHabilitada",
+                    fichaActual != null && fichaActual.isVinculacionLaboralHabilitada());
+            if (solicitudActual == null && fichaActual != null && !etapaPracticaHabilitada) {
+                LocalDate fechaHabilitacion = fichaActual.getFechaHabilitacionEtapaPractica();
+                model.addAttribute("fechaHabilitacionEtapa", fechaHabilitacion);
+                model.addAttribute("progresoEtapaLectiva", calcularProgresoEtapaLectiva(fichaActual.getFechaInicio(), fechaHabilitacion));
+                model.addAttribute("tiempoRestanteEtapaLectiva", Period.between(LocalDate.now(), fechaHabilitacion));
+            } else {
+                model.addAttribute("fechaHabilitacionEtapa", null);
+                model.addAttribute("progresoEtapaLectiva", 0.0);
+                model.addAttribute("tiempoRestanteEtapaLectiva", null);
+            }
+
             // Timeline (Mes 1 a Mes 6) calculado a partir de las fechas reales de la Etapa Productiva.
             // Se adelanta la consulta porque el menú reactivo (Formatos/Subir Bitácoras) depende de su estado.
             EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario()).orElse(null);
@@ -228,7 +265,7 @@ public class IndexController {
             // y la línea de tiempo.
             boolean certificando = etapaCertificando(etapaActiva);
             model.addAttribute("mostrarCertificacion", certificando);
-            model.addAttribute("etapaCertificada", etapaActiva != null && etapaActiva.getEstadoEtapa() == EstadoEtapa.CERTIFICADO);
+            model.addAttribute("etapaCertificada", etapaActiva != null && etapaActiva.getEstadoEtapa() == EstadoEtapa.TERMINADO);
             model.addAttribute("infoCertificacion", certificando ? evaluacionFormatosService.calcularInfoCertificacion(etapaActiva) : null);
 
             // El módulo "Formatos" solo aparece en el sidebar una vez el Gestor de Etapa aprobó
@@ -252,21 +289,36 @@ public class IndexController {
                 model.addAttribute("documentosSubidos", Collections.emptyList());
             }
 
-            // Novedades radicadas por el aprendiz sobre su propia Etapa Productiva
-            model.addAttribute("novedades",
+            // Novedades del aprendiz: las que él radicó MÁS los mensajes que su Instructor de
+            // Seguimiento le envió (él es el destinatario), en un solo hilo cronológico.
+            java.util.List<com.etapa_productiva.kronos.entity.Novedad> novedadesAprendiz = new java.util.ArrayList<>(
                     novedadRepository.findByRemitenteIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
+            for (com.etapa_productiva.kronos.entity.Novedad recibida :
+                    novedadRepository.findByDestinatarioAcIdUsuarioOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario())) {
+                if (novedadesAprendiz.stream().noneMatch(n -> n.getIdNovedad().equals(recibida.getIdNovedad()))) {
+                    novedadesAprendiz.add(recibida);
+                }
+            }
+            novedadesAprendiz.sort(java.util.Comparator
+                    .comparing(com.etapa_productiva.kronos.entity.Novedad::getFechaCreacion).reversed());
+            model.addAttribute("novedades", novedadesAprendiz);
             model.addAttribute("tiposNovedad", TipoNovedad.values());
 
             // Para que el formulario de Novedades permita elegir el Instructor de Seguimiento asignado
-            // (si ya tiene uno). Una vez CERTIFICADO ese instructor pertenece al ciclo ya cerrado,
+            // (si ya tiene uno). Una vez TERMINADO ese instructor pertenece al ciclo ya cerrado,
             // así que no se ofrece hasta que el Gestor de Etapa registre una nueva Etapa Productiva.
-            model.addAttribute("instructorAsignado", (etapaActiva == null || etapaActiva.getEstadoEtapa() == EstadoEtapa.CERTIFICADO) ? null :
+            model.addAttribute("instructorAsignado", (etapaActiva == null || etapaActiva.getEstadoEtapa() == EstadoEtapa.TERMINADO) ? null :
                     asignacionInstructorEtapaRepository.findByEtapaProductivaIdEtapaAndEstadoAsignacionTrue(etapaActiva.getIdEtapa())
                             .map(a -> a.getInstructor().getUsuario())
                             .orElse(null));
         } else {
             model.addAttribute("solicitudActual", null);
             model.addAttribute("seccionesFormato", Collections.emptyList());
+            model.addAttribute("etapaPracticaHabilitada", false);
+            model.addAttribute("vinculacionLaboralHabilitada", false);
+            model.addAttribute("fechaHabilitacionEtapa", null);
+            model.addAttribute("progresoEtapaLectiva", 0.0);
+            model.addAttribute("tiempoRestanteEtapaLectiva", null);
             model.addAttribute("plantillasDescarga", Collections.emptyList());
             model.addAttribute("documentosSubidos", Collections.emptyList());
             model.addAttribute("etapaActiva", null);
@@ -328,8 +380,9 @@ public class IndexController {
 
     /**
      * 👨‍🎓 El Aprendiz sube sus formatos iniciales diligenciados una vez el Gestor de Etapa
-     * aprobó los primeros checks (fecha/competencias). Mueve la solicitud a FORMATOS_ENVIADOS,
-     * lo que la hace visible en la bandeja "Solicitudes para Habilitar Plantillas" del Gestor.
+     * aprobó los primeros checks (fecha/competencias). Mueve la solicitud a FORMATOS_ENVIADOS
+     * y habilita de inmediato el panel de plantillas, dejándola visible en "Calificar
+     * Documentos" del Gestor.
      * POST /aprendiz/subir-formatos
      */
     @PostMapping(value = "/aprendiz/subir-formatos", consumes = "multipart/form-data")
@@ -414,6 +467,7 @@ public class IndexController {
             @RequestParam TipoNovedad tipoNovedad,
             @RequestParam String descripcion,
             @RequestParam String destinatarioTipo,
+            @RequestParam(required = false) MultipartFile archivo,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -432,7 +486,7 @@ public class IndexController {
             EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario())
                     .orElseThrow(() -> new IllegalStateException("No tienes una Etapa Productiva activa."));
 
-            workflowService.reportarNovedad(usuarioLogueado.getIdUsuario(), etapaActiva.getIdEtapa(), tipoNovedad, descripcion, destinatarioTipo);
+            workflowService.reportarNovedad(usuarioLogueado.getIdUsuario(), etapaActiva.getIdEtapa(), tipoNovedad, descripcion, destinatarioTipo, archivo);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -601,6 +655,15 @@ public class IndexController {
         return transcurridos * 100.0 / totalDias;
     }
 
+    // Porcentaje de avance (0-100) de la Etapa Lectiva de la ficha, entre su FECHA_INICIO y la
+    // fecha en que se habilita la Etapa Práctica (6 meses antes del fin de la ficha).
+    private double calcularProgresoEtapaLectiva(LocalDate fechaInicioFicha, LocalDate fechaHabilitacion) {
+        long totalDias = Math.max(1, ChronoUnit.DAYS.between(fechaInicioFicha, fechaHabilitacion));
+        long transcurridos = ChronoUnit.DAYS.between(fechaInicioFicha, LocalDate.now());
+        transcurridos = Math.max(0, Math.min(transcurridos, totalDias));
+        return transcurridos * 100.0 / totalDias;
+    }
+
     // El módulo de Formatos se desbloquea para el Aprendiz una vez el Gestor de Etapa
     // aprobó el primer filtro (fecha/competencias): cualquier estado posterior a PENDIENTE_REVISION,
     // salvo que la solicitud haya sido rechazada.
@@ -610,12 +673,11 @@ public class IndexController {
                 && solicitud.getEstado() != EstadoSolicitud.RECHAZADO;
     }
 
-    // 🥳 El aprendiz completó su proceso: su Etapa Productiva ya está POR_CERTIFICAR (esperando
-    // al Gestor de Etapa) o CERTIFICADO (ya aprobada). En ambos casos su dashboard cambia por
-    // completo (ver /index) y desaparecen del sidebar "Subir Bitácoras" y "📁 Formatos".
+    // 🥳 El aprendiz completó su proceso: su Etapa Productiva ya está TERMINADA (el Instructor de
+    // Seguimiento aprobó el 100% de bitácoras + Formato 023). Su dashboard cambia por completo
+    // (ver /index) y desaparecen del sidebar "Subir Bitácoras" y "📁 Formatos".
     static boolean etapaCertificando(EtapaProductiva etapa) {
-        return etapa != null
-                && (etapa.getEstadoEtapa() == EstadoEtapa.POR_CERTIFICAR || etapa.getEstadoEtapa() == EstadoEtapa.CERTIFICADO);
+        return etapa != null && etapa.getEstadoEtapa() == EstadoEtapa.TERMINADO;
     }
 
     // Ítems del sidebar exclusivos del proceso de etapa práctica en curso: una vez el aprendiz

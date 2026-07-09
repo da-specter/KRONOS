@@ -95,11 +95,13 @@
                 </div>
             </div>
 
-            <!-- 📢 Novedades radicadas por el aprendiz sobre su Etapa Productiva -->
-            <div class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ')}">
+            <!-- 📢 Novedades radicadas por el aprendiz sobre su Etapa Productiva: desaparece una vez
+                 la Etapa Productiva quedó TERMINADA (el ciclo ya cerró, no hay más novedades que radicar
+                 sobre él hasta que exista una nueva Etapa Productiva). -->
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('APRENDIZ') and !etapaCertificada}">
                 <h3 class="panel-header-title">📢 Novedades</h3>
 
-                <form th:if="${etapaActiva != null}" th:action="@{/aprendiz/novedad}" method="post"
+                <form th:if="${etapaActiva != null}" th:action="@{/aprendiz/novedad}" method="post" enctype="multipart/form-data"
                       style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 18px;">
                     <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
                         <label for="tipoNovedad">Tipo</label>
@@ -126,6 +128,13 @@
                                    style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0;">
                         </div>
                     </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="archivoNovedad">Adjunto</label>
+                        <div class="input-container">
+                            <input type="file" id="archivoNovedad" name="archivo" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+                                   style="font-size: 12px; padding: 4px 0;">
+                        </div>
+                    </div>
                     <button type="submit" class="btn-login" style="margin-top: 0; padding: 8px 16px; font-size: 12px;">Radicar</button>
                 </form>
 
@@ -139,7 +148,19 @@
                             <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);" th:text="${novedad.tipoNovedad}">OTRO</span>
                             <span style="font-size: 10px; color: var(--verde-sena); font-weight: 700; background: rgba(5,112,21,0.1); padding: 3px 10px; border-radius: 20px;" th:text="${novedad.estadoFiltro}">SOLICITADO</span>
                         </div>
+                        <!-- 💬 Mensaje recibido: lo envió el Instructor de Seguimiento (el aprendiz es el destinatario) -->
+                        <p th:if="${novedad.remitente.idUsuario != usuario.idUsuario}"
+                           style="font-size: 11px; color: #2563EB; font-weight: 700; background: rgba(37,99,235,0.08); display: inline-block; padding: 3px 10px; border-radius: 20px; margin-top: 8px;"
+                           th:text="'💬 Mensaje de ' + ${novedad.remitente.nombre} + ' ' + ${novedad.remitente.apellido} + ' (tu Instructor)'">
+                            💬 Mensaje de Adriana Silva (tu Instructor)
+                        </p>
+                        <p th:if="${novedad.descripcion != null and !#strings.isEmpty(novedad.descripcion)}"
+                           style="font-size: 12.5px; color: var(--text-dark); margin-top: 8px;" th:text="${novedad.descripcion}">Descripción</p>
                         <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;" th:text="${#temporals.format(novedad.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</p>
+                        <a th:if="${novedad.urlSoporte != null}" th:href="${novedad.urlSoporte}" target="_blank"
+                           style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none; font-size: 11px; margin-top: 6px;">
+                            📎 Ver adjunto
+                        </a>
                     </div>
 
                     <p th:if="${#lists.isEmpty(novedades)}" style="font-size: 13px; color: var(--text-muted); font-weight: 500; text-align: center; padding: 10px 0;">
@@ -148,72 +169,53 @@
                 </div>
             </div>
 
-            <!-- 🥳 Tarjeta de éxito: reemplaza toda la operativa de etapa práctica una vez el aprendiz
-                 completa el 100% de sus requisitos (POR_CERTIFICAR) o es certificado por el Gestor de Etapa.
-                 Va primero para que, si además puede radicar una nueva etapa (CERTIFICADO), la bandeja
-                 de solicitud aparezca justo debajo. -->
+            <!-- 🥳 Tarjeta de éxito: reemplaza toda la operativa de etapa práctica en cuanto el
+                 Instructor de Seguimiento aprueba el 100% de bitácoras + el Formato 023 y la Etapa
+                 Productiva queda TERMINADA. KRONOS no certifica —eso lo hace Sofía Plus—, aquí solo
+                 se refleja que el ciclo dentro del sistema ya cerró. Va primero para que, como el
+                 aprendiz ya puede radicar una nueva solicitud, esa bandeja aparezca justo debajo. -->
             <div class="success-card" th:if="${usuario.roles.contains('APRENDIZ') and mostrarCertificacion}">
+                <span class="success-card-badge success-card-badge-gold">✅ ESTADO: ETAPA PRODUCTIVA TERMINADA</span>
+                <h2 th:text="'🥳 ¡Lo lograste, ' + ${usuario.nombre} + '! Tu Etapa Productiva terminó'">🥳 ¡Lo lograste! Tu Etapa Productiva terminó</h2>
+                <p class="success-lead">
+                    Respira hondo... siente el aire fresco. Tu Instructor de Seguimiento revisó y aprobó el 100% de
+                    tus bitácoras y tu Formato de Planeación (023), así que en KRONOS tu Etapa Productiva ya quedó
+                    <strong>terminada</strong>. Ojo: esto no es tu certificado oficial —ese lo expide el SENA a
+                    través de Sofía Plus—, pero aquí ya cumpliste todo lo que dependía de ti.
+                </p>
 
-                <!-- Variante 1: POR_CERTIFICAR — acaba de completar bitácoras + Formato 023 -->
-                <th:block th:unless="${etapaCertificada}">
-                    <span class="success-card-badge">⏳ ESTADO ACTUAL DEL PROCESO: POR CERTIFICAR</span>
-                    <h2 th:text="'🥳 ¡Misión Cumplida, ' + ${usuario.nombre} + '!'">🥳 ¡Misión Cumplida!</h2>
-                    <p class="success-lead">
-                        ¡Felicidades! Has cargado y aprobado el 100% de tus requisitos de etapa práctica en KRONOS.
-                        Tu expediente digital ha sido completado con éxito y ya se encuentra en el escritorio del
-                        Coordinador Académico para la firma de tu paz y salvo definitivo.
-                    </p>
-
-                    <div class="success-checklist">
-                        <div class="success-check-item">
-                            <span class="check-icon">✓</span>
-                            <span th:text="'Bitácoras Quincenales: ' + ${infoCertificacion.bitacorasAprobadas} + ' de ' + ${infoCertificacion.totalBitacoras} + ' Aprobadas.'">Bitácoras Quincenales: 12 de 12 Aprobadas.</span>
-                        </div>
-                        <div class="success-check-item">
-                            <span class="check-icon">✓</span>
-                            <span>Formato de Planeación (023): Aprobado.</span>
-                        </div>
-                        <div class="success-check-item">
-                            <span class="check-icon">✓</span>
-                            <span th:text="'Visitas de Seguimiento: ' + ${infoCertificacion.visitasRealizadas} + ' de ' + ${infoCertificacion.totalVisitas} + ' Realizadas.'">Visitas de Seguimiento: 3 de 3 Realizadas.</span>
-                        </div>
-                        <div class="success-check-item">
-                            <span class="check-icon">✓</span>
-                            <span>Documentación Inicial: ARL y Contrato/Pasantía validados.</span>
-                        </div>
+                <div class="success-checklist">
+                    <div class="success-check-item">
+                        <span class="check-icon">✓</span>
+                        <span th:text="'Bitácoras Quincenales: ' + ${infoCertificacion.bitacorasAprobadas} + ' de ' + ${infoCertificacion.totalBitacoras} + ' Aprobadas.'">Bitácoras Quincenales: 12 de 12 Aprobadas.</span>
                     </div>
-
-                    <div class="success-next-steps">
-                        <h4>📊 Próximos pasos en tu proceso de certificación</h4>
-                        <ol>
-                            <li><strong>Revisión del Coordinador:</strong> validará que no tengas pendientes administrativos con el centro (como devolución de libros de biblioteca o herramientas).</li>
-                            <li><strong>Generación de Paz y Salvo:</strong> se cargará tu paz y salvo firmado directamente aquí en KRONOS.</li>
-                            <li><strong>Notificación de Cierre:</strong> te llegará una alerta al correo cuando tu estado cambie a Certificado para que puedas proceder con los trámites de grado en Sofía Plus.</li>
-                        </ol>
+                    <div class="success-check-item">
+                        <span class="check-icon">✓</span>
+                        <span>Formato de Planeación (023): Aprobado.</span>
                     </div>
-                </th:block>
+                    <div class="success-check-item">
+                        <span class="check-icon">✓</span>
+                        <span th:text="'Visitas de Seguimiento: ' + ${infoCertificacion.visitasRealizadas} + ' de ' + ${infoCertificacion.totalVisitas} + ' Realizadas.'">Visitas de Seguimiento: 3 de 3 Realizadas.</span>
+                    </div>
+                    <div class="success-check-item">
+                        <span class="check-icon">✓</span>
+                        <span>Documentación Inicial: ARL y Contrato/Pasantía validados.</span>
+                    </div>
+                </div>
 
-                <!-- Variante 2: CERTIFICADO — el Gestor de Etapa ya dio la aprobación final -->
-                <th:block th:if="${etapaCertificada}">
-                    <span class="success-card-badge success-card-badge-gold">🏆 ESTADO: CERTIFICADA</span>
-                    <h2>🥳 ¡ALERTA DE MILAGRO: ESTÁS CERTIFICADO(A)!</h2>
-                    <p class="success-lead">
-                        Respira hondo... siente el aire fresco. Tu expediente digital ha sido aprobado y firmado
-                        por la Coordinación Académica. ¡Oficialmente has terminado tu etapa práctica!
-                    </p>
+                <ul class="success-done-list">
+                    <li>❌ No más bitácoras quincenales.</li>
+                    <li>❌ No más llamadas del instructor de seguimiento preguntando por el Formato 023.</li>
+                    <li>❌ No más alertas de KRONOS a la 1:00 a.m.</li>
+                </ul>
 
-                    <ul class="success-done-list">
-                        <li>❌ No más bitácoras quincenales.</li>
-                        <li>❌ No más llamadas del instructor de seguimiento preguntando por el Formato 023.</li>
-                        <li>❌ No más alertas de KRONOS a la 1:00 a.m.</li>
-                    </ul>
-
-                    <p class="success-closing">
-                        Tu paz y salvo final ya está cargado en el sistema. Ahora ve a presumir ese logro,
-                        descansa y prepárate para los trámites de grado en Sofía Plus (cruza los dedos para que
-                        la plataforma no esté caída hoy). ¡Muchos éxitos en tu vida profesional!
-                    </p>
-                </th:block>
+                <p class="success-closing">
+                    Fuiste puntual con las bitácoras (o casi, no juzgamos) y sobreviviste al Formato 023 como todo
+                    un profesional. Ahora ve a presumir ese logro, descansa y mantente pendiente de tu correo y de
+                    Sofía Plus: ahí te llegará tu certificado oficial cuando el SENA termine su propio proceso
+                    (cruza los dedos para que la plataforma no esté caída ese día). ¡Muchos éxitos en tu vida
+                    profesional! 🎓
+                </p>
             </div>
 
             <!-- Desaparece mientras el aprendiz está en POR_CERTIFICAR; reaparece si ya está CERTIFICADO
@@ -226,14 +228,16 @@
 
                 <div class="alert-danger" th:if="${error}" th:text="${error}" style="margin-top: 15px;"></div>
 
-                <form th:if="${solicitudActual == null}" th:action="@{/aprendiz/solicitar}" method="post" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                <form th:if="${solicitudActual == null and (etapaPracticaHabilitada or vinculacionLaboralHabilitada)}" th:action="@{/aprendiz/solicitar}" method="post" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
                     <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                         <label for="idSeccionFormato">Modalidad del contrato</label>
                         <div class="input-container">
                             <select id="idSeccionFormato" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
                                 <option value="">Selecciona la modalidad</option>
                                 <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
-                                <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
+                                <option th:each="seccion : ${seccionesFormato}"
+                                        th:if="${etapaPracticaHabilitada or seccion.esVinculacionLaboral()}"
+                                        th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                             </select>
                         </div>
                     </div>
@@ -251,6 +255,60 @@
 
                     <button type="submit" class="btn-login" style="margin-top: 0;">Radicar Solicitud</button>
                 </form>
+
+                <!-- 💼 Ventana intermedia exclusiva de Vinculación Laboral: ya pasó su fecha de
+                     habilitación (9 meses antes del fin de ficha) pero aún no la de las demás
+                     modalidades (6 meses antes) — el formulario de arriba solo ofrece esa opción. -->
+                <div th:if="${solicitudActual == null and !etapaPracticaHabilitada and vinculacionLaboralHabilitada}"
+                     style="margin-top: 14px; background: rgba(37, 99, 235, 0.08); border-left: 4px solid #2563EB; padding: 12px 16px; border-radius: 12px;">
+                    <p style="margin: 0; color: var(--text-dark); font-size: 13px; font-weight: 600; line-height: 1.5;">
+                        💼 Por ahora solo puedes radicar en modalidad <strong>Vinculación Laboral</strong>: se habilita 3 meses
+                        antes que las demás, por el tiempo que toma formalizar un contrato laboral con la empresa. Las
+                        demás modalidades se habilitarán el
+                        <strong th:text="${#temporals.format(fechaHabilitacionEtapa, 'dd/MM/yyyy')}">10/12/2026</strong>.
+                    </p>
+                </div>
+
+                <!-- 📚 Ficha aún en Etapa Lectiva: todavía no llega ni a los 9 meses de Vinculación
+                     Laboral ni a los 6 meses de las demás modalidades, así que en vez del formulario
+                     se muestra la fecha de habilitación, el avance de la etapa lectiva y un mensaje de ánimo. -->
+                <div th:if="${solicitudActual == null and !etapaPracticaHabilitada and !vinculacionLaboralHabilitada and fechaHabilitacionEtapa != null}"
+                     style="margin-top: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center;">
+                        <div style="background: linear-gradient(135deg, var(--verde-sena), #086b1a); color: #FFFFFF; border-radius: 18px; padding: 22px 28px; text-align: center; min-width: 200px; box-shadow: 0 8px 20px rgba(5, 112, 21, 0.25);">
+                            <div style="font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; font-weight: 700;">Tu etapa práctica inicia</div>
+                            <div style="font-size: 34px; font-weight: 800; margin-top: 6px; line-height: 1;" th:text="${#temporals.format(fechaHabilitacionEtapa, 'dd')}">10</div>
+                            <div style="font-size: 14px; font-weight: 700; text-transform: capitalize; margin-top: 2px;" th:text="${#temporals.format(fechaHabilitacionEtapa, 'MMMM yyyy')}">Diciembre 2026</div>
+                        </div>
+
+                        <div style="flex: 1; min-width: 260px;">
+                            <p style="font-weight: 700; color: var(--text-dark); font-size: 15px; margin: 0 0 6px;">
+                                📚 Tu ficha todavía está en Etapa Lectiva
+                            </p>
+                            <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 14px; line-height: 1.5;">
+                                Por norma, la Etapa Práctica de tu ficha se habilita 6 meses antes de su finalización.
+                                Aún faltan
+                                <strong style="color: var(--text-dark);"
+                                        th:text="${(tiempoRestanteEtapaLectiva.years > 0 ? tiempoRestanteEtapaLectiva.years + ' año(s), ' : '')
+                                                  + (tiempoRestanteEtapaLectiva.months > 0 ? tiempoRestanteEtapaLectiva.months + ' mes(es) y ' : '')
+                                                  + tiempoRestanteEtapaLectiva.days + ' día(s)'}">4 meses y 12 días</strong>
+                                para que puedas radicar tu solicitud de etapa práctica.
+                            </p>
+                            <div style="background: #EEF2F0; border-radius: 20px; height: 10px; overflow: hidden;">
+                                <div style="background: var(--verde-sena); height: 100%; border-radius: 20px;"
+                                     th:style="'width: ' + ${#numbers.formatDecimal(progresoEtapaLectiva, 1, 0)} + '%;'"></div>
+                            </div>
+                            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; font-weight: 600;"
+                               th:text="${#numbers.formatDecimal(progresoEtapaLectiva, 1, 0)} + '% de tu etapa lectiva completada'">45% de tu etapa lectiva completada</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px; background: rgba(5, 112, 21, 0.06); border-left: 4px solid var(--verde-sena); padding: 14px 18px; border-radius: 12px;">
+                        <p style="margin: 0; color: var(--text-dark); font-size: 13px; font-weight: 600; line-height: 1.5;">
+                            💪 ¡Vas muy bien! Aprovecha tu Etapa Lectiva para reforzar tus competencias — cada día te acerca más a tu Etapa Práctica.
+                        </p>
+                    </div>
+                </div>
 
                 <!-- No se muestra si la solicitud es la del ciclo anterior ya CERTIFICADO (sería
                      información obsoleta: modalidad/estado de una etapa que ya no existe). -->
@@ -380,31 +438,41 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="solicitud : ${solicitudesPendientes}" style="border-bottom: 1px solid var(--card-border); font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+                            <tr th:each="solicitud : ${solicitudesPendientes}"
+                                th:attr="data-vinculacion-laboral=${solicitud.seccionFormato.esVinculacionLaboral()}"
+                                style="border-bottom: 1px solid var(--card-border); font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
 
                                 <td style="padding: 16px;">
-                                    <div style="font-weight: 700; color: var(--text-dark);" th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</div>
-                                    <span style="font-size: 11px; color: var(--text-muted);" th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud}">Ficha 2555228 · Sol. #102</span>
+                                    <div style="font-weight: 700; color: var(--text-dark); margin-bottom: 6px;" th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</div>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
+                                        <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap;" th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha}">Ficha 2555228</span>
+                                        <span style="background: #E2E8F0; color: var(--text-dark); padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap;" th:text="${solicitud.aprendizFicha.usuario.tipoDocumento} + ' ' + ${solicitud.aprendizFicha.usuario.documento}">CC 1122334455</span>
+                                    </div>
+                                    <span style="font-size: 11px; color: var(--text-muted);" th:text="'Sol. #' + ${solicitud.idSolicitud} + ' · ' + ${solicitud.seccionFormato.nombreSeccion}">Sol. #102 · Vinculación Laboral</span>
                                 </td>
-                                
+
                                 <td style="padding: 16px;">
                                     <span style="background: #E2E8F0; color: var(--text-dark); padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase;" th:text="${solicitud.modalidadSolicitada}">
                                         REMOTO
                                     </span>
                                 </td>
-                                
+
                                 <td style="padding: 16px;">
                                     <label style="display: flex; align-items: center; cursor: pointer;">
                                         <input type="checkbox" th:id="'checkFecha_' + ${solicitud.idSolicitud}" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer;">
                                         <span style="margin-left: 8px; font-weight: 500; color: var(--text-muted);">Cumple fecha</span>
                                     </label>
                                 </td>
-                                
+
                                 <td style="padding: 16px;">
-                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <label th:unless="${solicitud.seccionFormato.esVinculacionLaboral()}" style="display: flex; align-items: center; cursor: pointer;">
                                         <input type="checkbox" th:id="'checkCompetencias_' + ${solicitud.idSolicitud}" style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer;">
                                         <span style="margin-left: 8px; font-weight: 500; color: var(--text-muted);">100% Aprobado</span>
                                     </label>
+                                    <div th:if="${solicitud.seccionFormato.esVinculacionLaboral()}" title="Este check no aplica para Vinculación Laboral">
+                                        <input type="checkbox" th:id="'checkCompetencias_' + ${solicitud.idSolicitud}" disabled style="width: 18px; height: 18px; display: none;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">No aplica (Vinculación Laboral)</span>
+                                    </div>
                                 </td>
 
                                 <td style="padding: 16px;">
@@ -490,23 +558,23 @@
 
                 <!-- 🔢 Tarjetas de números clave -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 20px;">
-                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--verde-sena);" th:text="${dashInstructor.totalAprendices}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En progreso</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #D97706;" th:text="${dashInstructor.enProgreso}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Aprobados</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #057015;" th:text="${dashInstructor.aprobados}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En suspensión</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #6B7280;" th:text="${dashInstructor.enSuspension}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Fichas · Empresas</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--text-dark);">
                             <span th:text="${dashInstructor.totalFichas}">0</span>
@@ -520,7 +588,7 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 24px;">
 
                     <!-- Dona: distribución por estado de etapa -->
-                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px;">
+                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0 0 16px 0; font-size: 13px; font-weight: 700; color: var(--text-dark);">Aprendices por estado de etapa</p>
                         <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap;">
                             <div th:style="'background: ' + ${dashInstructor.donutGradient} + '; width: 150px; height: 150px; border-radius: 50%; position: relative; flex-shrink: 0;'">
@@ -543,7 +611,7 @@
                     </div>
 
                     <!-- Barras: aprendices por ficha -->
-                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px;">
+                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0 0 16px 0; font-size: 13px; font-weight: 700; color: var(--text-dark);">Aprendices por ficha</p>
                         <div style="display: flex; flex-direction: column; gap: 12px;">
                             <div th:each="barra : ${dashInstructor.aprendicesPorFicha}">
@@ -575,23 +643,23 @@
 
                 <!-- 🔢 Números clave -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px;">
-                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--verde-sena);" th:text="${dashTecnico.totalAprendices}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En etapa práctica</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #057015;" th:text="${dashTecnico.enEtapa}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Sin etapa práctica</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #D97706;" th:text="${dashTecnico.sinEtapa}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Por certificar</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #2563EB;" th:text="${dashTecnico.porCertificar}">0</p>
                     </div>
-                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Certificados · Fichas</p>
                         <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--text-dark);">
                             <span th:text="${dashTecnico.certificados}">0</span>
@@ -628,7 +696,7 @@
                     </div>
 
                     <!-- Barras: aprendices por ficha -->
-                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px;">
+                    <div style="border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
                         <p style="margin: 0 0 16px 0; font-size: 13px; font-weight: 700; color: var(--text-dark);">Aprendices por ficha</p>
                         <div style="display: flex; flex-direction: column; gap: 12px;">
                             <div th:each="barra : ${dashTecnico.aprendicesPorFicha}">
@@ -671,6 +739,100 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 🎓 Panel de Coordinación Académica: aprendices por ficha, en/sin Etapa Productiva -->
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('COORDINADOR_ACADEMICO') and dashCoordinacion != null}" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
+                    <span>🎓 Aprendices por Ficha</span>
+                    <a th:href="@{/coordinacion/solicitudes}"
+                       style="margin-left: auto; background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 700; text-decoration: none;">
+                        Ver solicitudes →
+                    </a>
+                </h3>
+
+                <!-- 🔢 Números clave -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px;">
+                    <div style="background: linear-gradient(135deg, rgba(5,112,21,0.10), rgba(5,112,21,0.02)); border: 1px solid rgba(5,112,21,0.15); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Total aprendices</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--verde-sena);" th:text="${dashCoordinacion.totalAprendices}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">En Etapa Productiva</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #057015;" th:text="${dashCoordinacion.totalEnEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Sin Etapa Productiva</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: #D97706;" th:text="${dashCoordinacion.totalSinEtapa}">0</p>
+                    </div>
+                    <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);">
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Fichas</p>
+                        <p style="margin: 4px 0 0 0; font-size: 30px; font-weight: 800; color: var(--text-dark);" th:text="${dashCoordinacion.totalFichas}">0</p>
+                    </div>
+                </div>
+
+                <!-- 📊 Una barra animada por ficha: verde = en Etapa Productiva, ámbar = aún no -->
+                <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 28px;">
+                    <div th:each="ficha : ${dashCoordinacion.fichas}">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                            <span style="font-weight: 700; color: var(--text-dark);" th:text="'Ficha ' + ${ficha.numeroFicha}">Ficha 2555228</span>
+                            <span style="color: var(--text-muted); font-size: 12px;" th:text="${ficha.programa}">ADSO</span>
+                            <span style="color: var(--text-muted); font-size: 12px;">
+                                <span style="color: #057015; font-weight: 700;" th:text="${ficha.enEtapa}">0</span> en etapa ·
+                                <span style="color: #D97706; font-weight: 700;" th:text="${ficha.sinEtapa}">0</span> sin etapa ·
+                                <span th:text="${ficha.total}">0</span> total
+                            </span>
+                        </div>
+                        <div class="coord-bar-track">
+                            <div class="coord-bar-fill coord-bar-en-etapa" th:attr="data-progreso=${ficha.porcentajeEnEtapa}"></div>
+                            <div class="coord-bar-fill coord-bar-sin-etapa" th:attr="data-progreso=${ficha.porcentajeSinEtapa}"></div>
+                        </div>
+                    </div>
+
+                    <p th:if="${#lists.isEmpty(dashCoordinacion.fichas)}" style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+                        Aún no hay aprendices matriculados en ninguna ficha.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 🌱 Panel minimalista de Registro: dona global de aprendices en Etapa Productiva vs. sin ella -->
+            <div class="dashboard-panel coord-fade-in" th:if="${usuario.roles.contains('REGISTRO') and dashCoordinacion != null}" style="grid-column: 1 / -1; margin-top: 10px;">
+                <h3 class="panel-header-title" style="margin: 0 0 4px 0;">🌱 Aprendices en Etapa Productiva</h3>
+                <p style="margin: 0 0 20px 0; font-size: 12px; color: var(--text-muted);">Foto rápida de todo el sistema, sin entrar en el detalle por ficha.</p>
+
+                <div style="display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; padding: 10px 0 6px 0;">
+                    <div th:style="'background: ' + ${dashCoordinacion.donutGradientGlobal} + '; width: 170px; height: 170px; border-radius: 50%; position: relative; flex-shrink: 0; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);'">
+                        <div style="position: absolute; inset: 30px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <span style="font-size: 30px; font-weight: 800; color: var(--text-dark);" th:text="${dashCoordinacion.porcentajeEnEtapaGlobal} + '%'">0%</span>
+                            <span style="font-size: 11px; color: var(--text-muted); text-align: center;">en etapa<br>productiva</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #057015; flex-shrink: 0;"></span>
+                            <div>
+                                <p style="margin: 0; font-size: 22px; font-weight: 800; color: var(--text-dark); line-height: 1;" th:text="${dashCoordinacion.totalEnEtapa}">0</p>
+                                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">En Etapa Productiva</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #D97706; flex-shrink: 0;"></span>
+                            <div>
+                                <p style="margin: 0; font-size: 22px; font-weight: 800; color: var(--text-dark); line-height: 1;" th:text="${dashCoordinacion.totalSinEtapa}">0</p>
+                                <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">Sin Etapa Productiva</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; padding-top: 6px; border-top: 1px solid var(--card-border);">
+                            <div>
+                                <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                                    <span style="font-weight: 700; color: var(--text-dark);" th:text="${dashCoordinacion.totalAprendices}">0</span> aprendices ·
+                                    <span style="font-weight: 700; color: var(--text-dark);" th:text="${dashCoordinacion.totalFichas}">0</span> fichas
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -788,7 +950,7 @@
             </div>
             <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">Estimado(a) aprendiz:</p>
             <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                Te informamos que las solicitudes y el seguimiento de la modalidad de <strong>Contrato de Aprendizaje</strong>
+                Te informamos que las solicitudes y la gestión de la modalidad de <strong>Contrato de Aprendizaje</strong>
                 se manejan exclusivamente a través de la plataforma oficial <strong>SGVA</strong> y no desde el sistema KRONOS.
             </p>
             <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">

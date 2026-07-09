@@ -91,6 +91,7 @@ public class AdminUsuariosService {
                 .correoElectronico(correo.trim())
                 .telefono(telefono == null || telefono.isBlank() ? null : telefono.trim())
                 .password(passwordEncoder.encode(documento.trim())) // contraseña inicial = documento
+                .debeCambiarContrasena(true) // obliga a cambiarla en su primer ingreso
                 .build());
 
         asignarRol(usuario.getIdUsuario(), nombreRol, idAdmin, false);
@@ -155,6 +156,62 @@ public class AdminUsuariosService {
                 "Cuenta " + (activar ? "activada" : "desactivada") + ": " + usuario.getNombre() + " "
                         + usuario.getApellido() + " (" + usuario.getDocumento() + ")");
         return usuario;
+    }
+
+    // ══════════════════════════ Solicitudes de acceso (autorregistro) ══════════════════════════
+
+    /**
+     * 🕓 Cuentas creadas por autorregistro público (/auth/registro) que quedaron INACTIVAS y sin
+     * ningún rol, a la espera de que un Administrador las revise. Esa combinación exacta (inactiva
+     * + sin rol) nunca la produce ninguna otra vía de alta: crearUsuario/importarUsuarios siempre
+     * asignan un rol de una vez, así que sirve como marca confiable de "solicitud pendiente".
+     */
+    @Transactional(readOnly = true)
+    public List<UsuarioAdminDto> listarSolicitudesPendientes() {
+        return listarUsuarios().stream()
+                .filter(u -> Boolean.FALSE.equals(u.estado()) && (u.roles() == null || u.roles().isEmpty()))
+                .toList();
+    }
+
+    /** ✅ El Administrador aprueba una solicitud: le asigna el rol que corresponde y activa la cuenta. */
+    @Transactional
+    public void aprobarSolicitud(Long idUsuario, String nombreRol, Long idAdmin) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+        if (!esSolicitudPendiente(usuario)) {
+            throw new IllegalArgumentException("Esta solicitud ya fue procesada.");
+        }
+
+        asignarRol(idUsuario, nombreRol, idAdmin, false);
+        usuario.setEstado(true);
+        usuarioRepository.save(usuario);
+
+        auditoriaService.registrar(idAdmin, AccionAuditoria.UPDATE,
+                "Solicitud de acceso aprobada: " + usuario.getNombre() + " " + usuario.getApellido()
+                        + " (" + usuario.getDocumento() + ") con rol " + nombreRol);
+    }
+
+    /** ❌ El Administrador rechaza una solicitud: al no haber quedado ningún dato dependiente
+     * (sin rol, sin ficha, sin nada creado a su nombre), se puede eliminar por completo. */
+    @Transactional
+    public void rechazarSolicitud(Long idUsuario, Long idAdmin) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+        if (!esSolicitudPendiente(usuario)) {
+            throw new IllegalArgumentException("Esta solicitud ya fue procesada; no se puede rechazar así.");
+        }
+
+        String nombreCompleto = usuario.getNombre() + " " + usuario.getApellido();
+        String documento = usuario.getDocumento();
+        usuarioRepository.delete(usuario);
+
+        auditoriaService.registrar(idAdmin, AccionAuditoria.DELETE,
+                "Solicitud de acceso rechazada: " + nombreCompleto + " (" + documento + ")");
+    }
+
+    private boolean esSolicitudPendiente(Usuario usuario) {
+        return Boolean.FALSE.equals(usuario.getEstado())
+                && usuarioRolRepository.findByUsuarioIdUsuario(usuario.getIdUsuario()).isEmpty();
     }
 
     // ══════════════════════════ Carga masiva por rol ══════════════════════════
@@ -246,6 +303,7 @@ public class AdminUsuariosService {
                                 .correoElectronico(correo.trim())
                                 .telefono(leer(row, colTelefono, fmt).isBlank() ? null : recortar(leer(row, colTelefono, fmt), 11))
                                 .password(passwordEncoder.encode(documento.trim()))
+                                .debeCambiarContrasena(true) // obliga a cambiarla en su primer ingreso
                                 .build());
                         creados++;
                     }

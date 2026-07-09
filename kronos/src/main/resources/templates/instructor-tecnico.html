@@ -101,6 +101,14 @@
                                 style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             📤 Importar Excel
                         </button>
+                        <button type="button" onclick="abrirModalExportar('excel')"
+                                style="display: flex; align-items: center; gap: 8px; background: #0E7C86; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📊 Exportar Excel
+                        </button>
+                        <button type="button" onclick="abrirModalExportar('pdf')"
+                                style="display: flex; align-items: center; gap: 8px; background: #B91C1C; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📄 Exportar PDF
+                        </button>
                     </div>
                 </div>
 
@@ -112,7 +120,7 @@
                 <!-- 🔎 Buscador multi-criterio -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 20px;">
                     <input type="text" id="filtroTexto" onkeyup="filtrarAprendices()"
-                           placeholder="🔎 Nombre, apellido o documento..."
+                           placeholder="🔎 Nombre, apellido, documento o ficha..."
                            style="padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); grid-column: span 2; min-width: 0;">
                     <select id="filtroTipoDoc" onchange="filtrarAprendices()"
                             style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
@@ -137,10 +145,11 @@
                     </button>
                 </div>
 
-                <div style="overflow-x: auto; margin-top: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1500px;">
+                <!-- 📌 El encabezado queda fijo (sticky) y solo se desplazan los registros -->
+                <div style="overflow: auto; max-height: 62vh; margin-top: 20px;">
+                    <table class="tabla-sticky" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1500px;">
                         <thead>
-                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
+                            <tr style="color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap;">
                                 <th style="padding: 12px 14px;">Nombres</th>
                                 <th style="padding: 12px 14px;">Apellidos</th>
                                 <th style="padding: 12px 14px;">Tipo Doc.</th>
@@ -161,6 +170,7 @@
                                 th:data-nombre="${#strings.toLowerCase(a.nombres)}"
                                 th:data-apellido="${#strings.toLowerCase(a.apellidos)}"
                                 th:data-documento="${a.documento}"
+                                th:data-ficha="${a.ficha}"
                                 th:data-tipodoc="${a.tipoDocumento}"
                                 th:data-contrato="${a.modalidadContrato}"
                                 th:data-modalidad="${a.modalidad}">
@@ -275,10 +285,107 @@
         </div>
     </div>
 
+    <!-- 🔐 Modal de re-autenticación previa a la exportación -->
+    <div id="modalExportar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">🔐 Confirma tu identidad</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                Por seguridad, ingresa tu contraseña para descargar el listado de tus aprendices en
+                <strong id="formatoElegidoTexto">Excel</strong>.
+            </p>
+
+            <input type="password" id="contrasenaExportar" placeholder="Contraseña" autocomplete="current-password"
+                   onkeydown="if (event.key === 'Enter') confirmarExportacion()"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; outline-color: var(--verde-sena); box-sizing: border-box;">
+
+            <p id="errorExportar" style="display: none; margin: 10px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModal('modalExportar')"
+                        style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarExportar" onclick="confirmarExportacion()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                    Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script th:src="@{/js/workflow.js}"></script>
     <script>
         function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // 📥 Exportación con re-autenticación (mismo patrón que Gestión Aprendices)
+        let formatoExportar = 'excel';
+
+        function abrirModalExportar(formato) {
+            formatoExportar = formato;
+            document.getElementById('formatoElegidoTexto').textContent = formato === 'pdf' ? 'PDF' : 'Excel';
+            document.getElementById('contrasenaExportar').value = '';
+            document.getElementById('errorExportar').style.display = 'none';
+            abrirModal('modalExportar');
+            document.getElementById('contrasenaExportar').focus();
+        }
+
+        function confirmarExportacion() {
+            const contrasena = document.getElementById('contrasenaExportar').value;
+            const error = document.getElementById('errorExportar');
+            const boton = document.getElementById('btnConfirmarExportar');
+
+            if (!contrasena) {
+                error.textContent = 'Debes ingresar tu contraseña para continuar.';
+                error.style.display = 'block';
+                return;
+            }
+
+            const datos = new URLSearchParams();
+            datos.append('formato', formatoExportar);
+            datos.append('contrasena', contrasena);
+
+            boton.disabled = true;
+            boton.textContent = 'Generando...';
+            error.style.display = 'none';
+
+            fetch('/instructor/tecnico/exportar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: datos.toString()
+            })
+            .then(async function (respuesta) {
+                if (!respuesta.ok) {
+                    let mensaje = 'No fue posible generar el archivo.';
+                    try {
+                        const cuerpo = await respuesta.json();
+                        if (cuerpo && cuerpo.mensaje) mensaje = cuerpo.mensaje;
+                    } catch (e) { /* respuesta sin cuerpo JSON */ }
+                    throw new Error(mensaje);
+                }
+                return respuesta.blob();
+            })
+            .then(function (blob) {
+                const extension = formatoExportar === 'pdf' ? 'pdf' : 'xlsx';
+                const hoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const enlace = document.createElement('a');
+                enlace.href = URL.createObjectURL(blob);
+                enlace.download = 'mis_aprendices_tecnico_' + hoy + '.' + extension;
+                document.body.appendChild(enlace);
+                enlace.click();
+                enlace.remove();
+                URL.revokeObjectURL(enlace.href);
+                cerrarModal('modalExportar');
+            })
+            .catch(function (e) {
+                error.textContent = e.message;
+                error.style.display = 'block';
+            })
+            .finally(function () {
+                boton.disabled = false;
+                boton.textContent = 'Descargar';
+            });
+        }
 
         // 🔎 Buscador multi-criterio: texto (nombre/apellido/documento) + tipo doc +
         // modalidad de contrato + modalidad (presencial/remoto/híbrido)
@@ -293,7 +400,7 @@
             filas.forEach(function (fila) {
                 const d = fila.dataset;
                 const coincideTexto = !texto
-                    || (d.nombre + ' ' + d.apellido + ' ' + d.documento).toLowerCase().includes(texto);
+                    || (d.nombre + ' ' + d.apellido + ' ' + d.documento + ' ' + d.ficha).toLowerCase().includes(texto);
                 const coincideTipo = !tipoDoc || d.tipodoc === tipoDoc;
                 const coincideContrato = !contrato || d.contrato === contrato;
                 const coincideModalidad = !modalidad || d.modalidad === modalidad;

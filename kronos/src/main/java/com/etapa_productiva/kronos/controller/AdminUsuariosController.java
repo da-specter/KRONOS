@@ -36,6 +36,7 @@ public class AdminUsuariosController {
 
         model.addAttribute("usuario", admin);
         model.addAttribute("usuarios", adminUsuariosService.listarUsuarios());
+        model.addAttribute("solicitudesPendientes", adminUsuariosService.listarSolicitudesPendientes());
         model.addAttribute("roles", rolRepository.findAll());
         model.addAttribute("tiposDocumento", TipoDocumento.values());
         return "admin-usuarios";
@@ -119,6 +120,37 @@ public class AdminUsuariosController {
             if (!resultado.errores().isEmpty()) {
                 redirect.addFlashAttribute("erroresImportacion", resultado.errores());
             }
+        } catch (Exception e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/usuarios";
+    }
+
+    // ══════════════════════════ SOLICITUDES DE ACCESO (AUTORREGISTRO) ══════════════════════════
+
+    @PostMapping("/usuarios/solicitudes/aprobar")
+    public String aprobarSolicitud(@RequestParam Long idUsuario,
+                                   @RequestParam String nombreRol,
+                                   HttpSession session, RedirectAttributes redirect) {
+        LoginResponse admin = AdminDatosMaestrosController.validarAdmin(session);
+        if (admin == null) return "redirect:/auth/login";
+        try {
+            adminUsuariosService.aprobarSolicitud(idUsuario, nombreRol, admin.getIdUsuario());
+            redirect.addFlashAttribute("exito", "Solicitud aprobada: la cuenta quedó activa con el rol " + nombreRol + ".");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/usuarios";
+    }
+
+    @PostMapping("/usuarios/solicitudes/rechazar")
+    public String rechazarSolicitud(@RequestParam Long idUsuario,
+                                    HttpSession session, RedirectAttributes redirect) {
+        LoginResponse admin = AdminDatosMaestrosController.validarAdmin(session);
+        if (admin == null) return "redirect:/auth/login";
+        try {
+            adminUsuariosService.rechazarSolicitud(idUsuario, admin.getIdUsuario());
+            redirect.addFlashAttribute("exito", "Solicitud rechazada y eliminada.");
         } catch (Exception e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }

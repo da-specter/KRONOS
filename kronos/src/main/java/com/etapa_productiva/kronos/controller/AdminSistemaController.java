@@ -5,6 +5,7 @@ import com.etapa_productiva.kronos.entity.AccionAuditoria;
 import com.etapa_productiva.kronos.repository.AuditoriaRepository;
 import com.etapa_productiva.kronos.repository.JobEjecucionRepository;
 import com.etapa_productiva.kronos.service.AuditoriaService;
+import com.etapa_productiva.kronos.service.BitacoraAlertaService;
 import com.etapa_productiva.kronos.service.ConfiguracionGlobalService;
 import com.etapa_productiva.kronos.service.VisitaAlertaService;
 
@@ -32,6 +33,7 @@ public class AdminSistemaController {
     @Autowired private ConfiguracionGlobalService configuracionGlobalService;
     @Autowired private AuditoriaService auditoriaService;
     @Autowired private VisitaAlertaService visitaAlertaService;
+    @Autowired private BitacoraAlertaService bitacoraAlertaService;
 
     // ══════════════════════════ MONITOREO DE JOBS ══════════════════════════
 
@@ -42,20 +44,21 @@ public class AdminSistemaController {
 
         model.addAttribute("usuario", admin);
         model.addAttribute("ejecuciones", jobEjecucionRepository.findTop100ByOrderByFechaInicioDesc());
-        model.addAttribute("nombreJob", VisitaAlertaService.NOMBRE_JOB);
+        model.addAttribute("nombreJob", "Alertas automáticas (visitas 1:00 a.m. · bitácoras 1:15 a.m.)");
         return "admin-jobs";
     }
 
-    /** ▶️ Dispara manualmente el job de alertas (sin esperar a la 1:00 a.m.) para verificarlo */
+    /** ▶️ Dispara manualmente los jobs de alertas (sin esperar a la 1:00 a.m.) para verificarlos */
     @PostMapping("/jobs/ejecutar")
     public String ejecutarJobAhora(HttpSession session, RedirectAttributes redirect) {
         LoginResponse admin = AdminDatosMaestrosController.validarAdmin(session);
         if (admin == null) return "redirect:/auth/login";
         try {
             visitaAlertaService.revisarAlertasVisitas();
+            bitacoraAlertaService.revisarBitacorasAtrasadas();
             auditoriaService.registrar(admin.getIdUsuario(), AccionAuditoria.ALERTA,
-                    "Job de alertas de visitas ejecutado manualmente desde Monitoreo de Jobs");
-            redirect.addFlashAttribute("exito", "Job ejecutado. Revisa la fila más reciente del historial.");
+                    "Jobs de alertas (visitas y bitácoras) ejecutados manualmente desde Monitoreo de Jobs");
+            redirect.addFlashAttribute("exito", "Jobs ejecutados. Revisa las filas más recientes del historial.");
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "El job falló: " + e.getMessage());
         }

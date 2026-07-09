@@ -108,9 +108,14 @@
                         <label for="idCronograma">Bitácora</label>
                         <div class="input-container">
                             <select id="idCronograma" name="idCronograma" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                                <!-- ⏳ Los cupos cuya fecha de apertura aún no llega se muestran bloqueados:
+                                     la bitácora no se puede radicar antes de tiempo (después de la fecha límite sí). -->
                                 <option th:each="cupo : ${cronogramaPendiente}"
                                         th:value="${cupo.idCronograma}"
-                                        th:text="'Bitácora N°' + ${cupo.numeroBitacora} + ' (vence: ' + ${cupo.fechaLimite} + ')'">
+                                        th:disabled="${cupo.fechaApertura.isAfter(hoy)}"
+                                        th:text="${cupo.fechaApertura.isAfter(hoy)}
+                                                 ? '🔒 Bitácora N°' + ${cupo.numeroBitacora} + ' (se habilita: ' + ${cupo.fechaApertura} + ')'
+                                                 : 'Bitácora N°' + ${cupo.numeroBitacora} + ' (vence: ' + ${cupo.fechaLimite} + ')'">
                                     Bitácora N°1 (vence: 2026-01-15)
                                 </option>
                             </select>

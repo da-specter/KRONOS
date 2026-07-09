@@ -74,7 +74,6 @@ public class InstructorVisitasController {
     public String agendarVisita(
             @RequestParam Long idEtapa,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            @RequestParam String tipoVisita,
             @RequestParam String modalidad,
             @RequestParam(required = false) String novedad,
             HttpSession session,
@@ -90,8 +89,9 @@ public class InstructorVisitasController {
         }
 
         try {
-            visitaSeguimientoService.agendarVisita(usuario.getIdUsuario(), idEtapa, fecha, tipoVisita, modalidad, novedad);
-            redirectAttributes.addFlashAttribute("exito", "Visita agendada correctamente. El aprendiz ya fue notificado.");
+            visitaSeguimientoService.agendarVisita(usuario.getIdUsuario(), idEtapa, fecha, modalidad, novedad);
+            redirectAttributes.addFlashAttribute("exito", "Visita agendada correctamente. El aprendiz ya fue notificado. "
+                    + "Si es la primera visita de este aprendiz, KRONOS ya agendó automáticamente las otras 2.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

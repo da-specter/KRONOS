@@ -2,8 +2,10 @@ package com.etapa_productiva.kronos.controller;
 
 import com.etapa_productiva.kronos.dto.LoginRequest;
 import com.etapa_productiva.kronos.dto.LoginResponse;
+import com.etapa_productiva.kronos.entity.TipoDocumento;
 import com.etapa_productiva.kronos.service.AuthService;
 import com.etapa_productiva.kronos.service.PasswordRecoveryService;
+import com.etapa_productiva.kronos.service.RegistroPublicoService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ public class AuthController {
 
     @Autowired
     private PasswordRecoveryService passwordRecoveryService;
+
+    @Autowired
+    private RegistroPublicoService registroPublicoService;
 
     @GetMapping("/login")
     public String verLogin(Model model) {
@@ -71,9 +76,129 @@ public class AuthController {
         return "redirect:/auth/login";
     }
 
+    /**
+     * 🔐 Cambio de contraseña obligatorio del primer ingreso (contraseña por defecto =
+     * documento). El interceptor CambioContrasenaInterceptor redirige aquí cualquier
+     * request mientras la bandera siga activa.
+     */
+    @GetMapping("/cambiar-contrasena-inicial")
+    public String verCambioContrasenaInicial(HttpSession session, Model model) {
+        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuarioLogueado == null) {
+            return "redirect:/auth/login";
+        }
+        if (!Boolean.TRUE.equals(usuarioLogueado.getDebeCambiarContrasena())) {
+            return "redirect:/index";
+        }
+        model.addAttribute("nombre", usuarioLogueado.getNombre());
+        return "cambiar-contrasena-inicial";
+    }
+
+    @PostMapping("/cambiar-contrasena-inicial")
+    public String procesarCambioContrasenaInicial(
+            @RequestParam String nuevaContrasena,
+            @RequestParam String confirmarContrasena,
+            HttpSession session,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuarioLogueado == null) {
+            return "redirect:/auth/login";
+        }
+        if (!Boolean.TRUE.equals(usuarioLogueado.getDebeCambiarContrasena())) {
+            return "redirect:/index";
+        }
+
+        model.addAttribute("nombre", usuarioLogueado.getNombre());
+
+        if (nuevaContrasena == null || nuevaContrasena.isBlank()) {
+            model.addAttribute("error", "Debes ingresar una nueva contraseña.");
+            return "cambiar-contrasena-inicial";
+        }
+        if (!nuevaContrasena.equals(confirmarContrasena)) {
+            model.addAttribute("error", "Las contraseñas no coinciden.");
+            return "cambiar-contrasena-inicial";
+        }
+
+        try {
+            authService.cambiarContrasenaInicial(usuarioLogueado.getIdUsuario(), nuevaContrasena);
+            session.invalidate();
+            redirectAttributes.addFlashAttribute("exito", "Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.");
+            return "redirect:/auth/login";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "cambiar-contrasena-inicial";
+        }
+    }
+
     @GetMapping("/recuperar")
     public String verRecuperar() {
         return "recuperar-contrasena";
+    }
+
+    /**
+     * 🆕 Autorregistro público: cubre a los aprendices o instructores que el Gestor/Admin no
+     * alcanzó a importar. El parámetro `tipo` (aprendiz|instructor) decide qué panel del
+     * formulario se muestra abierto (por defecto aprendiz).
+     */
+    @GetMapping("/registro")
+    public String verRegistro(@RequestParam(required = false, defaultValue = "aprendiz") String tipo, Model model) {
+        model.addAttribute("tiposDocumento", TipoDocumento.values());
+        model.addAttribute("tipoSeleccionado", tipo);
+        return "registro";
+    }
+
+    @PostMapping("/registro/aprendiz")
+    public String registrarAprendiz(
+            @RequestParam TipoDocumento tipoDocumento,
+            @RequestParam String documento,
+            @RequestParam String nombre,
+            @RequestParam String apellido,
+            @RequestParam String correo,
+            @RequestParam(required = false) String telefono,
+            @RequestParam String numeroFicha,
+            @RequestParam String contrasena,
+            @RequestParam String confirmarContrasena,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            registroPublicoService.registrarAprendiz(tipoDocumento, documento, nombre, apellido, correo,
+                    telefono, numeroFicha, contrasena, confirmarContrasena);
+            redirectAttributes.addFlashAttribute("exito",
+                    "¡Cuenta creada! Ya puedes iniciar sesión con tu correo y tu contraseña.");
+            return "redirect:/auth/login";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addAttribute("tipo", "aprendiz");
+            return "redirect:/auth/registro";
+        }
+    }
+
+    @PostMapping("/registro/instructor")
+    public String registrarInstructor(
+            @RequestParam TipoDocumento tipoDocumento,
+            @RequestParam String documento,
+            @RequestParam String nombre,
+            @RequestParam String apellido,
+            @RequestParam String correo,
+            @RequestParam(required = false) String telefono,
+            @RequestParam String contrasena,
+            @RequestParam String confirmarContrasena,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            registroPublicoService.registrarSolicitudInstructor(tipoDocumento, documento, nombre, apellido,
+                    correo, telefono, contrasena, confirmarContrasena);
+            redirectAttributes.addFlashAttribute("exito",
+                    "Tu solicitud fue enviada. Un Administrador revisará tu cuenta y te asignará tu rol; "
+                            + "podrás iniciar sesión en cuanto sea aprobada.");
+            return "redirect:/auth/login";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addAttribute("tipo", "instructor");
+            return "redirect:/auth/registro";
+        }
     }
 
     @PostMapping("/recuperar/enviar")

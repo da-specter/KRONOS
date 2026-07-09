@@ -31,5 +31,37 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                    "JOIN rol r ON r.id_rol = ur.id_rol " +
                    "WHERE r.nombre_rol = 'GESTOR_ETAPA' AND u.estado = 1", nativeQuery = true)
     List<Usuario> findAllGestoresEtapaActivos();
+
+    // Notifica a TODOS los usuarios del rol REGISTRO activos cuando el Gestor de Etapa califica
+    // y envía una solicitud a validación de documentos
+    @Query(value = "SELECT u.* FROM usuario u " +
+                   "JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario " +
+                   "JOIN rol r ON r.id_rol = ur.id_rol " +
+                   "WHERE r.nombre_rol = 'REGISTRO' AND u.estado = 1", nativeQuery = true)
+    List<Usuario> findAllRegistroActivos();
+
+    // Destinatario por defecto de una novedad informativa que envía el Gestor de Etapa
+    @Query(value = "SELECT u.* FROM usuario u " +
+                   "JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario " +
+                   "JOIN rol r ON r.id_rol = ur.id_rol " +
+                   "WHERE r.nombre_rol = 'REGISTRO' AND u.estado = 1 " +
+                   "FETCH FIRST 1 ROWS ONLY", nativeQuery = true)
+    Optional<Usuario> findPrimerRegistroActivo();
+
+    // Destinatario por defecto de un mensaje del chat que envía el Gestor de Etapa a Coordinación Académica
+    @Query(value = "SELECT u.* FROM usuario u " +
+                   "JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario " +
+                   "JOIN rol r ON r.id_rol = ur.id_rol " +
+                   "WHERE r.nombre_rol = 'COORDINADOR_ACADEMICO' AND u.estado = 1 " +
+                   "FETCH FIRST 1 ROWS ONLY", nativeQuery = true)
+    Optional<Usuario> findPrimerCoordinacionAcademicaActivo();
+
+    // Notifica a TODOS los usuarios del rol COORDINADOR_ACADEMICO activos cuando el Gestor de Etapa
+    // les escribe en el chat de Novedades
+    @Query(value = "SELECT u.* FROM usuario u " +
+                   "JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario " +
+                   "JOIN rol r ON r.id_rol = ur.id_rol " +
+                   "WHERE r.nombre_rol = 'COORDINADOR_ACADEMICO' AND u.estado = 1", nativeQuery = true)
+    List<Usuario> findAllCoordinacionAcademicaActivos();
 }
 

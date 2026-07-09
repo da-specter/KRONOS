@@ -44,6 +44,9 @@ public class JobEjecucion {
     @Column(name = "CORREOS_ENVIADOS", columnDefinition = "NUMBER(10,0)", nullable = false)
     private Integer correosEnviados;
 
+    @Column(name = "ALERTAS_PRIMERA_VISITA", columnDefinition = "NUMBER(10,0) DEFAULT 0", nullable = false)
+    private Integer alertasPrimeraVisita;
+
     // Resumen legible de la corrida o el mensaje de error si el job falló
     @Column(name = "DETALLE", columnDefinition = "VARCHAR2(500)")
     private String detalle;
@@ -55,5 +58,6 @@ public class JobEjecucion {
         if (this.alertasInstructores == null) this.alertasInstructores = 0;
         if (this.alertasAprendices == null) this.alertasAprendices = 0;
         if (this.correosEnviados == null) this.correosEnviados = 0;
+        if (this.alertasPrimeraVisita == null) this.alertasPrimeraVisita = 0;
     }
 }
