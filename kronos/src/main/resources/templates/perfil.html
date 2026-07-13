@@ -48,7 +48,7 @@
                     <button type="submit" class="btn-login" style="margin-top:0; width:auto; padding: 8px 18px; font-size: 13px;">Cambiar Foto</button>
                 </form>
 
-                <form th:action="@{/perfil/editar}" method="post">
+                <form th:action="@{/perfil/editar}" method="post" id="formPerfil">
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">
                         <div class="form-group">
                             <label>Nombre</label>
@@ -65,13 +65,13 @@
                         <div class="form-group">
                             <label>Correo Electrónico</label>
                             <div class="input-container">
-                                <input type="email" name="correoElectronico" th:value="${perfil.correoElectronico}" maxlength="150" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: usuario@sena.edu.co).">
+                                <input type="email" id="correoElectronico" name="correoElectronico" th:value="${perfil.correoElectronico}" maxlength="150" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: usuario@sena.edu.co).">
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Teléfono</label>
                             <div class="input-container">
-                                <input type="text" name="telefono" th:value="${perfil.telefono}" maxlength="11" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números.">
+                                <input type="text" id="telefono" name="telefono" th:value="${perfil.telefono}" maxlength="11" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números.">
                             </div>
                         </div>
                     </div>
@@ -79,17 +79,42 @@
                     <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--card-border);">
                         <p style="font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:14px;">Cambiar Contraseña <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></p>
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">
-                            <div class="form-group">
+                            <div class="form-group" style="margin-bottom: 0;">
                                 <label>Contraseña Actual</label>
                                 <div class="input-container">
-                                    <input type="password" name="contrasenaActual" autocomplete="current-password">
+                                    <input type="password" id="contrasenaActual" name="contrasenaActual" autocomplete="current-password">
                                 </div>
+                                <p id="hintActual" style="display:none; font-size: 11.5px; color: #DC2626; font-weight: 600; margin: 6px 0 0;">
+                                    Debes ingresar tu contraseña actual para poder cambiarla.
+                                </p>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="margin-bottom: 0;">
                                 <label>Contraseña Nueva</label>
                                 <div class="input-container">
-                                    <input type="password" name="contrasenaNueva" autocomplete="new-password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d.*\d)(?=.*[!@#$%]).*" title="Debe tener al menos una mayúscula, una minúscula, dos números y un carácter especial (! @ # $ %).">
+                                    <input type="password" id="contrasenaNueva" name="contrasenaNueva" autocomplete="new-password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d.*\d)(?=.*[!@#$%]).*" title="Debe tener al menos una mayúscula, una minúscula, dos números y un carácter especial (! @ # $ %).">
                                 </div>
+                                <!-- ✅ Checklist en vivo de la política de contraseña -->
+                                <ul style="list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:3px;">
+                                    <li style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+                                        <span id="reglaMay" style="width:12px; color:#94A3B8; font-weight:700;">○</span> Una letra mayúscula
+                                    </li>
+                                    <li style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+                                        <span id="reglaMin" style="width:12px; color:#94A3B8; font-weight:700;">○</span> Una letra minúscula
+                                    </li>
+                                    <li style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+                                        <span id="reglaNum" style="width:12px; color:#94A3B8; font-weight:700;">○</span> Dos números
+                                    </li>
+                                    <li style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+                                        <span id="reglaEsp" style="width:12px; color:#94A3B8; font-weight:700;">○</span> Un carácter especial (! @ # $ %)
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Confirmar Contraseña Nueva</label>
+                                <div class="input-container">
+                                    <input type="password" id="contrasenaConfirmar" name="contrasenaConfirmar" autocomplete="new-password" placeholder="Repite la contraseña nueva">
+                                </div>
+                                <p id="matchContrasena" style="display:none; font-size: 11.5px; font-weight: 600; margin: 6px 0 0;"></p>
                             </div>
                         </div>
                     </div>
@@ -102,5 +127,6 @@
     </main>
 
     <script th:src="@{/js/workflow.js}"></script>
+    <script th:src="@{/js/perfil-validacion.js}"></script>
 </body>
 </html>

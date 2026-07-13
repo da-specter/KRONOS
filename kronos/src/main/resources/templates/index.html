@@ -218,6 +218,62 @@
                 </p>
             </div>
 
+            <!-- 🎓 Siguiente paso: certificación oficial ante el SENA (Sofía Plus). No es algo que
+                 KRONOS gestione —es la bandeja de Certificación la que evalúa y responde—, así que
+                 esta tarjeta solo aparece junto a la de éxito para guiar al aprendiz sobre qué enviar
+                 y a dónde, sin que tenga que ir a buscar ese correo institucional en otro lado. -->
+            <div class="cert-card" th:if="${usuario.roles.contains('APRENDIZ') and mostrarCertificacion}">
+                <span class="cert-card-badge">🎓 SIGUIENTE PASO: CERTIFICACIÓN ANTE EL SENA</span>
+                <h2>Tu proceso formativo fue evaluado en Sofía Plus y quedó en estado APROBADO</h2>
+                <p class="cert-lead">
+                    Apreciado aprendiz: para <strong>finalizar el proceso y obtener tu certificado</strong>, envía la
+                    siguiente documentación al correo de Certificación. Revisa que cada archivo esté completo y sea
+                    legible antes de enviarlo, así evitas devoluciones que alarguen el proceso.
+                </p>
+
+                <div class="cert-doc-list">
+                    <div class="cert-doc-item">
+                        <span class="doc-icon">1</span>
+                        <span>Copia del documento de identidad, <strong>legible y visible</strong>.</span>
+                    </div>
+                    <div class="cert-doc-item">
+                        <span class="doc-icon">2</span>
+                        <span>Certificado de inscripción en la APE:
+                            <a href="https://ape.sena.edu.co/spe-web/spe/login" target="_blank" rel="noopener">ape.sena.edu.co/spe-web/spe/login</a>.
+                        </span>
+                    </div>
+                    <div class="cert-doc-item">
+                        <span class="doc-icon">3</span>
+                        <span>Evidencia fotográfica de que el carné fue <strong>destruido en varias partes</strong> (archivo JPG).</span>
+                    </div>
+                    <div class="cert-doc-item">
+                        <span class="doc-icon">4</span>
+                        <span>Certificado de asistencia o resultados de las pruebas <strong>T&amp;T</strong> (solo Tecnólogos).</span>
+                    </div>
+                    <div class="cert-doc-item">
+                        <span class="doc-icon">5</span>
+                        <span>Certificado que expide la empresa por la <strong>terminación de la práctica</strong>.</span>
+                    </div>
+                </div>
+
+                <div class="cert-email-box">
+                    <span class="cert-email-label">Envía todo a</span>
+                    <a href="mailto:certificacion9504@sena.edu.co">certificacion9504@sena.edu.co</a>
+                </div>
+
+                <p class="cert-timeline-note">
+                    ⏳ El proceso de certificación puede tardar entre <strong>20 y 30 días</strong>, así que agradecemos
+                    tu paciencia. Recuerda compartir toda la información correspondiente en un solo correo a
+                    <strong>certificacion9504@sena.edu.co</strong>.
+                </p>
+
+                <a class="cert-survey-btn"
+                   href="https://forms.office.com/pages/responsepage.aspx?id=gcPCyy4vk02R0VBskxas5_VO8wg1OfRLoEC_fYpkOYBURFlIOFROQ0tUVUE2MEw3SlFWRDVIMERNTy4u&route=shorturl"
+                   target="_blank" rel="noopener">
+                    📋 Diligenciar encuesta de satisfacción
+                </a>
+            </div>
+
             <!-- Desaparece mientras el aprendiz está en POR_CERTIFICAR; reaparece si ya está CERTIFICADO
                  (para permitirle radicar una nueva Etapa Práctica, justo debajo de la tarjeta de éxito)
                  y vuelve a su forma normal en cuanto el Gestor de Etapa le registre la nueva etapa. -->
@@ -228,15 +284,14 @@
 
                 <div class="alert-danger" th:if="${error}" th:text="${error}" style="margin-top: 15px;"></div>
 
-                <form th:if="${solicitudActual == null and (etapaPracticaHabilitada or vinculacionLaboralHabilitada)}" th:action="@{/aprendiz/solicitar}" method="post" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                <form th:if="${solicitudActual == null and (etapaPracticaHabilitada or vinculacionLaboralHabilitada)}" th:action="@{/aprendiz/solicitar}" method="post" class="form-solicitud-etapa" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
                     <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                         <label for="idSeccionFormato">Modalidad del contrato</label>
                         <div class="input-container">
                             <select id="idSeccionFormato" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
                                 <option value="">Selecciona la modalidad</option>
-                                <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                 <option th:each="seccion : ${seccionesFormato}"
-                                        th:if="${etapaPracticaHabilitada or seccion.esVinculacionLaboral()}"
+                                        th:if="${etapaPracticaHabilitada or seccion.esVinculacionLaboral() or seccion.esContratoAprendizaje()}"
                                         th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                             </select>
                         </div>
@@ -327,6 +382,12 @@
                     ⏳ Tu solicitud está siendo revisada por el Gestor de Etapa.
                 </p>
 
+                <!-- Estado exclusivo de Contrato de Aprendizaje: nunca pasa por el Gestor de Etapa -->
+                <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'PENDIENTE_REGISTRO'}"
+                   style="margin-top: 16px; font-size: 13px; color: var(--text-muted); font-weight: 600;">
+                    🏢 Esta siendo evaluado por Registro del Complejo Tecnológico Agroindustrial Pecuario y Turístico.
+                </p>
+
                 <!-- Estado 2: FORMATOS_HABILITADOS -> el módulo 📁 Formatos ya está desbloqueado en el sidebar; ahí descarga y sube sus formatos -->
                 <p th:if="${solicitudActual != null and solicitudActual.estado.name() == 'FORMATOS_HABILITADOS'}"
                    style="margin-top: 16px; font-size: 13px; color: var(--text-muted); font-weight: 600;">
@@ -350,13 +411,12 @@
                         Novedad del Gestor de Etapa: motivo del rechazo
                     </p>
 
-                    <form th:action="@{/aprendiz/solicitar}" method="post" style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                    <form th:action="@{/aprendiz/solicitar}" method="post" class="form-solicitud-etapa" style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
                         <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                             <label for="idSeccionFormatoReenvio">Modalidad del contrato</label>
                             <div class="input-container">
                                 <select id="idSeccionFormatoReenvio" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
                                     <option value="">Selecciona la modalidad</option>
-                                    <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                     <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                                 </select>
                             </div>
@@ -388,13 +448,12 @@
                     <p style="font-size: 13px; color: var(--verde-sena); font-weight: 700; margin-bottom: 14px;">
                         🏆 Ya certificaste tu Etapa Práctica anterior. Si necesitas iniciar una nueva, radícala aquí:
                     </p>
-                    <form th:action="@{/aprendiz/solicitar}" method="post" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+                    <form th:action="@{/aprendiz/solicitar}" method="post" class="form-solicitud-etapa" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
                         <div class="form-group" style="margin-bottom: 0; min-width: 220px;">
                             <label for="idSeccionFormatoNueva">Modalidad del contrato</label>
                             <div class="input-container">
                                 <select id="idSeccionFormatoNueva" name="idSeccionFormato" required class="select-modalidad-contrato" style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
                                     <option value="">Selecciona la modalidad</option>
-                                    <option value="SGVA_CONTRATO_APRENDIZAJE">Contrato Aprendizaje</option>
                                     <option th:each="seccion : ${seccionesFormato}" th:value="${seccion.idSeccionFormato}" th:text="${seccion.nombreSeccion}">Pasantía</option>
                                 </select>
                             </div>
@@ -415,6 +474,27 @@
                     </form>
                 </div>
 
+            </div>
+
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('GESTOR_ETAPA') and !#lists.isEmpty(alertasCalificacionVencida)}"
+                 style="grid-column: 1 / -1; margin-top: 10px; background: #FEF2F2; border-left: 4px solid #EF4444;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; color: #991B1B;">
+                    <span>⏰ Documentos sin calificar hace más de 2 días</span>
+                    <span style="background: rgba(239, 68, 68, 0.15); color: #991B1B; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                          th:text="${#lists.size(alertasCalificacionVencida)} + (${#lists.size(alertasCalificacionVencida)} == 1 ? ' caso' : ' casos')">1 caso</span>
+                </h3>
+                <ul style="margin: 14px 0 0 0; padding-left: 18px; font-size: 13px; color: #7F1D1D; line-height: 1.9;">
+                    <li th:each="alerta : ${alertasCalificacionVencida}">
+                        <strong th:text="${alerta.nombreAprendiz}">Nombre Aprendiz</strong>
+                        (ficha <span th:text="${alerta.numeroFicha}">0000</span>) lleva
+                        <strong th:text="${alerta.diasEspera} + ' día(s)'">2 día(s)</strong>
+                        esperando calificación de documentos.
+                    </li>
+                </ul>
+                <a href="/gestor/calificar-documentos"
+                   style="display: inline-block; margin-top: 16px; background-color: #DC2626; color: #FFFFFF; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; text-decoration: none;">
+                    Ir a Calificar Documentos →
+                </a>
             </div>
 
             <div class="dashboard-panel" th:if="${usuario.roles.contains('GESTOR_ETAPA')}" style="grid-column: 1 / -1; margin-top: 10px;">
@@ -498,52 +578,6 @@
                 </div>
             </div>
 
-            <div class="dashboard-panel" th:if="${usuario.roles.contains('GESTOR_ETAPA')}" style="grid-column: 1 / -1; margin-top: 10px;">
-                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
-                    <span>📄 Documentos Pendientes de Validación</span>
-                </h3>
-
-                <div style="overflow-x: auto; margin-top: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
-                                <th style="padding: 14px 16px;">Aprendiz</th>
-                                <th style="padding: 14px 16px;">Documento</th>
-                                <th style="padding: 14px 16px;">Fecha de Subida</th>
-                                <th style="padding: 14px 16px;">Archivo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="documento : ${documentosPendientes}" style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
-                                <td style="padding: 16px; font-weight: 700; color: var(--text-dark);"
-                                    th:text="${documento.solicitud.aprendizFicha.usuario.nombre} + ' ' + ${documento.solicitud.aprendizFicha.usuario.apellido}">
-                                    Nombre Aprendiz
-                                </td>
-                                <td style="padding: 16px;"
-                                    th:text="${documento.plantillaFormato != null ? documento.plantillaFormato.nombreDocumento : documento.asunto}">Documento</td>
-                                <td style="padding: 16px;" th:text="${#temporals.format(documento.fechaSubida, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
-                                <td style="padding: 16px;">
-                                    <a th:href="${documento.rutaArchivoLleno}" target="_blank"
-                                       style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--verde-sena); text-decoration: none;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="7 10 12 15 17 10"></polyline>
-                                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                                        </svg>
-                                        Descargar
-                                    </a>
-                                </td>
-                            </tr>
-
-                            <tr th:if="${#lists.isEmpty(documentosPendientes)}">
-                                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
-                                    🎉 No hay documentos pendientes por validar.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
             <div class="dashboard-panel" th:if="${usuario.roles.contains('INSTRUCTOR_SEGUIMIENTO')}" style="grid-column: 1 / -1; margin-top: 10px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
@@ -797,6 +831,27 @@
             </div>
 
             <!-- 🌱 Panel minimalista de Registro: dona global de aprendices en Etapa Productiva vs. sin ella -->
+            <div class="dashboard-panel" th:if="${usuario.roles.contains('REGISTRO') and !#lists.isEmpty(alertasValidacionVencida)}"
+                 style="grid-column: 1 / -1; margin-top: 10px; background: #FEF2F2; border-left: 4px solid #EF4444;">
+                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; color: #991B1B;">
+                    <span>⏰ Documentos sin validar hace más de 2 días</span>
+                    <span style="background: rgba(239, 68, 68, 0.15); color: #991B1B; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                          th:text="${#lists.size(alertasValidacionVencida)} + (${#lists.size(alertasValidacionVencida)} == 1 ? ' caso' : ' casos')">1 caso</span>
+                </h3>
+                <ul style="margin: 14px 0 0 0; padding-left: 18px; font-size: 13px; color: #7F1D1D; line-height: 1.9;">
+                    <li th:each="alerta : ${alertasValidacionVencida}">
+                        <strong th:text="${alerta.nombreAprendiz}">Nombre Aprendiz</strong>
+                        (ficha <span th:text="${alerta.numeroFicha}">0000</span>) lleva
+                        <strong th:text="${alerta.diasEspera} + ' día(s)'">2 día(s)</strong>
+                        esperando validación de documentos.
+                    </li>
+                </ul>
+                <a href="/registro/documentos"
+                   style="display: inline-block; margin-top: 16px; background-color: #DC2626; color: #FFFFFF; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; text-decoration: none;">
+                    Ir a Validación de Documentos →
+                </a>
+            </div>
+
             <div class="dashboard-panel coord-fade-in" th:if="${usuario.roles.contains('REGISTRO') and dashCoordinacion != null}" style="grid-column: 1 / -1; margin-top: 10px;">
                 <h3 class="panel-header-title" style="margin: 0 0 4px 0;">🌱 Aprendices en Etapa Productiva</h3>
                 <p style="margin: 0 0 20px 0; font-size: 12px; color: var(--text-muted);">Foto rápida de todo el sistema, sin entrar en el detalle por ficha.</p>
@@ -882,31 +937,84 @@
                     </div>
                 </div>
 
-                <!-- Estado de los servidores -->
+                <!-- Estado de los servidores: monitor en vivo estilo electrocardiograma. El trazo
+                     que viaja de izquierda a derecha comunica el estado sin leer texto: verde y
+                     ágil = todo bien, ámbar y lento = degradado, rojo en línea plana = sin señal. -->
                 <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
                     <h3 class="panel-header-title" style="margin: 0 0 16px 0;">🖥️ Estado de los Servidores</h3>
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
-                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 8px #22C55E;"></span>
-                            <div>
-                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Aplicación KRONOS</p>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">En línea · Activa hace <span th:text="${adminUptime}">0 min</span></p>
+                    <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+
+                        <!-- Aplicación KRONOS: si esto se está renderizando, la app está en línea -->
+                        <div class="tech-monitor-card tech-monitor-ok">
+                            <span class="tech-monitor-live">LIVE</span>
+                            <div class="tech-monitor-top">
+                                <span class="tech-status-dot tech-dot-ok"></span>
+                                <div>
+                                    <p class="tech-monitor-title">Aplicación KRONOS</p>
+                                    <p class="tech-monitor-caption">En línea · activa hace <span th:text="${adminUptime}">0 min</span></p>
+                                </div>
+                            </div>
+                            <div class="ekg-wrap">
+                                <div class="ekg-track ekg-ok">
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path" d="M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30"/>
+                                    </svg>
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path" d="M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30"/>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
-                            <span th:style="'width: 12px; height: 12px; border-radius: 50%; background: ' + (${adminBdEnLinea} ? '#22C55E; box-shadow: 0 0 8px #22C55E;' : '#DC2626; box-shadow: 0 0 8px #DC2626;')"></span>
-                            <div>
-                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Base de Datos Oracle</p>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;"
-                                   th:text="${adminBdEnLinea} ? 'Conectada y respondiendo' : 'Sin respuesta ⚠️'">Conectada</p>
+
+                        <!-- Base de Datos Oracle: verificada con un ping real (ver IndexController.verificarBaseDatos) -->
+                        <div class="tech-monitor-card" th:classappend="${adminBdEnLinea} ? 'tech-monitor-ok' : 'tech-monitor-error'">
+                            <span class="tech-monitor-live">LIVE</span>
+                            <div class="tech-monitor-top">
+                                <span class="tech-status-dot" th:classappend="${adminBdEnLinea} ? 'tech-dot-ok' : 'tech-dot-error'"></span>
+                                <div>
+                                    <p class="tech-monitor-title">Base de Datos Oracle</p>
+                                    <p class="tech-monitor-caption" th:text="${adminBdEnLinea} ? 'Conectada y respondiendo' : 'Sin respuesta ⚠️'">Conectada</p>
+                                </div>
+                            </div>
+                            <div class="ekg-wrap">
+                                <div class="ekg-track" th:classappend="${adminBdEnLinea} ? 'ekg-ok' : 'ekg-error ekg-detenida'">
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path"
+                                              th:attr="d=${adminBdEnLinea}
+                                                  ? 'M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30'
+                                                  : 'M0,30 L400,30'"/>
+                                    </svg>
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path"
+                                              th:attr="d=${adminBdEnLinea}
+                                                  ? 'M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30'
+                                                  : 'M0,30 L400,30'"/>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-                        <div class="inner-status-card" style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 14px;">
-                            <span th:style="'width: 12px; height: 12px; border-radius: 50%; background: ' + (${adminCorreoHabilitado} ? '#22C55E; box-shadow: 0 0 8px #22C55E;' : '#F59E0B; box-shadow: 0 0 8px #F59E0B;')"></span>
-                            <div>
-                                <p style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0;">Servidor de Correo (SMTP)</p>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;"
-                                   th:text="${adminCorreoHabilitado} ? 'Habilitado para envío de alertas' : 'Sin configurar (alertas solo internas)'">Habilitado</p>
+
+                        <!-- Servidor de Correo (SMTP): "ok" si hay credenciales configuradas, si no
+                             queda como degradado (ámbar, ritmo más lento) — las alertas se ven igual dentro de KRONOS -->
+                        <div class="tech-monitor-card" th:classappend="${adminCorreoHabilitado} ? 'tech-monitor-ok' : 'tech-monitor-warn'">
+                            <span class="tech-monitor-live">LIVE</span>
+                            <div class="tech-monitor-top">
+                                <span class="tech-status-dot" th:classappend="${adminCorreoHabilitado} ? 'tech-dot-ok' : 'tech-dot-warn'"></span>
+                                <div>
+                                    <p class="tech-monitor-title">Servidor de Correo (SMTP)</p>
+                                    <p class="tech-monitor-caption"
+                                       th:text="${adminCorreoHabilitado} ? 'Habilitado para envío de alertas' : 'Sin configurar (alertas solo internas)'">Habilitado</p>
+                                </div>
+                            </div>
+                            <div class="ekg-wrap">
+                                <div class="ekg-track" th:classappend="${adminCorreoHabilitado} ? 'ekg-ok' : 'ekg-warn ekg-lenta'">
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path" d="M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30"/>
+                                    </svg>
+                                    <svg class="ekg-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+                                        <path class="ekg-path" d="M0,30 L36,30 L40,22 L44,30 L48,30 L52,6 L56,54 L60,30 L66,30 L72,20 L78,30 L136,30 L140,22 L144,30 L148,30 L152,6 L156,54 L160,30 L166,30 L172,20 L178,30 L236,30 L240,22 L244,30 L248,30 L252,6 L256,54 L260,30 L266,30 L272,20 L278,30 L336,30 L340,22 L344,30 L348,30 L352,6 L356,54 L360,30 L366,30 L372,20 L378,30 L400,30"/>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -935,12 +1043,12 @@
         </div>
     </div>
 
-    <!-- ℹ️ Modal informativo: el Contrato de Aprendizaje se gestiona en SGVA, no en KRONOS -->
+    <!-- ℹ️ Modal informativo: el Contrato de Aprendizaje lo evalúa directo Registro, no el Gestor de Etapa -->
     <div id="modalContratoAprendizaje" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
         <div style="background: #fff; border-radius: 16px; padding: 30px; width: 92%; max-width: 480px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(5, 112, 21, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--verde-sena)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -949,20 +1057,10 @@
                 <h3 style="margin: 0; font-size: 16px; color: var(--text-dark);">Información sobre Contrato de Aprendizaje</h3>
             </div>
             <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">Estimado(a) aprendiz:</p>
-            <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                Te informamos que las solicitudes y la gestión de la modalidad de <strong>Contrato de Aprendizaje</strong>
-                se manejan exclusivamente a través de la plataforma oficial <strong>SGVA</strong> y no desde el sistema KRONOS.
-            </p>
             <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                Pedimos disculpas por cualquier inconveniente o confusión que esto pueda causarte en tu proceso.
-                Para asegurar el correcto registro de tu etapa productiva, te solicitamos comunicarte a la mayor brevedad
-                posible con el <strong>Líder de Etapa Productiva</strong> de tu centro de formación.
+                Esta siendo evaluado por <strong>Registro del Complejo Tecnológico Agroindustrial Pecuario y Turístico</strong>.
             </p>
             <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
-                <a href="https://caprendizaje.sena.edu.co/sgva/SGVA_Diseno/pag/login.aspx" target="_blank" rel="noopener"
-                   style="display: inline-block; background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none;">
-                    Ir a la plataforma SGVA
-                </a>
                 <button type="button" onclick="cerrarModalContratoAprendizaje()"
                         style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                     Entendido
@@ -978,17 +1076,33 @@
             window.location.reload();
         }
 
+        // Formulario que quedó pendiente de radicar mientras el aprendiz lee el modal informativo.
+        let formPendienteRadicar = null;
+
         function cerrarModalContratoAprendizaje() {
             document.getElementById('modalContratoAprendizaje').style.display = 'none';
+            if (formPendienteRadicar) {
+                const form = formPendienteRadicar;
+                formPendienteRadicar = null;
+                form.dataset.contratoAprendizajeConfirmado = 'true';
+                form.requestSubmit ? form.requestSubmit() : form.submit();
+            }
         }
 
-        // Si el aprendiz elige "Contrato Aprendizaje", se le informa que esa modalidad
-        // se gestiona en SGVA y el select vuelve al placeholder (no es radicable en KRONOS).
+        // Si el aprendiz elige "Contrato Aprendizaje", puede seguir escogiendo con total libertad
+        // la Modalidad (Presencial/Remoto/Híbrido) — el modal informativo (Registro la evalúa
+        // directo, sin pasar por el Gestor de Etapa) solo aparece al hacer clic en "Radicar
+        // Solicitud", justo antes de enviar de verdad el formulario.
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.select-modalidad-contrato').forEach(function (select) {
-                select.addEventListener('change', function () {
-                    if (this.value === 'SGVA_CONTRATO_APRENDIZAJE') {
-                        this.value = '';
+            document.querySelectorAll('.form-solicitud-etapa').forEach(function (form) {
+                form.addEventListener('submit', function (evento) {
+                    const select = form.querySelector('.select-modalidad-contrato');
+                    const opcionElegida = select ? select.options[select.selectedIndex] : null;
+                    const esContratoAprendizaje = opcionElegida && opcionElegida.text.trim().toUpperCase() === 'CONTRATO APRENDIZAJE';
+
+                    if (esContratoAprendizaje && form.dataset.contratoAprendizajeConfirmado !== 'true') {
+                        evento.preventDefault();
+                        formPendienteRadicar = form;
                         document.getElementById('modalContratoAprendizaje').style.display = 'flex';
                     }
                 });

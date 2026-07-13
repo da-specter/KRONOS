@@ -73,13 +73,12 @@ public class EtapaProductiva {
     @Column(name = "ESTADO_ETAPA", columnDefinition = "VARCHAR2(15) DEFAULT 'EN_PROGRESO'", nullable = false)
     private EstadoEtapa estadoEtapa;
 
-    // Momento exacto en que la etapa pasó a POR_CERTIFICAR (100% de bitácoras + Formato 023
-    // aprobados). La certificación final ya no la hace el Gestor de Etapa manualmente: ocurre
-    // en otra plataforma (Sofía Plus). KRONOS pasa la etapa a TERMINADO cuando el Instructor de
-    // Seguimiento aprueba el documento de cierre que el aprendiz radica en Novedades
-    // (ver KronosWorkflowService.responderNovedad).
-    @Column(name = "FECHA_POR_CERTIFICAR", columnDefinition = "TIMESTAMP")
-    private LocalDateTime fechaPorCertificar;
+    // Momento exacto en que la etapa pasó a TERMINADO (100% de bitácoras + Formato 023
+    // aprobados). No es una certificación: la certificación oficial ya no la hace el Gestor
+    // de Etapa manualmente, ocurre en otra plataforma (Sofía Plus). KRONOS solo refleja aquí
+    // que su ciclo interno quedó cerrado (ver EvaluacionFormatosService.verificarYTransicionarPorCertificar).
+    @Column(name = "FECHA_TERMINACION", columnDefinition = "TIMESTAMP")
+    private LocalDateTime fechaTerminacion;
 
     @Column(name = "NOMBRE_JEFE_INMEDIATO", columnDefinition = "VARCHAR2(100)", nullable = false)
     private String nombreJefeInmediato;
@@ -109,6 +108,23 @@ public class EtapaProductiva {
     // de seguimiento agendada, para avisarle al Instructor de Seguimiento que debe agendarla.
     @Column(name = "ALERTA_PRIMERA_VISITA_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
     private Boolean alertaPrimeraVisitaEnviada;
+
+    // Correo institucional que el aprendiz digita en el Formato 023 (distinto de USUARIO.CORREO,
+    // que es la credencial de acceso) — lo pide el formato GFPI-F-023 real de SENA.
+    @Column(name = "CORREO_INSTITUCIONAL_APRENDIZ", columnDefinition = "VARCHAR2(150)")
+    private String correoInstitucionalAprendiz;
+
+    // Firmas del Formato 023 como imagen: se capturan una sola vez por Etapa Productiva y se
+    // reutilizan en las 3 secciones de firma del PDF generado (mismo patrón que USUARIO.FOTO_PERFIL).
+    @Column(name = "FIRMA_APRENDIZ_RUTA", columnDefinition = "VARCHAR2(255)")
+    private String firmaAprendizRuta;
+
+    @Column(name = "FIRMA_INSTRUCTOR_RUTA", columnDefinition = "VARCHAR2(255)")
+    private String firmaInstructorRuta;
+
+    // La sube el aprendiz (no hay un actor "empresa" logueado en KRONOS)
+    @Column(name = "FIRMA_ENTE_COFORMADOR_RUTA", columnDefinition = "VARCHAR2(255)")
+    private String firmaEnteCoformadorRuta;
 
     // Setea el estado inicial por defecto en la capa de persistencia de Java
     @PrePersist

@@ -22,6 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,7 @@ public class InstructorVisitasController {
     public String agendarVisita(
             @RequestParam Long idEtapa,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime hora,
             @RequestParam String modalidad,
             @RequestParam(required = false) String novedad,
             HttpSession session,
@@ -89,7 +92,7 @@ public class InstructorVisitasController {
         }
 
         try {
-            visitaSeguimientoService.agendarVisita(usuario.getIdUsuario(), idEtapa, fecha, modalidad, novedad);
+            visitaSeguimientoService.agendarVisita(usuario.getIdUsuario(), idEtapa, LocalDateTime.of(fecha, hora), modalidad, novedad);
             redirectAttributes.addFlashAttribute("exito", "Visita agendada correctamente. El aprendiz ya fue notificado. "
                     + "Si es la primera visita de este aprendiz, KRONOS ya agendó automáticamente las otras 2.");
         } catch (Exception e) {

@@ -71,6 +71,7 @@ public class PerfilController {
             @RequestParam(required = false) String telefono,
             @RequestParam(required = false) String contrasenaActual,
             @RequestParam(required = false) String contrasenaNueva,
+            @RequestParam(required = false) String contrasenaConfirmar,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -104,6 +105,9 @@ public class PerfilController {
                 if (contrasenaActual == null || contrasenaActual.isBlank()) {
                     throw new IllegalArgumentException("Debes ingresar tu contraseña actual para cambiarla.");
                 }
+                if (contrasenaConfirmar == null || !contrasenaNueva.equals(contrasenaConfirmar)) {
+                    throw new IllegalArgumentException("Las contraseñas nuevas no coinciden.");
+                }
                 String passwordGuardada = usuario.getPassword();
                 boolean coincide = (passwordGuardada != null
                         && (passwordGuardada.startsWith("$2a$") || passwordGuardada.startsWith("$2b$") || passwordGuardada.startsWith("$2y$")))
@@ -111,6 +115,9 @@ public class PerfilController {
                         : contrasenaActual.equals(passwordGuardada);
                 if (!coincide) {
                     throw new IllegalArgumentException("La contraseña actual no es correcta.");
+                }
+                if (contrasenaActual.equals(contrasenaNueva)) {
+                    throw new IllegalArgumentException("La contraseña nueva debe ser diferente a la actual.");
                 }
                 usuario.setPassword(passwordEncoder.encode(contrasenaNueva));
             }

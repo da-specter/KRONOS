@@ -105,7 +105,9 @@ public class AuthService {
         }
         if (roles.contains("REGISTRO")) {
             // Módulo del rol Registro: recibe de Gestión Etapa los documentos ya calificados,
-            // los valida y registra formalmente la Etapa Productiva del aprendiz.
+            // los valida y registra formalmente la Etapa Productiva del aprendiz. También recibe
+            // directo (sin pasar por Gestor de Etapa) las solicitudes de Contrato de Aprendizaje.
+            menuNavegacion.add(new MenuDto("Bandeja de Solicitudes", "/registro/bandeja-solicitudes"));
             menuNavegacion.add(new MenuDto("Validación de Documentos", "/registro/documentos"));
             menuNavegacion.add(new MenuDto("Registro Etapa Productiva", "/registro/registro-etapa"));
             menuNavegacion.add(new MenuDto("Gestión Aprendices", "/gestor/aprendices"));
@@ -140,8 +142,13 @@ public class AuthService {
                     new MenuDto("Auditoría", "/admin/auditoria"),
                     new MenuDto("Configuración Global", "/admin/config")
             )));
-            // 📋 Evidencia de documentos requisito diligenciados y aprobados, buscable por aprendiz.
-            menuNavegacion.add(new MenuDto("Reporte", "/admin/reporte"));
+            // 📋 Módulo desplegable "Reportes": el listado completo de aprendices (mismo módulo
+            // que usan Gestor de Etapa/Registro, aquí en solo lectura) y la evidencia de
+            // documentos requisito diligenciados y aprobados, buscable por aprendiz.
+            menuNavegacion.add(new MenuDto("Reportes", null, List.of(
+                    new MenuDto("Gestión de Aprendices", "/gestor/aprendices"),
+                    new MenuDto("Documentos Aprobados", "/admin/reporte")
+            )));
         }
 
         // Disponible para cualquier rol: ver y editar los datos propios guardados en Usuario

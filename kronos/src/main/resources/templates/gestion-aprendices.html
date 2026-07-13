@@ -48,29 +48,41 @@
                 <div th:if="${error}" style="margin-top: 16px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;"
                      th:text="${error}">Ocurrió un error.</div>
 
-                <!-- 🚦 Leyenda del semáforo de Etapa Práctica (formato SENA). El color siempre
-                     significa lo mismo; el texto de cada fila nombra la modalidad real que
-                     escogió ese aprendiz (Pasantía, Vínculo Laboral, Monitoría, etc.). -->
-                <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding: 14px 18px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
-                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #DC2626; display: inline-block;"></span>
-                        Terminó su modalidad de contrato
+                <!-- 🚦 Resumen del semáforo de Etapa Práctica (formato SENA): cada tarjeta suma
+                     cuántos aprendices hay en ese punto de la línea de tiempo y funciona como
+                     filtro — clic para aislarlos en la tabla, clic de nuevo para quitar el filtro.
+                     El color siempre significa lo mismo; el texto de cada fila nombra la
+                     modalidad real que escogió ese aprendiz (Pasantía, Vínculo Laboral, etc.). -->
+                <div id="resumenEstados" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px;">
+                    <div class="chip-estado" data-estado="TERMINO_CONTRATO" onclick="filtrarPorEstado('TERMINO_CONTRATO')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #DC2626; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">Terminó su contrato</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${resumenEstados.terminoContrato}">0</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
-                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #D97706; display: inline-block;"></span>
-                        A un mes o menos de terminarla
+                    <div class="chip-estado" data-estado="EP_POR_TERMINAR" onclick="filtrarPorEstado('EP_POR_TERMINAR')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #D97706; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">Terminan en ≤1 mes</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${resumenEstados.epPorTerminar}">0</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
-                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #CA8A04; display: inline-block;"></span>
-                        En Etapa Práctica (en curso)
+                    <div class="chip-estado" data-estado="EN_EP" onclick="filtrarPorEstado('EN_EP')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #CA8A04; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">En Etapa Práctica</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${resumenEstados.enEp}">0</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
-                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #16A34A; display: inline-block;"></span>
-                        Inicia Etapa Práctica en un mes o menos
+                    <div class="chip-estado" data-estado="INICIA_EP_PRONTO" onclick="filtrarPorEstado('INICIA_EP_PRONTO')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #16A34A; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">Inician en ≤1 mes</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${resumenEstados.iniciaEpPronto}">0</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-dark);">
-                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #86EFAC; display: inline-block;"></span>
-                        A más de un mes para iniciar Etapa Práctica
+                    <div class="chip-estado" data-estado="FALTA_MAS_DE_UN_MES" onclick="filtrarPorEstado('FALTA_MAS_DE_UN_MES')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #86EFAC; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">A +1 mes de iniciar</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${resumenEstados.faltaMasDeUnMes}">0</span>
                     </div>
                 </div>
 
@@ -120,7 +132,7 @@
                         </thead>
                         <tbody id="tablaAprendices">
                             <th:block th:each="aprendiz : ${aprendices}">
-                            <tr class="fila-aprendiz" th:attr="data-mes-registro=${aprendiz.mesRegistro}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                            <tr class="fila-aprendiz" th:attr="data-mes-registro=${aprendiz.mesRegistro},data-estado-etapa=${aprendiz.estadoEtapa.name()}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.instructorSeguimiento}">Instructor</td>
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.tipoDocumento}">CC</td>
                                 <td style="padding: 12px 14px; font-weight: 600;" th:text="${aprendiz.documento}">1234567890</td>
@@ -359,7 +371,21 @@
 
     <script th:src="@{/js/workflow.js}"></script>
     <script>
-        // 🔎 Filtra las filas de la tabla según el texto del buscador y el mes de registro elegido
+        // 🚦 Filtro por chip de estado (semáforo): clic activa/desactiva, solo uno a la vez
+        let estadoElegido = '';
+
+        function filtrarPorEstado(estado) {
+            estadoElegido = (estadoElegido === estado) ? '' : estado;
+            document.querySelectorAll('.chip-estado').forEach(function (chip) {
+                const activo = chip.dataset.estado === estadoElegido;
+                chip.style.background = activo ? 'rgba(5, 112, 21, 0.10)' : '#F8FAF9';
+                chip.style.borderColor = activo ? 'var(--verde-sena)' : 'var(--card-border)';
+            });
+            filtrarAprendices();
+        }
+
+        // 🔎 Filtra las filas de la tabla según el texto del buscador, el mes de registro y el
+        // chip de estado (semáforo) elegidos
         function filtrarAprendices() {
             const criterio = document.getElementById('buscadorAprendices').value.trim().toLowerCase();
             const mesElegido = document.getElementById('filtroMesRegistro').value;
@@ -369,7 +395,8 @@
             filas.forEach(function (fila) {
                 const coincideTexto = fila.textContent.toLowerCase().includes(criterio);
                 const coincideMes = !mesElegido || fila.dataset.mesRegistro === mesElegido;
-                const coincide = coincideTexto && coincideMes;
+                const coincideEstado = !estadoElegido || fila.dataset.estadoEtapa === estadoElegido;
+                const coincide = coincideTexto && coincideMes && coincideEstado;
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
             });

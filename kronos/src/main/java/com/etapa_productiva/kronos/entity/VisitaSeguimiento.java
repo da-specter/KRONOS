@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "VISITA_SEGUIMIENTO")
@@ -29,7 +29,7 @@ public class VisitaSeguimiento {
     private Usuario instructor;
 
     @Column(name = "FECHA_VISITA", columnDefinition = "DATE", nullable = false)
-    private LocalDate fechaVisita;
+    private LocalDateTime fechaVisita;
 
     // Sincronizado con 'ACTA VISITA' de tu Excel
     @Column(name = "NUMERO_ACTA", columnDefinition = "VARCHAR2(50)")

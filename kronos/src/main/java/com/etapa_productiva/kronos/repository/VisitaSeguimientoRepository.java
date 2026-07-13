@@ -4,7 +4,7 @@ import com.etapa_productiva.kronos.entity.EstadoVisita;
 import com.etapa_productiva.kronos.entity.VisitaSeguimiento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -22,10 +22,10 @@ public interface VisitaSeguimientoRepository extends JpaRepository<VisitaSeguimi
     // se ponga al día si no corrió el día puntual en que faltaban exactamente N días; la
     // bandera evita reenviar la misma alerta si el job se ejecuta más de una vez.
     List<VisitaSeguimiento> findByEstadoVisitaAndFechaVisitaBetweenAndAlertaInstructorEnviadaFalse(
-            EstadoVisita estadoVisita, LocalDate desde, LocalDate hasta);
+            EstadoVisita estadoVisita, LocalDateTime desde, LocalDateTime hasta);
 
     List<VisitaSeguimiento> findByEstadoVisitaAndFechaVisitaBetweenAndAlertaAprendizEnviadaFalse(
-            EstadoVisita estadoVisita, LocalDate desde, LocalDate hasta);
+            EstadoVisita estadoVisita, LocalDateTime desde, LocalDateTime hasta);
 
     // Para saber si una Etapa Productiva ya tiene al menos una visita agendada (primera visita)
     boolean existsByEtapaProductivaIdEtapa(Long idEtapa);

@@ -34,6 +34,7 @@ public class AdminSistemaController {
     @Autowired private AuditoriaService auditoriaService;
     @Autowired private VisitaAlertaService visitaAlertaService;
     @Autowired private BitacoraAlertaService bitacoraAlertaService;
+    @Autowired private com.etapa_productiva.kronos.service.CodigoRecuperacionLimpiezaService codigoRecuperacionLimpiezaService;
 
     // ══════════════════════════ MONITOREO DE JOBS ══════════════════════════
 
@@ -44,11 +45,11 @@ public class AdminSistemaController {
 
         model.addAttribute("usuario", admin);
         model.addAttribute("ejecuciones", jobEjecucionRepository.findTop100ByOrderByFechaInicioDesc());
-        model.addAttribute("nombreJob", "Alertas automáticas (visitas 1:00 a.m. · bitácoras 1:15 a.m.)");
+        model.addAttribute("nombreJob", "Jobs automáticos (visitas 1:00 a.m. · bitácoras 1:15 a.m. · códigos de recuperación 1:30 a.m.)");
         return "admin-jobs";
     }
 
-    /** ▶️ Dispara manualmente los jobs de alertas (sin esperar a la 1:00 a.m.) para verificarlos */
+    /** ▶️ Dispara manualmente los jobs automáticos (sin esperar a su horario) para verificarlos */
     @PostMapping("/jobs/ejecutar")
     public String ejecutarJobAhora(HttpSession session, RedirectAttributes redirect) {
         LoginResponse admin = AdminDatosMaestrosController.validarAdmin(session);
@@ -56,8 +57,9 @@ public class AdminSistemaController {
         try {
             visitaAlertaService.revisarAlertasVisitas();
             bitacoraAlertaService.revisarBitacorasAtrasadas();
+            codigoRecuperacionLimpiezaService.limpiarCodigosVencidos();
             auditoriaService.registrar(admin.getIdUsuario(), AccionAuditoria.ALERTA,
-                    "Jobs de alertas (visitas y bitácoras) ejecutados manualmente desde Monitoreo de Jobs");
+                    "Jobs automáticos (visitas, bitácoras y limpieza de códigos de recuperación) ejecutados manualmente desde Monitoreo de Jobs");
             redirect.addFlashAttribute("exito", "Jobs ejecutados. Revisa las filas más recientes del historial.");
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "El job falló: " + e.getMessage());

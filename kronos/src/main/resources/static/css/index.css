@@ -460,6 +460,20 @@ body {
     box-shadow: 0 0 0 3px rgba(5, 112, 21, 0.1);
 }
 
+/* ✅ Validación en tiempo real (ej. Mi Perfil): rojo mientras el campo no cumple la regla,
+   verde cuando cumple. Solo feedback visual — el servidor vuelve a validar todo al guardar. */
+.input-container.input-invalido,
+.input-container.input-invalido:focus-within {
+    border-color: #DC2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.input-container.input-valido,
+.input-container.input-valido:focus-within {
+    border-color: var(--verde-sena);
+    box-shadow: 0 0 0 3px rgba(5, 112, 21, 0.12);
+}
+
 .input-container input,
 .input-container select {
     width: 100%;
@@ -946,6 +960,169 @@ body {
     color: #EAFBEE;
     max-width: 760px;
 }
+
+/* ================= TARJETA "SIGUIENTE PASO: CERTIFICACIÓN SENA" =================
+   Aparece junto a la tarjeta de éxito (misma condición: etapa TERMINADA/POR_CERTIFICAR
+   en KRONOS). A propósito usa un tema dorado/institucional distinto al verde neón de
+   arriba: esa ya dijo "aquí terminaste"; esta es la gestión externa pendiente con el
+   SENA/Sofía Plus, así que necesita leerse como un paso aparte, no como una repetición. */
+.cert-card {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #241B04 0%, #1A1403 55%, #120D02 100%);
+    border: 1px solid rgba(250, 204, 21, 0.32);
+    border-radius: 20px;
+    padding: 40px clamp(20px, 5vw, 56px);
+    color: #FBF3D9;
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.08), 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.cert-card::before {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    background:
+        radial-gradient(circle at 20% 15%, rgba(250, 204, 21, 0.20), transparent 55%),
+        radial-gradient(circle at 85% 90%, rgba(250, 204, 21, 0.12), transparent 50%);
+    pointer-events: none;
+}
+
+.cert-card-badge {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(250, 204, 21, 0.14);
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    color: #FACC15;
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    padding: 8px 18px;
+    border-radius: 999px;
+    text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+}
+
+.cert-card h2 {
+    position: relative;
+    z-index: 1;
+    font-size: clamp(20px, 2.6vw, 26px);
+    font-weight: 800;
+    margin-top: 18px;
+    color: #ffffff;
+    line-height: 1.35;
+}
+
+.cert-card p.cert-lead {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    line-height: 1.75;
+    color: #E8DDBB;
+    margin-top: 14px;
+    max-width: 780px;
+}
+
+.cert-card p.cert-lead strong { color: #FACC15; }
+
+.cert-doc-list {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.cert-doc-item {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(250, 204, 21, 0.2);
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #FBF3D9;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.cert-doc-item .doc-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(250, 204, 21, 0.16);
+    color: #FACC15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+.cert-doc-item a { color: #FACC15; font-weight: 700; }
+
+.cert-email-box {
+    position: relative;
+    z-index: 1;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px dashed rgba(250, 204, 21, 0.45);
+    border-radius: 14px;
+    padding: 16px 20px;
+}
+
+.cert-email-box .cert-email-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #C9BE8E;
+    font-weight: 800;
+}
+
+.cert-email-box a {
+    font-size: 15px;
+    font-weight: 800;
+    color: #FACC15;
+    text-decoration: none;
+}
+
+.cert-timeline-note {
+    position: relative;
+    z-index: 1;
+    margin-top: 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #E8DDBB;
+    max-width: 780px;
+}
+
+.cert-survey-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 26px;
+    background: var(--verde-sena);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13.5px;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(5, 112, 21, 0.35);
+}
+
 /* 📌 Tablas con encabezado fijo: el contenedor scrollea (vertical y horizontal) y el
    thead se queda pegado arriba — solo se mueven los registros. Usado en Gestión
    Aprendices (Gestor/Registro), Mis Fichas (Instructor Técnico) y Mis Aprendices
@@ -956,4 +1133,216 @@ body {
     background: #FFFFFF;
     z-index: 5;
     box-shadow: inset 0 -2px 0 var(--card-border);
+}
+
+/* ================= MONITOR "ESTADO DE LOS SERVIDORES" (estilo electrocardiograma) =================
+   Cada servidor es una tarjeta oscura tipo consola de monitoreo, con un trazo de pulso que
+   viaja de forma continua (igual que un ECG) y un punto de estado con anillo de "ping" en vivo.
+   El ritmo/color del trazo comunica el estado sin tener que leer texto: verde y ágil = OK,
+   ámbar y más lento = degradado, rojo en línea plana = sin señal. */
+.tech-monitor-card {
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    min-width: 260px;
+    background: linear-gradient(160deg, #141D31 0%, #0B1120 55%, #060911 100%);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 16px;
+    padding: 18px 20px 16px 20px;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4);
+    transition: transform 0.25s ease;
+}
+
+.tech-monitor-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Textura sutil de "grilla técnica" de fondo, puramente decorativa */
+.tech-monitor-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 🎨 Halo de color que "respira" detrás de la grilla: el fondo se tiñe con el mismo color
+   del estado (verde/ámbar/rojo), así la tarjeta entera se siente viva y adaptada a lo que
+   está reportando, no solo el puntito de estado. */
+.tech-monitor-card::after {
+    content: '';
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    top: -110px;
+    right: -80px;
+    border-radius: 50%;
+    filter: blur(54px);
+    opacity: 0.4;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.tech-monitor-ok::after { background: #0BF42E; }
+.tech-monitor-warn::after { background: #F59E0B; }
+.tech-monitor-error::after { background: #EF4444; }
+
+/* 🟢🟠🔴 Brillo neón del borde: cada tarjeta "respira" con el color de su propio estado.
+   El caso de error respira más rápido e intenso, como una alarma discreta. */
+.tech-monitor-ok {
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(11, 244, 46, 0.18), 0 0 22px -6px rgba(11, 244, 46, 0.55);
+    animation: tech-glow-ok 3.4s ease-in-out infinite;
+}
+.tech-monitor-warn {
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(245, 158, 11, 0.18), 0 0 22px -6px rgba(245, 158, 11, 0.5);
+    animation: tech-glow-warn 4.6s ease-in-out infinite;
+}
+.tech-monitor-error {
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.25), 0 0 26px -4px rgba(239, 68, 68, 0.65);
+    animation: tech-glow-error 1.7s ease-in-out infinite;
+}
+
+@keyframes tech-glow-ok {
+    0%, 100% { box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(11, 244, 46, 0.18), 0 0 16px -6px rgba(11, 244, 46, 0.4); }
+    50% { box-shadow: 0 12px 34px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(11, 244, 46, 0.3), 0 0 34px -2px rgba(11, 244, 46, 0.75); }
+}
+@keyframes tech-glow-warn {
+    0%, 100% { box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(245, 158, 11, 0.18), 0 0 16px -6px rgba(245, 158, 11, 0.35); }
+    50% { box-shadow: 0 12px 34px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(245, 158, 11, 0.28), 0 0 30px -2px rgba(245, 158, 11, 0.65); }
+}
+@keyframes tech-glow-error {
+    0%, 100% { box-shadow: 0 12px 30px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.25), 0 0 20px -4px rgba(239, 68, 68, 0.5); }
+    50% { box-shadow: 0 12px 34px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.4), 0 0 40px 2px rgba(239, 68, 68, 0.9); }
+}
+
+.tech-monitor-live {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: #64748B;
+}
+
+.tech-monitor-live::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #64748B;
+    animation: tech-live-blink 1.6s ease-in-out infinite;
+}
+
+.tech-monitor-top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1;
+}
+
+.tech-status-dot {
+    position: relative;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tech-status-dot::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: tech-dot-ping 1.8s ease-out infinite;
+}
+
+.tech-dot-ok { background: #0BF42E; color: #0BF42E; box-shadow: 0 0 9px #0BF42E; }
+.tech-dot-warn { background: #F59E0B; color: #F59E0B; box-shadow: 0 0 9px #F59E0B; }
+.tech-dot-error { background: #EF4444; color: #EF4444; box-shadow: 0 0 9px #EF4444; }
+
+.tech-monitor-title {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #E2E8F0;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.3px;
+}
+
+.tech-monitor-caption {
+    margin: 3px 0 0 0;
+    font-size: 11px;
+    color: #94A3B8;
+    font-family: 'Courier New', monospace;
+}
+
+.ekg-wrap {
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    height: 46px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #060A16;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.ekg-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    animation: ekg-scroll 3s linear infinite;
+}
+
+.ekg-track.ekg-lenta { animation-duration: 5.5s; }
+.ekg-track.ekg-detenida { animation-play-state: paused; }
+
+.ekg-svg {
+    width: 50%;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.ekg-path {
+    fill: none;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ekg-ok .ekg-path { stroke: #0BF42E; filter: drop-shadow(0 0 4px rgba(11, 244, 46, 0.65)); }
+.ekg-warn .ekg-path { stroke: #F59E0B; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6)); }
+.ekg-error .ekg-path { stroke: #EF4444; filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.6)); animation: ekg-flatline-pulse 2.2s ease-in-out infinite; }
+
+@keyframes ekg-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+@keyframes tech-dot-ping {
+    0% { transform: scale(0.8); opacity: 0.65; }
+    70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes tech-live-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+}
+
+@keyframes ekg-flatline-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
 }

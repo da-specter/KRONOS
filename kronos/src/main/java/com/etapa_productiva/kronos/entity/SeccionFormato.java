@@ -34,4 +34,12 @@ public class SeccionFormato {
     public boolean esVinculacionLaboral() {
         return "VINCULACION LABORAL".equalsIgnoreCase(nombreSeccion);
     }
+
+    // 🎓 Contrato de Aprendizaje: la etapa productiva ya se gestiona en Sofía Plus, así que la
+    // solicitud salta directo a Registro (sin checks del Gestor de Etapa) — ver EstadoSolicitud
+    // .PENDIENTE_REGISTRO y KronosWorkflowService.aprendizCrearSolicitud.
+    @Transient
+    public boolean esContratoAprendizaje() {
+        return "CONTRATO APRENDIZAJE".equalsIgnoreCase(nombreSeccion);
+    }
 }

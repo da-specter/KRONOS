@@ -4,6 +4,7 @@ import com.etapa_productiva.kronos.dto.AprendizBitacoraDetalleDto;
 import com.etapa_productiva.kronos.dto.AprendizBitacoraResumenDto;
 import com.etapa_productiva.kronos.dto.AprendizPlaneacionResumenDto;
 import com.etapa_productiva.kronos.dto.LoginResponse;
+import com.etapa_productiva.kronos.entity.JuicioEvaluacion;
 import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.service.EvaluacionFormatosService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -136,16 +138,18 @@ public class EvaluacionFormatosController {
         model.addAttribute("notificacionesNoLeidas",
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuario.getIdUsuario()));
         model.addAttribute("resumenPlaneacion", resumen);
-        model.addAttribute("resultados", ResultadoEvaluacion.values());
 
         return "instructor-planeacion";
     }
 
-    @PostMapping("/instructor/seguimiento/planeacion/evaluar")
-    public String evaluarPlaneacion(
-            @RequestParam Long idFormatoPlaneacion,
-            @RequestParam ResultadoEvaluacion resultado,
-            @RequestParam(required = false) String observaciones,
+    @PostMapping("/instructor/seguimiento/planeacion/momento")
+    public String guardarObservacionMomento(
+            @RequestParam Long idEtapa,
+            @RequestParam int numeroMomento,
+            @RequestParam(required = false) String observacion,
+            @RequestParam(required = false) JuicioEvaluacion juicioEvaluacion,
+            @RequestParam(required = false) String retroInstructorProceso,
+            @RequestParam(required = false) String retroInstructorDesempeno,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -158,8 +162,33 @@ public class EvaluacionFormatosController {
         }
 
         try {
-            evaluacionFormatosService.evaluarPlaneacion(usuario.getIdUsuario(), idFormatoPlaneacion, resultado, observaciones);
-            redirectAttributes.addFlashAttribute("exito", "Evaluación registrada y notificada al aprendiz.");
+            evaluacionFormatosService.guardarObservacionMomento(usuario.getIdUsuario(), idEtapa, numeroMomento,
+                    observacion, juicioEvaluacion, retroInstructorProceso, retroInstructorDesempeno);
+            redirectAttributes.addFlashAttribute("exito", "Observación guardada y notificada al aprendiz.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/instructor/seguimiento/planeacion";
+    }
+
+    @PostMapping(value = "/instructor/seguimiento/planeacion/firma", consumes = "multipart/form-data")
+    public String guardarFirmaInstructor(
+            @RequestParam Long idEtapa,
+            @RequestParam("firma") MultipartFile firma,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        LoginResponse usuario = validarAcceso(session);
+        if (usuario == null) {
+            return "redirect:/auth/login";
+        }
+        if (!esInstructorSeguimiento(usuario)) {
+            return "redirect:/index";
+        }
+
+        try {
+            evaluacionFormatosService.guardarFirmaInstructor(usuario.getIdUsuario(), idEtapa, firma);
+            redirectAttributes.addFlashAttribute("exito", "Firma guardada correctamente.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

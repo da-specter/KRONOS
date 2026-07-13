@@ -143,9 +143,27 @@
                 <!-- 📋 Listado -->
                 <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
                     <span>📋 Usuarios Registrados</span>
-                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                    <span id="contadorUsuarios" style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
                           th:text="${#lists.size(usuarios)} + ' usuarios'">0</span>
                 </h3>
+
+                <div style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="buscadorUsuarios" onkeyup="filtrarUsuarios()"
+                           placeholder="🔎 Buscar por nombre, apellido, documento o correo..."
+                           style="flex: 1; min-width: 240px; max-width: 480px; padding: 12px 16px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena);">
+                    <select id="filtroRolUsuario" onchange="filtrarUsuarios()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option value="">🎭 Todos los roles</option>
+                        <option th:each="r : ${roles}" th:value="${r.nombreRol}" th:text="${r.nombreRol}">ROL</option>
+                    </select>
+                    <select id="filtroEstadoUsuario" onchange="filtrarUsuarios()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option value="">🔘 Todos los estados</option>
+                        <option value="activo">🟢 Activos</option>
+                        <option value="inactivo">🔴 Inactivos</option>
+                    </select>
+                </div>
+
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
@@ -158,9 +176,11 @@
                                 <th style="padding: 14px 16px;">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tablaUsuarios">
                             <th:block th:each="u : ${usuarios}">
-                                <tr style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
+                                <tr class="fila-usuario"
+                                    th:attr="data-roles=${#strings.listJoin(u.roles, '|')},data-estado=${u.estado ? 'activo' : 'inactivo'}"
+                                    style="border-bottom: 1px solid var(--card-border); font-size: 14px;">
                                     <td style="padding: 14px 16px; font-weight: 700; color: var(--text-dark);"
                                         th:text="${u.tipoDocumento + ' ' + u.documento}">CC 123</td>
                                     <td style="padding: 14px 16px;" th:text="${u.nombre + ' ' + u.apellido}">Nombre</td>
@@ -214,11 +234,40 @@
                             </tr>
                         </tbody>
                     </table>
+                    <p id="sinResultadosUsuarios" style="display: none; text-align: center; padding: 30px; color: var(--text-muted); font-weight: 500;">
+                        Ningún usuario coincide con la búsqueda.
+                    </p>
                 </div>
             </div>
 
         </section>
     </main>
 
+    <script>
+        // 🔎 Filtra las filas de usuarios según el texto del buscador, el rol y el estado elegidos
+        function filtrarUsuarios() {
+            const criterio = document.getElementById('buscadorUsuarios').value.trim().toLowerCase();
+            const rolElegido = document.getElementById('filtroRolUsuario').value;
+            const estadoElegido = document.getElementById('filtroEstadoUsuario').value;
+            const filas = document.querySelectorAll('#tablaUsuarios .fila-usuario');
+            let visibles = 0;
+
+            filas.forEach(function (fila) {
+                const coincideTexto = fila.textContent.toLowerCase().includes(criterio);
+                const roles = (fila.dataset.roles || '').split('|');
+                const coincideRol = !rolElegido || roles.includes(rolElegido);
+                const coincideEstado = !estadoElegido || fila.dataset.estado === estadoElegido;
+                const coincide = coincideTexto && coincideRol && coincideEstado;
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+
+            const contador = document.getElementById('contadorUsuarios');
+            if (contador) contador.textContent = visibles + ' usuario' + (visibles === 1 ? '' : 's');
+
+            const sinResultados = document.getElementById('sinResultadosUsuarios');
+            if (sinResultados) sinResultados.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+    </script>
 </body>
 </html>

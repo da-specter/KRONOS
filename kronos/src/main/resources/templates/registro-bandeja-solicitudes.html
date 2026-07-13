@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS | Bandeja de Solicitudes</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+
+    <aside th:replace="~{fragments/sidebar :: sidebar(${usuario.menuNavegacion}, '/registro/bandeja-solicitudes')}"></aside>
+
+    <main class="main-content">
+
+        <header class="top-header-capsule">
+            <div class="welcome-info">
+                <h1>🎓 Bandeja de Solicitudes</h1>
+                <p>Solicitudes de Contrato de Aprendizaje: llegan directo a Registro (la etapa productiva ya se gestiona en Sofía Plus), sin pasar por el Gestor de Etapa.</p>
+            </div>
+
+            <div th:replace="~{fragments/notificaciones :: campana}"></div>
+        </header>
+
+        <section class="dashboard-grid">
+
+            <div class="alert-success" th:if="${exito}" th:text="${exito}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+            <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
+
+            <div th:each="solicitud : ${solicitudesPendientes}"
+                 style="grid-column: 1 / -1; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <p style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;"
+                           th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
+                           th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud}">
+                            Ficha 2555228 · Sol. #2
+                        </p>
+                        <span style="display: inline-block; margin-top: 8px; background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;">
+                            🎓 Contrato Aprendizaje
+                        </span>
+                    </div>
+                    <button type="button" th:onclick="'toggleEvaluarForm(' + ${solicitud.idSolicitud} + ')'"
+                            style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                        Evaluar
+                    </button>
+                </div>
+
+                <form th:id="'form-evaluar-' + ${solicitud.idSolicitud}"
+                      th:action="@{'/registro/bandeja-solicitudes/' + ${solicitud.idSolicitud}}" method="post"
+                      onsubmit="return validarNovedadBandeja(this)"
+                      style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
+
+                    <div style="display: flex; gap: 24px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
+                            <input type="radio" name="aprobado" value="true" checked style="width: 18px; height: 18px; accent-color: var(--verde-sena); cursor: pointer; margin-right: 8px;">
+                            Aprobar
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark);">
+                            <input type="radio" name="aprobado" value="false" style="width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer; margin-right: 8px;">
+                            No aprobar
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Novedad (obligatoria si no apruebas)</label>
+                        <div class="input-container">
+                            <textarea name="novedad" rows="2" placeholder="Escribe una novedad para el aprendiz (opcional si apruebas, obligatoria si no apruebas)..."
+                                      style="width: 100%; border: none; outline: none; font-size: 13px; background: transparent; padding: 6px 0; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar</button>
+                </form>
+            </div>
+
+            <p th:if="${#lists.isEmpty(solicitudesPendientes)}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                🎉 No hay solicitudes de Contrato de Aprendizaje pendientes.
+            </p>
+
+        </section>
+    </main>
+
+    <script>
+        function toggleEvaluarForm(idSolicitud) {
+            const form = document.getElementById('form-evaluar-' + idSolicitud);
+            if (!form) return;
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Si Registro va a rechazar, exige que deje la novedad para el aprendiz
+        function validarNovedadBandeja(form) {
+            const aprobado = form.querySelector('input[name="aprobado"]:checked').value === 'true';
+            const novedad = form.querySelector('textarea[name="novedad"]').value.trim();
+
+            if (!aprobado && !novedad) {
+                alert('Debes escribir una novedad explicando el motivo antes de continuar.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

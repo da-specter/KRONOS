@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "KronosApplication",
+            "request": "launch",
+            "mainClass": "com.etapa_productiva.kronos.KronosApplication",
+            "projectName": "kronos",
+            "cwd": "${workspaceFolder}/kronos"
+        }
+    ]
+}

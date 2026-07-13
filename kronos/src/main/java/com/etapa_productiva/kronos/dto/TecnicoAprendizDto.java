@@ -32,6 +32,8 @@ public class TecnicoAprendizDto {
 
     // Datos de la Etapa Productiva (— si aún no tiene una registrada)
     private String empresa;
+    private String municipioEmpresa;
+    private String departamentoEmpresa;
     private String modalidadContrato; // TipoContrato (Contrato de aprendizaje, pasantía, etc.)
     private String modalidad;         // Presencial / Remoto / Híbrido
     private String etapaInicio;

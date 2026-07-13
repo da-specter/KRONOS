@@ -47,6 +47,12 @@ public class JobEjecucion {
     @Column(name = "ALERTAS_PRIMERA_VISITA", columnDefinition = "NUMBER(10,0) DEFAULT 0", nullable = false)
     private Integer alertasPrimeraVisita;
 
+    // Contador genérico para jobs que no encajan en las columnas de alertas de arriba (ej. el
+    // job de limpieza de códigos de recuperación cuenta aquí cuántas filas borró). Los jobs de
+    // alertas de visitas/bitácoras lo dejan en 0.
+    @Column(name = "REGISTROS_PROCESADOS", columnDefinition = "NUMBER(10,0) DEFAULT 0", nullable = false)
+    private Integer registrosProcesados;
+
     // Resumen legible de la corrida o el mensaje de error si el job falló
     @Column(name = "DETALLE", columnDefinition = "VARCHAR2(500)")
     private String detalle;
@@ -59,5 +65,6 @@ public class JobEjecucion {
         if (this.alertasAprendices == null) this.alertasAprendices = 0;
         if (this.correosEnviados == null) this.correosEnviados = 0;
         if (this.alertasPrimeraVisita == null) this.alertasPrimeraVisita = 0;
+        if (this.registrosProcesados == null) this.registrosProcesados = 0;
     }
 }

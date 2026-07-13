@@ -39,7 +39,8 @@ public class InstructorSeguimientoService {
 
     private static final String[] TITULOS = {
             "Nombres", "Apellidos", "Tipo Documento", "Documento", "Teléfono", "Correo Electrónico",
-            "Ficha", "Programa Formación", "Empresa", "Jefe Inmediato", "Tel. Jefe", "Modalidad Contrato",
+            "Ficha", "Programa Formación", "Empresa", "Municipio Empresa", "Departamento Empresa",
+            "Jefe Inmediato", "Tel. Jefe", "Modalidad Contrato",
             "Inicio Etapa", "Fin Etapa", "Estado Etapa", "Asignado Desde"
     };
 
@@ -86,6 +87,8 @@ public class InstructorSeguimientoService {
                     .ficha(ficha.getNumeroFicha())
                     .programaFormacion(ficha.getProgramaFormacion().getNombrePrograma())
                     .razonSocial(etapa.getEmpresa().getNombreEmpresa())
+                    .municipioEmpresa(etapa.getEmpresa().getMunicipio().getNombreMunicipio())
+                    .departamentoEmpresa(etapa.getEmpresa().getMunicipio().getDepartamento().getNombreDepartamento())
                     .jefeNombre(valor(etapa.getNombreJefeInmediato()))
                     .jefeTelefono(valor(etapa.getTelefonoJefeInmediato()))
                     .modalidadContrato(etapa.getTipoContrato().getNombreTipoContrato())
@@ -177,7 +180,8 @@ public class InstructorSeguimientoService {
             filas.add(new String[]{
                     a.getNombres(), a.getApellidos(), a.getTipoDocumento(), a.getDocumento(),
                     a.getTelefono(), a.getCorreoElectronico(), a.getFicha(), a.getProgramaFormacion(),
-                    a.getRazonSocial(), a.getJefeNombre(), a.getJefeTelefono(),
+                    a.getRazonSocial(), a.getMunicipioEmpresa(), a.getDepartamentoEmpresa(),
+                    a.getJefeNombre(), a.getJefeTelefono(),
                     a.getModalidadContrato(), a.getEtapaInicio(), a.getEtapaFin(), a.getEstadoEtapa(),
                     a.getAsignadoDesde()
             });

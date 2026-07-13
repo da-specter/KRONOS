@@ -180,17 +180,30 @@ public class KronosWorkflowService {
             solicitud.setAprendizFicha(aprendizFicha);
         }
 
+        // 🎓 Contrato de Aprendizaje ya se gestiona en Sofía Plus: salta directo a Registro,
+        // sin pasar por los checks de fecha/competencias/documentos del Gestor de Etapa.
+        boolean esContratoAprendizaje = seccionFormato.esContratoAprendizaje();
+
         solicitud.setSeccionFormato(seccionFormato);
         solicitud.setModalidadSolicitada(modalidad); // 🚀 Ya no fallará por tipo
-        solicitud.setEstado(EstadoSolicitud.PENDIENTE_REVISION);
+        solicitud.setEstado(esContratoAprendizaje
+                ? EstadoSolicitud.PENDIENTE_REGISTRO
+                : EstadoSolicitud.PENDIENTE_REVISION);
         solicitud.setFechaActualizacion(LocalDateTime.now());
 
         SolicitudEtapaPractica guardada = solicitudRepository.save(solicitud);
 
         Usuario aprendizRemitente = aprendizFicha.getUsuario();
-        for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
-            notificacionService.crear(gestor, "📝 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
-                    + " radicó una nueva solicitud de etapa productiva (" + modalidad + ").");
+        if (esContratoAprendizaje) {
+            for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
+                notificacionService.crear(registro, "🎓 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
+                        + " radicó una solicitud de Contrato de Aprendizaje: ya puedes evaluarla en tu Bandeja de Solicitudes.");
+            }
+        } else {
+            for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
+                notificacionService.crear(gestor, "📝 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
+                        + " radicó una nueva solicitud de etapa productiva (" + modalidad + ").");
+            }
         }
 
         return guardada;
@@ -516,6 +529,54 @@ public class KronosWorkflowService {
             notificacionService.crear(gestor, "↩️ Registro devolvió la solicitud de "
                     + aprendiz.getNombre() + " " + aprendiz.getApellido() + ". Novedad: " + observacion);
         }
+
+        return devuelta;
+    }
+
+    /**
+     * 🎓 Bandeja exclusiva de Contrato de Aprendizaje (rol REGISTRO): a diferencia de
+     * {@link #registroValidarDocumentos}, aquí no hay checklist de documentos — la etapa
+     * productiva ya se gestiona en Sofía Plus, así que Registro solo aprueba o no con una
+     * novedad opcional (obligatoria si rechaza). Si aprueba, la solicitud cae directo en la
+     * bandeja de "Registro Etapa Productiva" (LISTO_PARA_REGISTRO).
+     */
+    @Transactional
+    public SolicitudEtapaPractica registroEvaluarSolicitudContratoAprendizaje(Long idSolicitud, boolean aprobado, String novedad) {
+        SolicitudEtapaPractica solicitud = solicitudRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+        if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE_REGISTRO) {
+            throw new IllegalStateException("Acción denegada: La solicitud no se encuentra pendiente de aprobación de Registro.");
+        }
+
+        Usuario aprendiz = solicitud.getAprendizFicha().getUsuario();
+
+        if (aprobado) {
+            solicitud.setObservacionRechazo(null);
+            solicitud.setEstado(EstadoSolicitud.LISTO_PARA_REGISTRO);
+            solicitud.setFechaActualizacion(LocalDateTime.now());
+            SolicitudEtapaPractica actualizada = solicitudRepository.save(solicitud);
+
+            String mensaje = "✅ Registro aprobó tu solicitud de Contrato de Aprendizaje. Tu Etapa Productiva será registrada en breve.";
+            if (novedad != null && !novedad.isBlank()) {
+                mensaje += " Novedad: " + novedad;
+            }
+            notificacionService.crear(aprendiz, mensaje);
+
+            return actualizada;
+        }
+
+        if (novedad == null || novedad.isBlank()) {
+            throw new IllegalArgumentException("Debes escribir una novedad indicando el motivo del rechazo.");
+        }
+
+        solicitud.setEstado(EstadoSolicitud.RECHAZADO);
+        solicitud.setObservacionRechazo(novedad);
+        solicitud.setFechaActualizacion(LocalDateTime.now());
+        SolicitudEtapaPractica devuelta = solicitudRepository.save(solicitud);
+
+        notificacionService.crear(aprendiz,
+                "❌ Registro rechazó tu solicitud de Contrato de Aprendizaje. Novedad: " + novedad);
 
         return devuelta;
     }

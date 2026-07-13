@@ -13,6 +13,7 @@ import com.etapa_productiva.kronos.repository.JobEjecucionRepository;
 import com.etapa_productiva.kronos.repository.VisitaSeguimientoRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * ⏰ Job diario de alertas de visitas de seguimiento: recorre las visitas aún PLANEADA y,
@@ -38,7 +40,7 @@ public class VisitaAlertaService {
 
     public static final String NOMBRE_JOB = "Alertas de visitas (1:00 a.m.)";
 
-    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Autowired
     private VisitaSeguimientoRepository visitaSeguimientoRepository;
@@ -56,10 +58,19 @@ public class VisitaAlertaService {
     private EmailService emailService;
 
     @Autowired
+    private WhatsAppService whatsAppService;
+
+    @Autowired
     private JobEjecucionRepository jobEjecucionRepository;
 
     @Autowired
     private ConfiguracionGlobalService configuracionGlobalService;
+
+    @Value("${whatsapp.plantilla.recordatorio-visita-instructor:recordatorio_visita_instructor}")
+    private String plantillaVisitaInstructor;
+
+    @Value("${whatsapp.plantilla.recordatorio-visita-aprendiz:recordatorio_visita_aprendiz}")
+    private String plantillaVisitaAprendiz;
 
     @Scheduled(cron = "0 0 1 * * *") // Todos los días a la 1:00 a.m.
     @Transactional
@@ -69,14 +80,17 @@ public class VisitaAlertaService {
         int diasAprendiz = configuracionGlobalService.getEntero(ConfiguracionGlobalService.DIAS_ALERTA_APRENDIZ, 2);
         int diasPrimeraVisita = configuracionGlobalService.getEntero(ConfiguracionGlobalService.DIAS_PRIMERA_VISITA, 15);
 
-        int alertasInstructores = 0, alertasAprendices = 0, correosEnviados = 0, alertasPrimeraVisita = 0;
+        int alertasInstructores = 0, alertasAprendices = 0, correosEnviados = 0, alertasPrimeraVisita = 0, whatsappEnviados = 0;
         try {
             LocalDate hoy = LocalDate.now();
-            alertasInstructores = alertarInstructores(hoy, hoy.plusDays(diasInstructor), diasInstructor);
+            int[] resultadoInstructores = alertarInstructores(hoy, hoy.plusDays(diasInstructor), diasInstructor);
+            alertasInstructores = resultadoInstructores[0];
+            whatsappEnviados += resultadoInstructores[1];
 
             int[] resultadoAprendices = alertarAprendices(hoy, hoy.plusDays(diasAprendiz), diasAprendiz);
             alertasAprendices = resultadoAprendices[0];
             correosEnviados = resultadoAprendices[1];
+            whatsappEnviados += resultadoAprendices[2];
 
             alertasPrimeraVisita = alertarPrimeraVisitaPendiente(hoy, diasPrimeraVisita);
 
@@ -89,9 +103,11 @@ public class VisitaAlertaService {
                     .alertasAprendices(alertasAprendices)
                     .correosEnviados(correosEnviados)
                     .alertasPrimeraVisita(alertasPrimeraVisita)
+                    .registrosProcesados(whatsappEnviados)
                     .detalle("Alertas a " + diasInstructor + " días (instructores) y " + diasAprendiz
                             + " días (aprendices) enviadas correctamente. Alertas de primera visita ("
-                            + diasPrimeraVisita + " días desde el inicio): " + alertasPrimeraVisita + ".")
+                            + diasPrimeraVisita + " días desde el inicio): " + alertasPrimeraVisita
+                            + ". WhatsApp enviados: " + whatsappEnviados + ".")
                     .build());
         } catch (Exception e) {
             // Registra la corrida fallida para que el Administrador la vea en Monitoreo de Jobs
@@ -104,35 +120,48 @@ public class VisitaAlertaService {
                     .alertasAprendices(alertasAprendices)
                     .correosEnviados(correosEnviados)
                     .alertasPrimeraVisita(alertasPrimeraVisita)
+                    .registrosProcesados(whatsappEnviados)
                     .detalle("Error: " + e.getMessage())
                     .build());
             throw e;
         }
     }
 
-    private int alertarInstructores(LocalDate hoy, LocalDate fechaLimite, int dias) {
-        int alertas = 0;
+    // @return [alertas enviadas, mensajes de WhatsApp enviados]
+    private int[] alertarInstructores(LocalDate hoy, LocalDate fechaLimite, int dias) {
+        int alertas = 0, whatsapps = 0;
         for (VisitaSeguimiento visita : visitaSeguimientoRepository
-                .findByEstadoVisitaAndFechaVisitaBetweenAndAlertaInstructorEnviadaFalse(EstadoVisita.PLANEADA, hoy, fechaLimite)) {
+                .findByEstadoVisitaAndFechaVisitaBetweenAndAlertaInstructorEnviadaFalse(
+                        EstadoVisita.PLANEADA, hoy.atStartOfDay(), fechaLimite.atTime(23, 59, 59))) {
             Usuario aprendiz = visita.getEtapaProductiva().getAprendizFicha().getUsuario();
-            notificacionService.crear(visita.getInstructor(),
+            Usuario instructor = visita.getInstructor();
+            String fechaVisita = visita.getFechaVisita().format(FORMATO_FECHA);
+
+            notificacionService.crear(instructor,
                     "⏰ Tienes una visita de seguimiento programada en " + dias + " días ("
-                            + visita.getFechaVisita().format(FORMATO_FECHA) + ") con "
-                            + aprendiz.getNombre() + " " + aprendiz.getApellido() + ".");
+                            + fechaVisita + ") con " + aprendiz.getNombre() + " " + aprendiz.getApellido() + ".");
             visita.setAlertaInstructorEnviada(true);
             visitaSeguimientoRepository.save(visita);
             alertas++;
+
+            if (whatsAppService.enviarPlantillaSiHabilitado(instructor.getTelefono(), plantillaVisitaInstructor, "es",
+                    List.of(instructor.getNombre(), aprendiz.getNombre() + " " + aprendiz.getApellido(), fechaVisita))) {
+                whatsapps++;
+            }
         }
-        return alertas;
+        return new int[]{alertas, whatsapps};
     }
 
+    // @return [alertas enviadas, correos enviados, mensajes de WhatsApp enviados]
     private int[] alertarAprendices(LocalDate hoy, LocalDate fechaLimite, int dias) {
-        int alertas = 0, correos = 0;
+        int alertas = 0, correos = 0, whatsapps = 0;
         for (VisitaSeguimiento visita : visitaSeguimientoRepository
-                .findByEstadoVisitaAndFechaVisitaBetweenAndAlertaAprendizEnviadaFalse(EstadoVisita.PLANEADA, hoy, fechaLimite)) {
+                .findByEstadoVisitaAndFechaVisitaBetweenAndAlertaAprendizEnviadaFalse(
+                        EstadoVisita.PLANEADA, hoy.atStartOfDay(), fechaLimite.atTime(23, 59, 59))) {
             Usuario aprendiz = visita.getEtapaProductiva().getAprendizFicha().getUsuario();
+            String fechaVisita = visita.getFechaVisita().format(FORMATO_FECHA);
             String mensaje = "⏰ Recuerda: tienes una visita de seguimiento programada en " + dias + " días ("
-                    + visita.getFechaVisita().format(FORMATO_FECHA) + ").";
+                    + fechaVisita + ").";
 
             notificacionService.crear(aprendiz, mensaje);
             visita.setAlertaAprendizEnviada(true);
@@ -142,8 +171,12 @@ public class VisitaAlertaService {
                     "KRONOS - Recordatorio de visita de seguimiento", mensaje)) {
                 correos++;
             }
+            if (whatsAppService.enviarPlantillaSiHabilitado(aprendiz.getTelefono(), plantillaVisitaAprendiz, "es",
+                    List.of(aprendiz.getNombre(), fechaVisita))) {
+                whatsapps++;
+            }
         }
-        return new int[]{alertas, correos};
+        return new int[]{alertas, correos, whatsapps};
     }
 
     /**

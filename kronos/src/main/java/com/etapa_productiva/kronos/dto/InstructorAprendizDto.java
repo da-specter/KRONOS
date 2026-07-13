@@ -24,6 +24,8 @@ public class InstructorAprendizDto {
     private String ficha;
     private String programaFormacion;
     private String razonSocial;
+    private String municipioEmpresa;
+    private String departamentoEmpresa;
     private String jefeNombre;
     private String jefeTelefono;
     private String modalidadContrato;

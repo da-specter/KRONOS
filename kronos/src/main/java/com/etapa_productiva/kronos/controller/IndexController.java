@@ -6,7 +6,6 @@ import com.etapa_productiva.kronos.entity.AprendizFicha;
 import com.etapa_productiva.kronos.repository.AsignacionInstructorEtapaRepository;
 import com.etapa_productiva.kronos.entity.EstadoEtapa;
 import com.etapa_productiva.kronos.entity.EstadoSolicitud;
-import com.etapa_productiva.kronos.entity.EstadoValidacion;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.Ficha;
 import com.etapa_productiva.kronos.entity.InstructorSeguimiento;
@@ -40,14 +39,22 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
 public class IndexController {
+
+    // ⏰ Umbral de las alertas de documentos "estancados": si una solicitud lleva más de
+    // este número de días en la bandeja de Calificar Documentos (Gestor) o Validación de
+    // Documentos (Registro) sin que nadie la mueva, se avisa en el dashboard del rol dueño
+    // de esa bandeja.
+    private static final long DIAS_ALERTA_DOCUMENTOS_ESTANCADOS = 2;
 
     @Autowired
     private SolicitudRepository solicitudRepository;
@@ -135,14 +142,19 @@ public class IndexController {
 
         List<String> roles = usuarioLogueado.getRoles();
 
-        // 3 y 4. Bandeja del Gestor de Etapa: absorbe lo que antes era exclusivo del Coordinador
-        //    (solicitudes pendientes) + los documentos por validar (el detalle de calificación
-        //    vive en /gestor/calificar-documentos, único módulo de revisión del Gestor)
+        // 3. Bandeja del Gestor de Etapa: solicitudes recién radicadas, pendientes del primer
+        //    filtro. El detalle de calificación de documentos vive en /gestor/calificar-documentos,
+        //    único módulo de revisión del Gestor (el widget de "documentos pendientes" que solía
+        //    vivir aquí se quitó: duplicaba esa bandeja y podía mostrar datos desalineados, porque
+        //    el flag de documento no siempre reflejaba en qué paso real estaba la solicitud).
         if (roles != null && roles.contains("GESTOR_ETAPA")) {
             model.addAttribute("solicitudesPendientes",
                     solicitudRepository.findByEstado(EstadoSolicitud.PENDIENTE_REVISION));
-            model.addAttribute("documentosPendientes",
-                    documentoSolicitudRepository.findByEstadoValidacion(EstadoValidacion.PENDIENTE));
+
+            // ⏰ Alerta: aprendices que ya enviaron sus formatos/plantillas pero llevan más de
+            // 2 días esperando que el Gestor los califique en /gestor/calificar-documentos.
+            model.addAttribute("alertasCalificacionVencida",
+                    construirAlertasVencidas(EstadoSolicitud.FORMATOS_ENVIADOS));
 
             // 👋 Saludo dinámico del Gestor de Etapa según la franja horaria (mañana/tarde/noche/trasnochador)
             String[] saludoGestor = saludoGestorEtapa(usuarioLogueado.getNombre());
@@ -150,7 +162,7 @@ public class IndexController {
             model.addAttribute("saludoGestorFrase", saludoGestor[1]);
         } else {
             model.addAttribute("solicitudesPendientes", Collections.emptyList());
-            model.addAttribute("documentosPendientes", Collections.emptyList());
+            model.addAttribute("alertasCalificacionVencida", Collections.emptyList());
         }
 
         // 5. Panel del Instructor de Seguimiento: dashboard (números + gráficas) de sus aprendices asignados
@@ -188,6 +200,15 @@ public class IndexController {
             model.addAttribute("dashCoordinacion", coordinacionAcademicaService.calcularDashboard());
         } else {
             model.addAttribute("dashCoordinacion", null);
+        }
+
+        // ⏰ Alerta del rol Registro: solicitudes que el Gestor ya calificó y envió, pero
+        // llevan más de 2 días esperando la validación de documentos en /registro/documentos.
+        if (roles != null && roles.contains("REGISTRO")) {
+            model.addAttribute("alertasValidacionVencida",
+                    construirAlertasVencidas(EstadoSolicitud.EN_VALIDACION_REGISTRO));
+        } else {
+            model.addAttribute("alertasValidacionVencida", Collections.emptyList());
         }
 
         // 7. Panel de Control del Administrador: vista general del sistema
@@ -625,6 +646,22 @@ public class IndexController {
         long horas = minutosTotales / 60;
         long minutos = minutosTotales % 60;
         return horas > 0 ? horas + " h " + minutos + " min" : minutos + " min";
+    }
+
+    // ⏰ Solicitudes que llevan más de DIAS_ALERTA_DOCUMENTOS_ESTANCADOS días en el estado
+    // indicado (según FECHA_ACTUALIZACION, que se actualiza cada vez que la solicitud cambia
+    // de estado), ordenadas de la más urgente a la más reciente.
+    private List<com.etapa_productiva.kronos.dto.AlertaSolicitud> construirAlertasVencidas(EstadoSolicitud estado) {
+        LocalDateTime limite = LocalDateTime.now().minusDays(DIAS_ALERTA_DOCUMENTOS_ESTANCADOS);
+        return solicitudRepository.findByEstado(estado).stream()
+                .filter(s -> s.getFechaActualizacion() != null && s.getFechaActualizacion().isBefore(limite))
+                .sorted(Comparator.comparing(SolicitudEtapaPractica::getFechaActualizacion))
+                .map(s -> new com.etapa_productiva.kronos.dto.AlertaSolicitud(
+                        s.getIdSolicitud(),
+                        s.getAprendizFicha().getUsuario().getNombre() + " " + s.getAprendizFicha().getUsuario().getApellido(),
+                        s.getAprendizFicha().getFicha().getNumeroFicha(),
+                        ChronoUnit.DAYS.between(s.getFechaActualizacion(), LocalDateTime.now())))
+                .toList();
     }
 
     private SolicitudEtapaPractica buscarSolicitudActual(Long idUsuario) {

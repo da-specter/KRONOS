@@ -25,136 +25,294 @@
 
             <div class="alert-danger" th:if="${error}" th:text="${error}" style="grid-column: 1 / -1; margin-top: 0;"></div>
 
-            <div th:each="solicitud : ${solicitudesParaRegistrar}"
-                 style="grid-column: 1 / -1; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
-
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <p style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;"
-                           th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</p>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
-                           th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud} + ' · ' + ${solicitud.seccionFormato.nombreSeccion}">
-                            Ficha 2555228 · Sol. #2 · Pasantía
-                        </p>
-                    </div>
-                    <button type="button" th:onclick="'toggleRegistroForm(' + ${solicitud.idSolicitud} + ')'"
-                            style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
-                        Registrar Etapa
-                    </button>
-                </div>
-
-                <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
-                      th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
-                      style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
-
-                    <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
-
-                    <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Datos de la empresa</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>NIT</label>
-                            <div class="input-container"><input type="text" name="nit" required pattern="\d+" inputmode="numeric" title="El NIT solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Nombre de la empresa</label>
-                            <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+( [a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+)*" title="El nombre de la empresa puede contener letras, números y los signos . , & - #." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Dirección</label>
-                            <div class="input-container"><input type="text" name="direccionEmpresa" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Teléfono</label>
-                            <div class="input-container"><input type="text" name="telefonoEmpresa" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Correo</label>
-                            <div class="input-container"><input type="email" name="correoEmpresa" pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: contacto@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Departamento</label>
-                            <div class="input-container">
-                                <select name="nombreDepartamento" required onchange="filtrarMunicipios(this)"
-                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
-                                    <option value="">Selecciona un departamento</option>
-                                    <option th:each="d : ${departamentos}" th:value="${d.nombreDepartamento}"
-                                            th:text="${d.nombreDepartamento}" th:attr="data-id=${d.idDepartamento}"></option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Municipio</label>
-                            <div class="input-container">
-                                <select name="nombreMunicipio" required
-                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
-                                    <option value="">Selecciona un departamento primero</option>
-                                    <option th:each="m : ${municipios}" th:value="${m.nombreMunicipio}"
-                                            th:text="${m.nombreMunicipio}" th:attr="data-dept=${m.departamento.idDepartamento}" hidden></option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Contrato y vigencia</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Tipo de contrato</label>
-                            <div class="input-container">
-                                <select name="nombreTipoContrato" required
-                                        style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
-                                    <option value="">Selecciona la modalidad</option>
-                                    <option th:each="tc : ${tiposContrato}" th:value="${tc.nombreTipoContrato}"
-                                            th:text="${tc.nombreTipoContrato}">Pasantia</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Fecha inicio</label>
-                            <div class="input-container"><input type="date" name="fechaInicio" required onchange="ajustarRangoFechaFin(this)" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Fecha fin <span style="font-weight: 500; color: var(--text-muted); font-size: 11px;">(máx. 6 meses)</span></label>
-                            <div class="input-container"><input type="date" name="fechaFin" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                    </div>
-
-                    <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Jefe inmediato</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Nombre</label>
-                            <div class="input-container"><input type="text" name="nombreJefeInmediato" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Correo</label>
-                            <div class="input-container"><input type="email" name="correoJefeInmediato" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: jefe@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Teléfono</label>
-                            <div class="input-container"><input type="text" name="telefonoJefeInmediato" required pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                    </div>
-
-                    <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
-                        <div class="form-group" style="margin-bottom: 0; max-width: 320px;">
-                            <label>Tu contraseña</label>
-                            <div class="input-container"><input type="password" name="contrasena" required autocomplete="current-password" placeholder="Confírmala para registrar" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
-                        </div>
-                    </div>
-                    <p style="font-size: 11.5px; color: var(--text-muted); margin: -8px 0 14px 0;">Por seguridad, el registro solo se confirma si tu contraseña es correcta.</p>
-
-                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Registro</button>
-                </form>
+            <!-- 🔀 Dos caminos separados: Contrato de Aprendizaje ya trae sus datos de Sofía Plus
+                 (el tipo de contrato queda fijo), las demás modalidades siguen el formulario
+                 completo de siempre — no se toca su comportamiento. -->
+            <div style="grid-column: 1 / -1; display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px;">
+                <button type="button" id="btn-tab-contrato-aprendizaje" onclick="mostrarTabRegistro('contrato-aprendizaje')"
+                        style="background: var(--verde-sena); color: #fff; border: none; padding: 12px 22px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                    🎓 Contrato de Aprendizaje
+                </button>
+                <button type="button" id="btn-tab-otras-modalidades" onclick="mostrarTabRegistro('otras-modalidades')"
+                        style="background: #F8FAF9; color: var(--text-dark); border: 1px solid var(--card-border); padding: 12px 22px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                    🏢 Otras modalidades
+                </button>
             </div>
 
-            <p th:if="${#lists.isEmpty(solicitudesParaRegistrar)}" class="dashboard-panel" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
-                🎉 No hay solicitudes pendientes de registrar como Etapa Productiva.
-            </p>
+            <!-- ═══════════════════════ Panel: Contrato de Aprendizaje ═══════════════════════ -->
+            <div id="tab-contrato-aprendizaje" style="grid-column: 1 / -1;">
+                <div th:each="solicitud : ${solicitudesParaRegistrar}" th:if="${solicitud.seccionFormato.esContratoAprendizaje()}"
+                     style="background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <p style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;"
+                               th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
+                               th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud} + ' · Contrato Aprendizaje'">
+                                Ficha 2555228 · Sol. #2 · Contrato Aprendizaje
+                            </p>
+                        </div>
+                        <button type="button" th:onclick="'toggleRegistroForm(' + ${solicitud.idSolicitud} + ')'"
+                                style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                            Registrar Etapa
+                        </button>
+                    </div>
+
+                    <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
+                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
+                          style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
+
+                        <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
+                        <input type="hidden" name="nombreTipoContrato" value="Contrato de Aprendizaje">
+
+                        <p style="font-size: 12px; color: var(--text-muted); margin: -4px 0 14px 0;">
+                            🎓 El tipo de contrato ya queda fijo en <strong>Contrato de Aprendizaje</strong> — solo completa los demás datos.
+                        </p>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Datos de la empresa</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>NIT</label>
+                                <div class="input-container"><input type="text" name="nit" required pattern="\d+" inputmode="numeric" title="El NIT solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Nombre de la empresa</label>
+                                <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+( [a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+)*" title="El nombre de la empresa puede contener letras, números y los signos . , & - #." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Dirección</label>
+                                <div class="input-container"><input type="text" name="direccionEmpresa" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Teléfono</label>
+                                <div class="input-container"><input type="text" name="telefonoEmpresa" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Correo</label>
+                                <div class="input-container"><input type="email" name="correoEmpresa" pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: contacto@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Departamento</label>
+                                <div class="input-container">
+                                    <select name="nombreDepartamento" required onchange="filtrarMunicipios(this)"
+                                            style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                        <option value="">Selecciona un departamento</option>
+                                        <option th:each="d : ${departamentos}" th:value="${d.nombreDepartamento}"
+                                                th:text="${d.nombreDepartamento}" th:attr="data-id=${d.idDepartamento}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Municipio</label>
+                                <div class="input-container">
+                                    <select name="nombreMunicipio" required
+                                            style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                        <option value="">Selecciona un departamento primero</option>
+                                        <option th:each="m : ${municipios}" th:value="${m.nombreMunicipio}"
+                                                th:text="${m.nombreMunicipio}" th:attr="data-dept=${m.departamento.idDepartamento}" hidden></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Vigencia</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Fecha inicio</label>
+                                <div class="input-container"><input type="date" name="fechaInicio" required onchange="ajustarRangoFechaFin(this)" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Fecha fin <span style="font-weight: 500; color: var(--text-muted); font-size: 11px;">(máx. 6 meses)</span></label>
+                                <div class="input-container"><input type="date" name="fechaFin" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Jefe inmediato</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Nombre</label>
+                                <div class="input-container"><input type="text" name="nombreJefeInmediato" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Correo</label>
+                                <div class="input-container"><input type="email" name="correoJefeInmediato" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: jefe@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Teléfono</label>
+                                <div class="input-container"><input type="text" name="telefonoJefeInmediato" required pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0; max-width: 320px;">
+                                <label>Tu contraseña</label>
+                                <div class="input-container"><input type="password" name="contrasena" required autocomplete="current-password" placeholder="Confírmala para registrar" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+                        <p style="font-size: 11.5px; color: var(--text-muted); margin: -8px 0 14px 0;">Por seguridad, el registro solo se confirma si tu contraseña es correcta.</p>
+
+                        <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Registro</button>
+                    </form>
+                </div>
+
+                <p th:if="${#lists.isEmpty(solicitudesParaRegistrar.?[seccionFormato.esContratoAprendizaje()])}"
+                   class="dashboard-panel" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                    🎉 No hay solicitudes de Contrato de Aprendizaje pendientes de registrar.
+                </p>
+            </div>
+
+            <!-- ═══════════════════════ Panel: Otras modalidades (sin cambios) ═══════════════════════ -->
+            <div id="tab-otras-modalidades" style="grid-column: 1 / -1; display: none;">
+                <div th:each="solicitud : ${solicitudesParaRegistrar}" th:if="${!solicitud.seccionFormato.esContratoAprendizaje()}"
+                     style="background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06), 0 20px 40px -8px rgba(15, 23, 42, 0.16); border: 1px solid var(--card-border); margin-top: 10px;">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <p style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;"
+                               th:text="${solicitud.aprendizFicha.usuario.nombre} + ' ' + ${solicitud.aprendizFicha.usuario.apellido}">Nombre Aprendiz</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;"
+                               th:text="'Ficha ' + ${solicitud.aprendizFicha.ficha.numeroFicha} + ' · Sol. #' + ${solicitud.idSolicitud} + ' · ' + ${solicitud.seccionFormato.nombreSeccion}">
+                                Ficha 2555228 · Sol. #2 · Pasantía
+                            </p>
+                        </div>
+                        <button type="button" th:onclick="'toggleRegistroForm(' + ${solicitud.idSolicitud} + ')'"
+                                style="background-color: var(--verde-sena); color: #FFFFFF; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 112, 21, 0.15);">
+                            Registrar Etapa
+                        </button>
+                    </div>
+
+                    <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
+                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
+                          style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
+
+                        <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Datos de la empresa</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>NIT</label>
+                                <div class="input-container"><input type="text" name="nit" required pattern="\d+" inputmode="numeric" title="El NIT solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Nombre de la empresa</label>
+                                <div class="input-container"><input type="text" name="nombreEmpresa" required pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+( [a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,&#-]+)*" title="El nombre de la empresa puede contener letras, números y los signos . , & - #." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Dirección</label>
+                                <div class="input-container"><input type="text" name="direccionEmpresa" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Teléfono</label>
+                                <div class="input-container"><input type="text" name="telefonoEmpresa" pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Correo</label>
+                                <div class="input-container"><input type="email" name="correoEmpresa" pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: contacto@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Departamento</label>
+                                <div class="input-container">
+                                    <select name="nombreDepartamento" required onchange="filtrarMunicipios(this)"
+                                            style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                        <option value="">Selecciona un departamento</option>
+                                        <option th:each="d : ${departamentos}" th:value="${d.nombreDepartamento}"
+                                                th:text="${d.nombreDepartamento}" th:attr="data-id=${d.idDepartamento}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Municipio</label>
+                                <div class="input-container">
+                                    <select name="nombreMunicipio" required
+                                            style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                        <option value="">Selecciona un departamento primero</option>
+                                        <option th:each="m : ${municipios}" th:value="${m.nombreMunicipio}"
+                                                th:text="${m.nombreMunicipio}" th:attr="data-dept=${m.departamento.idDepartamento}" hidden></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Contrato y vigencia</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Tipo de contrato</label>
+                                <div class="input-container">
+                                    <select name="nombreTipoContrato" required
+                                            style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;">
+                                        <option value="">Selecciona la modalidad</option>
+                                        <option th:each="tc : ${tiposContrato}" th:value="${tc.nombreTipoContrato}"
+                                                th:text="${tc.nombreTipoContrato}">Pasantia</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Fecha inicio</label>
+                                <div class="input-container"><input type="date" name="fechaInicio" required onchange="ajustarRangoFechaFin(this)" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Fecha fin <span style="font-weight: 500; color: var(--text-muted); font-size: 11px;">(máx. 6 meses)</span></label>
+                                <div class="input-container"><input type="date" name="fechaFin" required style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">Jefe inmediato</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Nombre</label>
+                                <div class="input-container"><input type="text" name="nombreJefeInmediato" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+( [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)*" title="El nombre solo puede contener letras." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Correo</label>
+                                <div class="input-container"><input type="email" name="correoJefeInmediato" required pattern="[^@\s]+@[^@\s]*\.co[^@\s]*" title="El correo debe tener '@' y dominio '.co' (ej: jefe@empresa.com.co)." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Teléfono</label>
+                                <div class="input-container"><input type="text" name="telefonoJefeInmediato" required pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                            <div class="form-group" style="margin-bottom: 0; max-width: 320px;">
+                                <label>Tu contraseña</label>
+                                <div class="input-container"><input type="password" name="contrasena" required autocomplete="current-password" placeholder="Confírmala para registrar" style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
+                            </div>
+                        </div>
+                        <p style="font-size: 11.5px; color: var(--text-muted); margin: -8px 0 14px 0;">Por seguridad, el registro solo se confirma si tu contraseña es correcta.</p>
+
+                        <button type="submit" class="btn-login" style="margin-top: 0; padding: 10px 24px; font-size: 13px;">Confirmar Registro</button>
+                    </form>
+                </div>
+
+                <p th:if="${#lists.isEmpty(solicitudesParaRegistrar.?[!seccionFormato.esContratoAprendizaje()])}"
+                   class="dashboard-panel" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                    🎉 No hay solicitudes pendientes de registrar como Etapa Productiva.
+                </p>
+            </div>
 
         </section>
     </main>
 
     <script>
+        // 🔀 Alterna entre el panel de Contrato de Aprendizaje y el de las demás modalidades
+        function mostrarTabRegistro(tab) {
+            const esContrato = tab === 'contrato-aprendizaje';
+            document.getElementById('tab-contrato-aprendizaje').style.display = esContrato ? 'block' : 'none';
+            document.getElementById('tab-otras-modalidades').style.display = esContrato ? 'none' : 'block';
+
+            const btnContrato = document.getElementById('btn-tab-contrato-aprendizaje');
+            const btnOtras = document.getElementById('btn-tab-otras-modalidades');
+            btnContrato.style.background = esContrato ? 'var(--verde-sena)' : '#F8FAF9';
+            btnContrato.style.color = esContrato ? '#fff' : 'var(--text-dark)';
+            btnContrato.style.border = esContrato ? 'none' : '1px solid var(--card-border)';
+            btnOtras.style.background = esContrato ? '#F8FAF9' : 'var(--verde-sena)';
+            btnOtras.style.color = esContrato ? 'var(--text-dark)' : '#fff';
+            btnOtras.style.border = esContrato ? '1px solid var(--card-border)' : 'none';
+        }
+
         function toggleRegistroForm(idSolicitud) {
             const form = document.getElementById('form-registro-' + idSolicitud);
             if (!form) return;

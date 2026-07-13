@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Formato GFPI-F-023 V6 - SENA</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #000000;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .container.page-break {
+            page-break-before: always;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .logo-sena {
+            width: 65px;
+            height: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #000000;
+            padding: 5px 6px;
+            vertical-align: middle;
+            text-align: left;
+        }
+        .bg-black {
+            background-color: #000000;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            padding: 6px !important;
+            line-height: 1.3;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-bold {
+            font-weight: bold;
+        }
+        .section-sidebar {
+            font-weight: bold;
+            text-align: center;
+            font-size: 10px;
+            width: 110px;
+            background-color: #ffffff;
+        }
+        .label-cell {
+            font-weight: bold;
+            width: 190px;
+        }
+        .checkbox-cell {
+            width: 35px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .footer-text {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 15px;
+        }
+        .legal-text {
+            font-size: 15px;
+            text-align: justify;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #000000;
+            margin-bottom: -1px; /* Evita bordes dobles al apilar tablas */
+            table-layout: fixed;
+        }
+        .main-table td, .main-table th {
+            border: 1px solid #000000;
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+        .section-subtitle {
+            font-weight: bold;
+            font-style: italic;
+            text-align: center;
+            padding: 4px;
+            background-color: #ffffff;
+            page-break-after: avoid;
+        }
+        .label-sm {
+            font-size: 10px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .italic-text {
+            font-style: italic;
+            font-weight: normal;
+        }
+        /* Tablas internas invisibles (evitan descuadrar la grilla) */
+        .inner-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+        .inner-table td {
+            border: none;
+            border-right: 1px solid #000000;
+            padding: 4px 6px;
+        }
+        .inner-table td:last-child {
+            border-right: none;
+        }
+        .concertacion-row {
+            height: 70px; /* Simula el espacio de escritura */
+        }
+        .obs-title {
+            font-weight: bold;
+            font-size: 10px;
+            margin-top: 15px;
+            margin-bottom: 2px;
+        }
+        .line-row {
+            border-bottom: 1px solid #000000;
+            min-height: 16px;
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 11px;
+            padding-left: 2px;
+        }
+        .feedback-row {
+            height: 85px;
+            vertical-align: top !important;
+            page-break-inside: avoid;
+        }
+        .juicio-box {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .checkbox-square {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #000;
+            margin-left: 5px;
+            margin-right: 15px;
+            text-align: center;
+            line-height: 12px;
+            font-size: 10px;
+        }
+        .signature-section {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            border: none;
+        }
+        .signature-section td {
+            border: none;
+            padding: 0;
+            vertical-align: bottom;
+        }
+        .signature-line {
+            border-bottom: 1px solid #000000;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="logo-container">
+        <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
+    </div>
+
+    <table>
+        <tr>
+            <td class="bg-black">PROCESO</td>
+        </tr>
+        <tr>
+            <td class="text-center text-bold">GESTIÓN DE FORMACIÓN PROFESIONAL INTEGRAL</td>
+        </tr>
+        <tr>
+            <td class="bg-black">NOMBRE DEL FORMATO</td>
+        </tr>
+        <tr>
+            <td class="text-center text-bold">Formato de Planeación, Seguimiento y Evaluación de Etapa Productiva</td>
+        </tr>
+        <tr>
+            <td class="bg-black">CLASIFICACIÓN DE LA INFORMACIÓN</td>
+        </tr>
+        <tr>
+            <td style="padding: 0;">
+                <table style="margin: 0; border: none;">
+                    <tr style="border: none;">
+                        <td style="border: none; width: 14%;">Pública</td>
+                        <td class="checkbox-cell" style="border-top: none; border-bottom: none;"></td>
+                        <td style="border: none; width: 22%;">Pública Clasificada</td>
+                        <td class="checkbox-cell" style="border-top: none; border-bottom: none;"></td>
+                        <td style="border: none; width: 22%;">Pública Reservada</td>
+                        <td class="checkbox-cell" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td class="bg-black" colspan="6">Información general</td>
+        </tr>
+        <tr>
+            <td class="text-bold" style="width: 15%;">Regional:</td>
+            <td style="width: 35%;" colspan="2" th:text="${regional}"></td>
+            <td class="text-bold" style="width: 15%;">Nivel formativo:</td>
+            <td style="width: 35%;" colspan="2" th:text="${nivelFormativo}"></td>
+        </tr>
+        <tr>
+            <td class="text-bold">Centro de formación:</td>
+            <td colspan="5" th:text="${centroFormacion}"></td>
+        </tr>
+        <tr>
+            <td class="text-bold">Programa de formación:</td>
+            <td colspan="3" th:text="${programaFormacion}"></td>
+            <td class="text-bold" style="width: 12%;">No. Grupo:</td>
+            <td th:text="${numeroGrupo}"></td>
+        </tr>
+        <tr>
+            <td class="text-bold">Modalidad de formación:</td>
+            <td style="width: 12%;">Presencial</td>
+            <td class="checkbox-cell" style="width: 30px;" th:text="${modPresencial}"></td>
+            <td style="width: 10%;">Virtual</td>
+            <td class="checkbox-cell" style="width: 30px;" th:text="${modVirtual}"></td>
+            <td>A Distancia <span class="checkbox-cell" th:text="${modDistancia}"></span></td>
+        </tr>
+        <tr>
+            <td class="text-bold">Estrategia formativa:</td>
+            <td colspan="2" th:text="${estrategiaFormativa}"></td>
+            <td class="text-bold" colspan="2">Fecha fin de la etapa lectiva:</td>
+            <td th:text="${fechaFinEtapaLectiva}"></td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td class="section-sidebar" rowspan="9">Datos del aprendiz</td>
+            <td class="label-cell">Nombre completo:</td>
+            <td th:text="${aprendizNombreCompleto}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Tipo de documento:</td>
+            <td th:text="${aprendizTipoDocumento}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">N° de identificación:</td>
+            <td th:text="${aprendizDocumento}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Contacto telefónico:</td>
+            <td th:text="${aprendizTelefono}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Dirección:</td>
+            <td th:text="${aprendizDireccion}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Correo electrónico personal:</td>
+            <td th:text="${aprendizCorreoPersonal}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Correo electrónico institucional:</td>
+            <td th:text="${aprendizCorreoInstitucional}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Alternativa de etapa productiva registrada:</td>
+            <td th:text="${aprendizAlternativaEtapa}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Fecha de Registro en SofiaPlus:</td>
+            <td th:text="${aprendizFechaRegistroSofia}"></td>
+        </tr>
+
+        <tr>
+            <td class="section-sidebar" rowspan="3">Datos del instructor de seguimiento:</td>
+            <td class="label-cell">Nombre:</td>
+            <td th:text="${instructorNombre}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Contacto telefónico:</td>
+            <td th:text="${instructorTelefono}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Correo electrónico institucional:</td>
+            <td th:text="${instructorCorreo}"></td>
+        </tr>
+
+        <tr>
+            <td class="section-sidebar" rowspan="9" style="font-size: 9.5px; padding: 4px;">
+                Datos del ente co-formador<br>
+                <span style="font-style: italic; font-weight: normal;">(jefe Inmediato o tutor* y empresa u organización)</span><br><br>
+                <span style="font-weight: normal; font-size: 8.5px;">* Tutor: resolución 0623 del 2020 y 3546 del 2018.</span>
+            </td>
+            <td class="label-cell">Nombre empresa o entidad co-formadora:</td>
+            <td th:text="${empresaNombre}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Dirección:</td>
+            <td th:text="${empresaDireccion}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Nit:</td>
+            <td th:text="${empresaNit}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Correo electrónico:</td>
+            <td th:text="${empresaCorreo}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Nombre del jefe inmediato/ co-formador del aprendiz/tutor:</td>
+            <td th:text="${empresaJefeInmediato}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Cargo:</td>
+            <td th:text="${empresaCargo}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Contacto telefónico:</td>
+            <td th:text="${empresaTelefonoJefe}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Nombre otro contacto:</td>
+            <td th:text="${empresaOtroContacto}"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Teléfono institucional (fijo/móvil):</td>
+            <td th:text="${empresaTelefonoInstitucional}"></td>
+        </tr>
+
+        <tr>
+            <td class="section-sidebar" rowspan="3" style="font-size: 9.5px;">
+                Persona en situación de discapacidad<br>
+                <span style="font-style: italic; font-weight: normal;">(Si aplica)</span>
+            </td>
+            <td class="label-cell">Nombre de la persona que asiste al aprendiz:</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="label-cell" style="font-size: 10.5px;">Tipo de asistencia <span style="font-style: italic; font-weight: normal;">(lenguaje de señas, apoyo visual, u otros):</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Contacto telefónico:</td>
+            <td></td>
+        </tr>
+    </table>
+
+    <div class="footer-text">GFPI-F-023 V6.</div>
+
+</div>
+
+<div class="container page-break">
+
+    <div class="logo-container">
+        <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
+    </div>
+
+    <div class="legal-text">
+        Con el diligenciamiento de este formato autorizo al SENA para la recolección y tratamiento de mis datos personales, conforme a la política de datos personales de la entidad GOR-POL-006. Entiendo que los datos serán objeto de recolección, almacenamiento, uso, circulación, supresión, transferencia, transmisión, cesión y todo el tratamiento, realizados por el SENA.
+    </div>
+
+    <table class="main-table">
+        <tr>
+            <td class="bg-black">
+                Momento N° 1 - Planeación de la Etapa Productiva <span class="italic-text">(Se realiza por una única vez)</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 0; border: none;">
+                <table class="inner-table" style="border-bottom: 1px solid #000;">
+                    <tr>
+                        <td style="width: 15%;" class="label-sm">Fecha inicio etapa<br>productiva:<br><span class="italic-text">(DD/MM/AA)</span></td>
+                        <td style="width: 18%;" th:text="${momento1.fechaInicio}"></td>
+                        <td style="width: 15%;" class="label-sm">Fecha fin de etapa<br>productiva:<br><span class="italic-text">(DD/MM/AA)</span></td>
+                        <td style="width: 18%;" th:text="${momento1.fechaFin}"></td>
+                        <td style="width: 16%;" class="label-sm">Fecha de afiliación a la<br>ARL:<br><span class="italic-text">(DD/MM/AA)</span></td>
+                        <td style="width: 18%;" th:text="${momento1.fechaArl}"></td>
+                    </tr>
+                </table>
+                <table class="inner-table" style="border-bottom: 1px solid #000;">
+                    <tr>
+                        <td style="width: 25%;" class="label-sm text-center">Número de póliza ARL:<br><span class="italic-text">(Si aplica)</span></td>
+                        <td style="width: 25%;" th:text="${momento1.numeroPoliza}"></td>
+                        <td style="width: 25%;" class="label-sm text-center">Horario:<br><span class="italic-text">(Indicar si es diurno, nocturno, días de la semana y la hora)</span></td>
+                        <td style="width: 25%;" th:text="${momento1.horario}"></td>
+                    </tr>
+                </table>
+                <table class="inner-table">
+                    <tr>
+                        <td style="width: 30%;" class="label-sm text-center">Enlace de grabación del momento 1:<br><span class="italic-text">(Aplica si se realiza de forma virtual)</span></td>
+                        <td style="width: 70%;" th:text="${momento1.enlaceGrabacion}"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <tr>
+            <td colspan="2" class="text-center text-bold label-sm" style="padding: 6px;">
+                Concertación plan de trabajo durante la etapa productiva del aprendiz
+            </td>
+        </tr>
+        <tr>
+            <td class="label-sm text-center concertacion-row" style="width: 28%;">
+                Competencias a desarrollar<br><span class="italic-text">(Competencias del programa relacionadas)</span>
+            </td>
+            <td style="width: 72%; vertical-align: top;" th:text="${momento1.competencias}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm text-center concertacion-row">
+                Resultados de aprendizaje
+            </td>
+            <td style="vertical-align: top;" th:text="${momento1.resultados}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm text-center concertacion-row">
+                Actividades a desarrollar<br><span class="italic-text">(Durante los meses de Etapa Productiva)</span>
+            </td>
+            <td style="vertical-align: top;" th:text="${momento1.actividades}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm text-center concertacion-row">
+                Evidencias de aprendizaje<br><span class="italic-text">(Que generará el Aprendiz de acuerdo con cada Actividad)</span>
+            </td>
+            <td style="vertical-align: top;" th:text="${momento1.evidencias}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm text-center concertacion-row">
+                Observaciones adicionales<br><span class="italic-text">(En caso de ser necesarias)</span>
+            </td>
+            <td style="vertical-align: top;" th:text="${momento1.observaciones}"></td>
+        </tr>
+    </table>
+
+    <table class="signature-section">
+        <tr>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del aprendiz</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del instructor de seguimiento</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del ente co-formador</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="label-sm" style="margin-top: 25px;">
+        Ciudad <span th:text="${momento1.ciudad}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        y fecha de diligenciamiento: <span th:text="${momento1.fechaDia}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${momento1.fechaMes}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${momento1.fechaAnio}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span>
+        de forma presencial <span style="text-decoration: underline;" th:text="${momento1.modalidadCierre == 'Presencial' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+        o virtual <span style="text-decoration: underline;" th:text="${momento1.modalidadCierre == 'Virtual' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+    </div>
+
+    <div class="footer-text">GFPI-F-023 V6.</div>
+
+</div>
+
+<div class="container page-break">
+
+    <div class="logo-container">
+        <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
+    </div>
+
+    <table class="main-table">
+        <tr>
+            <td class="bg-black" colspan="4">Momento N° 2 - Seguimiento Etapa Productiva</td>
+        </tr>
+        <tr>
+            <td style="width: 22%;" class="label-sm">Fecha inicio de etapa<br>productiva:<br><span class="italic-text">(DD/MM/AA)</span></td>
+            <td style="width: 28%;" th:text="${visita.fechaInicio}"></td>
+            <td style="width: 22%;" class="label-sm">Fecha del momento de<br>seguimiento:<br><span class="italic-text">(DD/MM/AA)</span></td>
+            <td style="width: 28%;" th:text="${visita.fechaSeguimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Modalidad del seguimiento:<br><span class="italic-text">(presencial/virtual)</span></td>
+            <td th:text="${visita.modalidad}"></td>
+            <td class="label-sm">Enlace de grabación del momento 2:<br><span class="italic-text">(si se hace de forma virtual)</span></td>
+            <td th:text="${visita.enlaceGrabacion}"></td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <tr>
+            <td colspan="4" class="section-subtitle">Factores Técnicos</td>
+        </tr>
+        <tr>
+            <td rowspan="2" class="text-center text-bold" style="width: 35%;">Variable</td>
+            <td colspan="2" class="text-center text-bold" style="width: 20%;">Valoración <span class="italic-text">(marcar con X)</span></td>
+            <td rowspan="2" class="text-center text-bold" style="width: 45%;">Observaciones / Compromisos de mejora</td>
+        </tr>
+        <tr>
+            <td class="text-center label-sm" style="width: 10%;">Satisfactorio</td>
+            <td class="text-center label-sm" style="width: 10%;">Por mejorar</td>
+        </tr>
+        <tr>
+            <td class="label-sm">Aplicación de conocimiento</td>
+            <td class="text-center" th:text="${visita.aplicacionConocimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.aplicacionConocimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsConocimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Mejora continua</td>
+            <td class="text-center" th:text="${visita.mejoraContinua == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.mejoraContinua == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsMejora}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Fortalecimiento ocupacional</td>
+            <td class="text-center" th:text="${visita.fortalecimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.fortalecimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsFortalecimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Oportunidad y calidad</td>
+            <td class="text-center" th:text="${visita.oportunidad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.oportunidad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsOportunidad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Responsabilidad ambiental</td>
+            <td class="text-center" th:text="${visita.responsabilidad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.responsabilidad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsResponsabilidad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Administración de recursos</td>
+            <td class="text-center" th:text="${visita.administracion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.administracion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsAdministracion}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Seguridad y salud en el trabajo</td>
+            <td class="text-center" th:text="${visita.seguridad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.seguridad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsSeguridad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Documentación etapa productiva</td>
+            <td class="text-center" th:text="${visita.documentacion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.documentacion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsDocumentacion}"></td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <tr>
+            <td colspan="4" class="section-subtitle">Factores Actitudinales y Comportamentales</td>
+        </tr>
+        <tr>
+            <td rowspan="2" class="text-center text-bold" style="width: 35%;">Variable</td>
+            <td colspan="2" class="text-center text-bold" style="width: 20%;">Valoración <span class="italic-text">(marcar con X)</span></td>
+            <td rowspan="2" class="text-center text-bold" style="width: 45%;">Observaciones / Compromisos de mejora</td>
+        </tr>
+        <tr>
+            <td class="text-center label-sm" style="width: 10%;">Satisfactorio</td>
+            <td class="text-center label-sm" style="width: 10%;">Por mejorar</td>
+        </tr>
+        <tr>
+            <td class="label-sm">Relaciones interpersonales</td>
+            <td class="text-center" th:text="${visita.relaciones == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.relaciones == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsRelaciones}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Trabajo en equipo</td>
+            <td class="text-center" th:text="${visita.equipo == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.equipo == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsEquipo}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Solución de problemas</td>
+            <td class="text-center" th:text="${visita.solucion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.solucion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsSolucion}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Cumplimiento</td>
+            <td class="text-center" th:text="${visita.cumplimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.cumplimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsCumplimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Organización</td>
+            <td class="text-center" th:text="${visita.organizacion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${visita.organizacion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${visita.obsOrganizacion}"></td>
+        </tr>
+    </table>
+
+    <div class="obs-title">Observaciones complementarias del instructor de seguimiento:</div>
+    <div class="line-row" th:text="${visita.obsComplementariasInstructor}"></div>
+    <div class="line-row"></div>
+    <div class="line-row"></div>
+
+    <div class="obs-title">Observaciones del aprendiz:</div>
+    <div class="line-row" th:text="${visita.obsAprendiz}"></div>
+    <div class="line-row"></div>
+
+    <div class="obs-title">Observaciones del responsable ente co-formador:</div>
+    <div class="line-row" th:text="${visita.obsCoformador}"></div>
+    <div class="line-row"></div>
+
+    <table class="signature-section">
+        <tr>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del aprendiz</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma Instructor de seguimiento</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del ente co-formador</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="label-sm" style="margin-top: 30px; text-align: center;">
+        Ciudad <span th:text="${visita.ciudad}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        y fecha de diligenciamiento: <span th:text="${visita.fechaDia}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${visita.fechaMes}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${visita.fechaAnio}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span>
+        de forma presencial <span style="text-decoration: underline;" th:text="${visita.modalidadCierre == 'Presencial' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+        o virtual <span style="text-decoration: underline;" th:text="${visita.modalidadCierre == 'Virtual' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+    </div>
+
+    <div class="footer-text">GFPI-F-023 V6.</div>
+
+</div>
+
+<div class="container page-break">
+
+    <div class="logo-container">
+        <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
+    </div>
+
+    <table class="main-table" style="table-layout: fixed;">
+        <tr>
+            <td class="bg-black" colspan="6">
+                Momento N° 3 - Evaluación etapa productiva<br>
+                <span class="italic-text" style="font-size: 10px;">(Este ítem solo se diligencia una vez, al finalizar la Etapa Productiva)</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-sm" style="width: 16%;">Fecha inicio etapa productiva:<br><span class="italic-text">(DD/MM/AA)</span></td>
+            <td style="width: 14%;" th:text="${evaluacion.fechaInicio}"></td>
+            <td class="label-sm" style="width: 18%;">Fecha de fin de la ejecución<br>de la etapa productiva:<br><span class="italic-text">(DD/MM/AA)</span></td>
+            <td style="width: 14%;" th:text="${evaluacion.fechaFin}"></td>
+            <td class="label-sm" style="width: 18%;">Número de visitas<br>realizadas en toda la<br>etapa productiva:</td>
+            <td style="width: 20%;" class="text-center" th:text="${evaluacion.numeroVisitas}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm" colspan="2">La evaluación se realizó en<br>forma (virtual/presencial):</td>
+            <td colspan="1" th:text="${evaluacion.modalidad}"></td>
+            <td class="label-sm" colspan="2">Enlace de grabación del momento 3:<br><span class="italic-text">(si se hace de forma virtual)</span></td>
+            <td colspan="1" th:text="${evaluacion.enlaceGrabacion}"></td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <colgroup>
+            <col style="width: 26%;"> <col style="width: 12%;"> <col style="width: 12%;"> <col style="width: 50%;"> </colgroup>
+        <tr>
+            <td colspan="4" class="section-subtitle">Factores Técnicos</td>
+        </tr>
+        <tr>
+            <td rowspan="2" class="text-center text-bold">Variable</td>
+            <td colspan="2" class="text-center text-bold">Valoración <span class="italic-text">(marcar con X)</span></td>
+            <td rowspan="2" class="text-center text-bold">Observaciones / Compromisos de mejora</td>
+        </tr>
+        <tr>
+            <td class="text-center label-sm">Satisfactorio</td>
+            <td class="text-center label-sm">Por mejorar</td>
+        </tr>
+        <tr>
+            <td class="label-sm">Aplicación de conocimiento</td>
+            <td class="text-center" th:text="${evaluacion.aplicacionConocimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.aplicacionConocimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsConocimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Mejora continua</td>
+            <td class="text-center" th:text="${evaluacion.mejoraContinua == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.mejoraContinua == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsMejora}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Fortalecimiento ocupacional</td>
+            <td class="text-center" th:text="${evaluacion.fortalecimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.fortalecimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsFortalecimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Oportunidad y calidad</td>
+            <td class="text-center" th:text="${evaluacion.oportunidad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.oportunidad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsOportunidad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Responsabilidad ambiental</td>
+            <td class="text-center" th:text="${evaluacion.responsabilidad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.responsabilidad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsResponsabilidad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Administración de recursos</td>
+            <td class="text-center" th:text="${evaluacion.administracion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.administracion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsAdministracion}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Seguridad y salud en el trabajo</td>
+            <td class="text-center" th:text="${evaluacion.seguridad == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.seguridad == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsSeguridad}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Documentación etapa productiva</td>
+            <td class="text-center" th:text="${evaluacion.documentacion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.documentacion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsDocumentacion}"></td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <colgroup>
+            <col style="width: 26%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 50%;">
+        </colgroup>
+        <tr>
+            <td colspan="4" class="section-subtitle">Factores Actitudinales y Comportamentales</td>
+        </tr>
+        <tr>
+            <td rowspan="2" class="text-center text-bold">Variable</td>
+            <td colspan="2" class="text-center text-bold">Valoración <span class="italic-text">(marcar con X)</span></td>
+            <td rowspan="2" class="text-center text-bold">Observaciones / Compromisos de mejora</td>
+        </tr>
+        <tr>
+            <td class="text-center label-sm">Satisfactorio</td>
+            <td class="text-center label-sm">Por mejorar</td>
+        </tr>
+        <tr>
+            <td class="label-sm">Relaciones interpersonales</td>
+            <td class="text-center" th:text="${evaluacion.relaciones == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.relaciones == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsRelaciones}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Trabajo en equipo</td>
+            <td class="text-center" th:text="${evaluacion.equipo == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.equipo == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsEquipo}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Solución de problemas</td>
+            <td class="text-center" th:text="${evaluacion.solucion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.solucion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsSolucion}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Cumplimiento</td>
+            <td class="text-center" th:text="${evaluacion.cumplimiento == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.cumplimiento == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsCumplimiento}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm">Organización</td>
+            <td class="text-center" th:text="${evaluacion.organizacion == 'SATISFACTORIO' ? 'X' : ''}"></td>
+            <td class="text-center" th:text="${evaluacion.organizacion == 'POR_MEJORAR' ? 'X' : ''}"></td>
+            <td th:text="${evaluacion.obsOrganizacion}"></td>
+        </tr>
+    </table>
+
+    <table class="main-table" style="margin-top: 15px;">
+        <colgroup>
+            <col style="width: 20%;">
+            <col style="width: 80%;">
+        </colgroup>
+
+        <tr>
+            <td colspan="2" class="section-subtitle">Retroalimentación ente co-formador o reconocimientos especiales</td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Proceso de formación del<br>aprendiz:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroProcesoCoformador}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Desempeño de las<br>competencias técnicas y<br>actitudinales del<br>programa de formación<br>que el aprendiz pone en<br>práctica durante la etapa<br>productiva:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroDesempenoCoformador}"></td>
+        </tr>
+
+        <tr>
+            <td colspan="2" class="section-subtitle" style="background-color: #f9f9f9; border-top: 2px solid #000;">Retroalimentación instructor de seguimiento o reconocimientos especiales</td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Proceso de formación del<br>aprendiz:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroProcesoInstructor}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Desempeño de las<br>competencias técnicas y<br>actitudinales del<br>programa de formación<br>que el aprendiz pone en<br>práctica durante la etapa<br>productiva:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroDesempenoInstructor}"></td>
+        </tr>
+
+        <tr>
+            <td colspan="2" class="section-subtitle" style="background-color: #f9f9f9; border-top: 2px solid #000;">Retroalimentación del aprendiz</td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Proceso de formación del<br>aprendiz:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroProcesoAprendiz}"></td>
+        </tr>
+        <tr>
+            <td class="label-sm feedback-row">Desempeño de las<br>competencias técnicas y<br>actitudinales del<br>programa de formación<br>que el aprendiz pone en<br>práctica durante la etapa<br>productiva:</td>
+            <td class="feedback-row" th:text="${evaluacion.retroDesempenoAprendiz}"></td>
+        </tr>
+    </table>
+
+    <div class="juicio-box">
+        Juicio de evaluación de la etapa productiva (seleccione):
+        &#160;&#160;&#160;Aprobado
+        <span class="checkbox-square" th:text="${evaluacion.juicioFinal == 'APROBADO' ? 'X' : ''}"></span>
+        &#160;&#160;No aprobado
+        <span class="checkbox-square" th:text="${evaluacion.juicioFinal == 'NO_APROBADO' ? 'X' : ''}"></span>
+    </div>
+
+    <table class="signature-section">
+        <tr>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del aprendiz</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma Instructor de seguimiento</div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td style="width: 30%;">
+                <div class="signature-line"></div>
+                <div class="label-sm text-center">Firma del ente co-formador</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="label-sm" style="margin-top: 20px;">
+        El momento 3 – Evaluación se llevó a cabo en la ciudad <span th:text="${evaluacion.ciudad}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        con fecha de diligenciamiento: <span th:text="${evaluacion.fechaDia}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${evaluacion.fechaMes}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span> / <span th:text="${evaluacion.fechaAnio}" style="text-decoration: underline;">&nbsp;&nbsp;&nbsp;</span>
+        de forma presencial <span style="text-decoration: underline;" th:text="${evaluacion.modalidadCierre == 'Presencial' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+        o virtual <span style="text-decoration: underline;" th:text="${evaluacion.modalidadCierre == 'Virtual' ? 'X' : ''}">&nbsp;&nbsp;&nbsp;</span>
+    </div>
+
+    <div class="footer-text">GFPI-F-023 V6.</div>
+
+</div>
+
+</body>
+</html>

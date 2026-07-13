@@ -15,7 +15,7 @@
         <header class="top-header-capsule">
             <div class="welcome-info">
                 <h1>📈 Monitoreo de Jobs</h1>
-                <p>Historial del proceso automático de la 1:00 a.m.: alertas de 2 y 3 días antes de las visitas.</p>
+                <p>Historial de los procesos automáticos nocturnos: alertas de visitas, bitácoras atrasadas y limpieza de códigos de recuperación.</p>
             </div>
             <div class="header-controls">
                 <img th:if="${usuario.fotoPerfil != null and !#strings.isEmpty(usuario.fotoPerfil)}"
@@ -50,17 +50,20 @@
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid var(--card-border); color: var(--text-muted); font-size: 13px; font-weight: 700;">
+                                <th style="padding: 14px 16px;">Job</th>
                                 <th style="padding: 14px 16px;">Inicio</th>
                                 <th style="padding: 14px 16px;">Fin</th>
                                 <th style="padding: 14px 16px;">Resultado</th>
                                 <th style="padding: 14px 16px;">Alertas Instructores</th>
                                 <th style="padding: 14px 16px;">Alertas Aprendices</th>
                                 <th style="padding: 14px 16px;">Correos</th>
+                                <th style="padding: 14px 16px;">Procesados</th>
                                 <th style="padding: 14px 16px;">Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="ejecucion : ${ejecuciones}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                                <td style="padding: 14px 16px; color: var(--text-dark); font-weight: 600;" th:text="${ejecucion.nombreJob}">Job</td>
                                 <td style="padding: 14px 16px; font-weight: 700; color: var(--text-dark);"
                                     th:text="${#temporals.format(ejecucion.fechaInicio, 'dd/MM/yyyy HH:mm:ss')}">01/01</td>
                                 <td style="padding: 14px 16px; color: var(--text-muted);"
@@ -72,12 +75,13 @@
                                 <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.alertasInstructores}">0</td>
                                 <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.alertasAprendices}">0</td>
                                 <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.correosEnviados}">0</td>
+                                <td style="padding: 14px 16px; text-align: center;" th:text="${ejecucion.registrosProcesados}">0</td>
                                 <td style="padding: 14px 16px; font-size: 12px; color: var(--text-muted);" th:text="${ejecucion.detalle}">Detalle</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(ejecuciones)}">
-                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
-                                    Aún no hay corridas registradas. El job corre automáticamente todos los días a la 1:00 a.m.,
-                                    o puedes dispararlo manualmente con el botón "Ejecutar ahora".
+                                <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                    Aún no hay corridas registradas. Los jobs corren automáticamente cada noche,
+                                    o puedes dispararlos manualmente con el botón "Ejecutar ahora".
                                 </td>
                             </tr>
                         </tbody>

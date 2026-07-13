@@ -7,5 +7,6 @@ public enum EstadoSolicitud {
     EN_VALIDACION_REGISTRO,  // Gestor de Etapa calificó los documentos y los envió al rol Registro
     LISTO_PARA_REGISTRO,     // Registro validó los documentos: ya puede registrar la Etapa Productiva
     APROBADO_EN_ETAPA,       // Registro creó la Etapa Productiva y el aprendiz ya está activo
-    RECHAZADO                // Por si no cumple con algún requisito del flujo
+    RECHAZADO,               // Por si no cumple con algún requisito del flujo
+    PENDIENTE_REGISTRO // Contrato de Aprendizaje: va directo a Registro, sin pasar por el Gestor de Etapa
 }

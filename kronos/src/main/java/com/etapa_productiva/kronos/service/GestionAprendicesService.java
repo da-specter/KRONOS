@@ -2,6 +2,7 @@ package com.etapa_productiva.kronos.service;
 
 
 import com.etapa_productiva.kronos.dto.AprendizGestionDto;
+import com.etapa_productiva.kronos.dto.ResumenEstadoEtapaDto;
 import com.etapa_productiva.kronos.entity.AprendizFicha;
 import com.etapa_productiva.kronos.entity.DocumentoRequisito;
 import com.etapa_productiva.kronos.entity.Empresa;
@@ -248,6 +249,29 @@ public class GestionAprendicesService {
 
     private boolean dentroDeUnMes(LocalDate fechaObjetivo, LocalDate hoy) {
         return !fechaObjetivo.isAfter(hoy.plusMonths(1));
+    }
+
+    // 📊 Suma cuántos aprendices cayeron en cada punto del semáforo, para las tarjetas de
+    // resumen encima de la tabla (ej. "cuántos terminan en 1 mes o menos").
+    public ResumenEstadoEtapaDto calcularResumenEstados(List<AprendizGestionDto> aprendices) {
+        long termino = 0, porTerminar = 0, enEp = 0, iniciaPronto = 0, faltaMas = 0;
+        for (AprendizGestionDto a : aprendices) {
+            switch (a.getEstadoEtapa()) {
+                case TERMINO_CONTRATO -> termino++;
+                case EP_POR_TERMINAR -> porTerminar++;
+                case EN_EP -> enEp++;
+                case INICIA_EP_PRONTO -> iniciaPronto++;
+                case FALTA_MAS_DE_UN_MES -> faltaMas++;
+            }
+        }
+        return ResumenEstadoEtapaDto.builder()
+                .terminoContrato(termino)
+                .epPorTerminar(porTerminar)
+                .enEp(enEp)
+                .iniciaEpPronto(iniciaPronto)
+                .faltaMasDeUnMes(faltaMas)
+                .total(aprendices.size())
+                .build();
     }
 
     /**

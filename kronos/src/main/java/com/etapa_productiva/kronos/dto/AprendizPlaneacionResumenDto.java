@@ -5,10 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
- * 📋 Fila del listado "Formato Planeación 023" del módulo Evaluación de Formatos
- * (Instructor Técnico): el aprendiz, su Formato de Planeación (si ya lo radicó) y el
- * estado de su evaluación (Sin radicar, En revisión, Aprobado, Reprobado, Para corregir).
+ * 📋 Fila del listado "Formato Planeación 023" del módulo Evaluación de Formatos (Instructor de
+ * Seguimiento): el aprendiz y el estado de sus 3 "momentos" (cada uno se habilita con un grupo
+ * de 4 bitácoras). Cuando los 3 quedan escritos, KRONOS genera el PDF del 023 automáticamente.
  */
 @Data
 @Builder
@@ -16,16 +18,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AprendizPlaneacionResumenDto {
     private Long idEtapa;
-    private Long idFormatoPlaneacion; // null si el aprendiz aún no lo ha radicado
     private String nombres;
     private String apellidos;
     private String documento;
     private String ficha;
 
-    private String asunto;
-    private String fechaSubida;
-    private String rutaArchivo;
+    private List<MomentoEstadoDto> momentos;
+    private int momentosCompletados; // 0-3, para el filtro por chips
 
-    private String estado; // Sin radicar / En revisión / Aprobado / Reprobado / Para corregir
-    private String observaciones; // última novedad registrada, si la hay
+    private boolean formatoGenerado;
+    private String rutaArchivo023;
+    private String fechaGeneracion023;
 }

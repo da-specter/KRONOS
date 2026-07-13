@@ -200,7 +200,7 @@ public class ImportacionVisitaFilaService {
         visitaSeguimientoRepository.save(VisitaSeguimiento.builder()
                 .etapaProductiva(etapa)
                 .instructor(usuarioInstructor)
-                .fechaVisita(fechaVisita)
+                .fechaVisita(fechaVisita.atStartOfDay())
                 .numeroActa(numeroActa)
                 .modalidad(modalidadVisita)
                 .tipoVisita(tipoVisita)

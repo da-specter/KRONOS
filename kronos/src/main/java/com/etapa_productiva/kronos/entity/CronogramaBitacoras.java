@@ -58,6 +58,12 @@ public class CronogramaBitacoras {
     @Column(name = "ALERTA_APRENDIZ_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
     private Boolean alertaAprendizEnviada;
 
+    // Bandera de dedup independiente para el recordatorio "vence hoy" (WhatsApp al aprendiz):
+    // se enciende el mismo día de FECHA_LIMITE, antes de que el cupo se considere atrasado, así
+    // que no interfiere con ALERTA_APRENDIZ_ENVIADA (esa es la del aviso de atraso, un día después).
+    @Column(name = "ALERTA_VENCE_HOY_ENVIADA", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
+    private Boolean alertaVenceHoyEnviada;
+
     // Interceptor automático: Setea el estado inicial como PENDIENTE justo antes del INSERT en Oracle
     @PrePersist
     protected void onPrePersist() {
@@ -69,6 +75,9 @@ public class CronogramaBitacoras {
         }
         if (this.alertaAprendizEnviada == null) {
             this.alertaAprendizEnviada = false;
+        }
+        if (this.alertaVenceHoyEnviada == null) {
+            this.alertaVenceHoyEnviada = false;
         }
     }
 }

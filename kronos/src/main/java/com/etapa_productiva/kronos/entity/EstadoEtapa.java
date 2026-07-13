@@ -5,5 +5,6 @@ public enum EstadoEtapa {
     APROBADO,
     REPROBADO,
     TERMINADO,
-    EN_SUSPENSION // <--- Nuevo estado para congelar el proceso temporalmente
+    EN_SUSPENSION,
+    CANCELADO // <--- Nuevo estado para congelar el proceso temporalmente
 }

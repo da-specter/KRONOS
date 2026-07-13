@@ -6,16 +6,12 @@ import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EstadoBitacora;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.EvaluacionBitacora;
-import com.etapa_productiva.kronos.entity.EvaluacionPlaneacion;
-import com.etapa_productiva.kronos.entity.FormatoPlaneacion;
 import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
 import com.etapa_productiva.kronos.entity.Usuario;
 import com.etapa_productiva.kronos.repository.AsignacionInstructorEtapaRepository;
 import com.etapa_productiva.kronos.repository.BitacoraRepository;
 import com.etapa_productiva.kronos.repository.CronogramaBitacorasRepository;
 import com.etapa_productiva.kronos.repository.EvaluacionBitacoraRepository;
-import com.etapa_productiva.kronos.repository.EvaluacionPlaneacionRepository;
-import com.etapa_productiva.kronos.repository.FormatoPlaneacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,9 +31,6 @@ import java.nio.file.Paths;
 public class SeguimientoEtapaService {
 
     @Autowired
-    private FormatoPlaneacionRepository formatoPlaneacionRepository;
-
-    @Autowired
     private CronogramaBitacorasRepository cronogramaBitacorasRepository;
 
     @Autowired
@@ -47,9 +40,6 @@ public class SeguimientoEtapaService {
     private EvaluacionBitacoraRepository evaluacionBitacoraRepository;
 
     @Autowired
-    private EvaluacionPlaneacionRepository evaluacionPlaneacionRepository;
-
-    @Autowired
     private AsignacionInstructorEtapaRepository asignacionInstructorEtapaRepository;
 
     @Autowired
@@ -57,52 +47,6 @@ public class SeguimientoEtapaService {
 
     @Value("${app.upload.root-dir:uploads}")
     private String uploadRootDir;
-
-    @Transactional
-    public FormatoPlaneacion subirFormatoPlaneacion(EtapaProductiva etapa, String asunto, MultipartFile archivo) {
-        FormatoPlaneacion existente = formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapa.getIdEtapa()).orElse(null);
-
-        if (existente != null) {
-            // Solo se puede volver a radicar (sobre el mismo registro) si el Instructor Técnico
-            // pidió corrección o lo reprobó; si está en revisión o ya aprobado, no se puede resubir.
-            EvaluacionPlaneacion ultima = evaluacionPlaneacionRepository
-                    .findTopByFormatoPlaneacionIdFormatoPlaneacionOrderByFechaEvaluacionDesc(existente.getIdFormatoPlaneacion())
-                    .orElse(null);
-            boolean puedeResubir = ultima != null
-                    && (ultima.getResultado() == ResultadoEvaluacion.CORREGIR || ultima.getResultado() == ResultadoEvaluacion.REPROBADO);
-            if (!puedeResubir) {
-                throw new IllegalStateException(ultima == null
-                        ? "Ya radicaste el Formato de Planeación; está en revisión por tu Instructor Técnico."
-                        : "Ya radicaste el Formato de Planeación y fue aprobado.");
-            }
-
-            existente.setAsunto(asunto);
-            existente.setRutaArchivo(guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa()));
-            existente.setFechaEntrega(java.time.LocalDate.now());
-            existente.setFechaHoraSubida(java.time.LocalDateTime.now());
-            FormatoPlaneacion corregido = formatoPlaneacionRepository.save(existente);
-
-            notificarInstructorSeguimiento(etapa,
-                    "📋 %s volvió a radicar su Formato de Planeación (023) corregido. Ya puedes evaluarlo en KRONOS.");
-
-            return corregido;
-        }
-
-        String rutaGuardada = guardarArchivo(archivo, "formato-planeacion", etapa.getIdEtapa());
-
-        FormatoPlaneacion formato = FormatoPlaneacion.builder()
-                .etapaProductiva(etapa)
-                .asunto(asunto)
-                .rutaArchivo(rutaGuardada)
-                .build();
-
-        FormatoPlaneacion radicado = formatoPlaneacionRepository.save(formato);
-
-        notificarInstructorSeguimiento(etapa,
-                "📋 %s radicó su Formato de Planeación (023) (\"" + asunto + "\"). Ya puedes evaluarlo en KRONOS.");
-
-        return radicado;
-    }
 
     @Transactional
     public Bitacora subirBitacora(EtapaProductiva etapa, Long idCronograma, String asunto, MultipartFile archivo) {
@@ -115,11 +59,14 @@ public class SeguimientoEtapaService {
 
         // ⏳ Candado de calendario: la bitácora solo se puede radicar desde su fecha de apertura.
         // Después de la fecha límite sigue permitida (entrega extemporánea), antes de tiempo no.
-        if (java.time.LocalDate.now().isBefore(cronograma.getFechaApertura())) {
-            throw new IllegalStateException("La Bitácora N°" + cronograma.getNumeroBitacora()
-                    + " aún no está habilitada: se abre el "
-                    + cronograma.getFechaApertura().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
-        }
+        // 🚧 DESHABILITADO TEMPORALMENTE (a pedido del usuario) para poder probar el flujo de
+        // momentos sin esperar las fechas reales del cronograma. Reactivar el bloque de abajo
+        // cuando termine la etapa de pruebas.
+        // if (java.time.LocalDate.now().isBefore(cronograma.getFechaApertura())) {
+        //     throw new IllegalStateException("La Bitácora N°" + cronograma.getNumeroBitacora()
+        //             + " aún no está habilitada: se abre el "
+        //             + cronograma.getFechaApertura().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+        // }
 
         // Última bitácora radicada para ese cupo (si existe): solo se permite volver a radicar
         // si el Instructor Técnico pidió corrección o la reprobó; si está en revisión o aprobada, no.

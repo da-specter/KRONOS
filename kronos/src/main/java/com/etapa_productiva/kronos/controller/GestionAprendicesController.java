@@ -76,7 +76,8 @@ public class GestionAprendicesController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        boolean autorizado = roles != null && (roles.contains("GESTOR_ETAPA") || roles.contains("REGISTRO"));
+        boolean autorizado = roles != null
+                && (roles.contains("GESTOR_ETAPA") || roles.contains("REGISTRO") || roles.contains("ADMINISTRADOR"));
         if (!autorizado) {
             return "redirect:/index";
         }
@@ -92,6 +93,8 @@ public class GestionAprendicesController {
                 notificacionRepository.findByUsuarioDestinoIdUsuarioAndLeidoFalseOrderByFechaCreacionDesc(usuarioLogueado.getIdUsuario()));
         List<com.etapa_productiva.kronos.dto.AprendizGestionDto> aprendices = gestionAprendicesService.listarAprendices();
         model.addAttribute("aprendices", aprendices);
+        // 📊 Resumen del semáforo (cuántos terminan en ≤1 mes, cuántos inician pronto, etc.)
+        model.addAttribute("resumenEstados", gestionAprendicesService.calcularResumenEstados(aprendices));
         // 📅 Filtro "por mes": meses en los que realmente hay una etapa registrada, más
         // reciente primero (ver FechaUtil / columna "Registrada el").
         model.addAttribute("mesesRegistro", aprendices.stream()

@@ -15,7 +15,7 @@
         <header class="top-header-capsule">
             <div class="welcome-info">
                 <h1>📋 Formato de Planeación 023</h1>
-                <p>Evalúa el Formato de Planeación de los aprendices que tienes asignados.</p>
+                <p>Cada momento se habilita cuando el aprendiz entrega el grupo de 4 bitácoras correspondiente. Aprendiz e instructor diligencian su parte en paralelo; al completar los 3, KRONOS genera el PDF del Formato 023 automáticamente.</p>
             </div>
 
             <div th:replace="~{fragments/notificaciones :: campana}"></div>
@@ -33,56 +33,186 @@
                           th:text="${#lists.size(resumenPlaneacion)} + ' aprendices'">0 aprendices</span>
                 </h3>
 
-                <div th:each="p : ${resumenPlaneacion}" class="inner-status-card" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- 🔎 Filtro por chip: cuántos de los 3 momentos ya completó el instructor, por aprendiz -->
+                <div id="chipsMomentos" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px;">
+                    <div class="chip-momento" data-momentos="0" onclick="filtrarPorMomentos('0')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #6B7280; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">Sin empezar</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${#lists.size(resumenPlaneacion.?[momentosCompletados == 0])}">0</span>
+                    </div>
+                    <div class="chip-momento" data-momentos="1" onclick="filtrarPorMomentos('1')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #D97706; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">1 de 3 momentos</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${#lists.size(resumenPlaneacion.?[momentosCompletados == 1])}">0</span>
+                    </div>
+                    <div class="chip-momento" data-momentos="2" onclick="filtrarPorMomentos('2')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #2563EB; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">2 de 3 momentos</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${#lists.size(resumenPlaneacion.?[momentosCompletados == 2])}">0</span>
+                    </div>
+                    <div class="chip-momento" data-momentos="3" onclick="filtrarPorMomentos('3')"
+                         style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F8FAF9; border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.15s;">
+                        <span style="width: 13px; height: 13px; border-radius: 4px; background: #057015; display: inline-block; flex-shrink: 0;"></span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-dark);">023 generado</span>
+                        <span class="chip-contador" style="font-size: 13px; font-weight: 800; color: var(--text-dark);" th:text="${#lists.size(resumenPlaneacion.?[momentosCompletados == 3])}">0</span>
+                    </div>
+                </div>
+
+                <div th:each="p : ${resumenPlaneacion}" class="inner-status-card fila-planeacion" th:attr="data-momentos=${p.momentosCompletados}"
+                     style="margin-top: 16px; display: flex; flex-direction: column; gap: 14px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                         <div>
                             <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;" th:text="${p.nombres} + ' ' + ${p.apellidos}">Nombre Apellido</p>
                             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"
-                               th:text="'Doc: ' + ${p.documento} + ' · Ficha: ' + ${p.ficha} + (${p.idFormatoPlaneacion} != null ? ' · Asunto: ' + ${p.asunto} + ' · Subido: ' + ${p.fechaSubida} : '')">Doc: 123 · Ficha: 2555228</p>
+                               th:text="'Doc: ' + ${p.documento} + ' · Ficha: ' + ${p.ficha}">Doc: 123 · Ficha: 2555228</p>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span th:text="${#strings.toUpperCase(p.estado)}"
-                                  th:style="${p.estado == 'Sin radicar'} ? 'background: rgba(107,114,128,0.12); color: #6B7280;' : (${p.estado == 'En revisión'} ? 'background: #FEF3C7; color: #B45309;' : (${p.estado == 'Aprobado'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${p.estado == 'Para corregir'} ? 'background: rgba(37,99,235,0.1); color: #2563EB;' : 'background: rgba(220,38,38,0.1); color: #DC2626;')))"
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span th:text="${p.momentosCompletados} + ' / 3 momentos'"
+                                  th:style="${p.momentosCompletados == 3} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${p.momentosCompletados == 0} ? 'background: rgba(107,114,128,0.12); color: #6B7280;' : 'background: rgba(217,119,6,0.12); color: #B45309;')"
                                   style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
-                                SIN RADICAR
+                                0 / 3 momentos
                             </span>
-                            <a th:if="${p.idFormatoPlaneacion} != null" th:href="${p.rutaArchivo}" target="_blank"
+                            <button type="button" th:onclick="'mostrarPanel(' + ${p.idEtapa} + ',\'firma\')'"
+                                    style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                ✍️ Mi firma
+                            </button>
+                            <a th:if="${p.formatoGenerado}" th:href="${p.rutaArchivo023}" target="_blank"
                                style="background: #2563EB; color: #fff; font-size: 12px; padding: 8px 16px; border-radius: 8px; font-weight: 700; text-decoration: none; white-space: nowrap;">
-                                ⬇ Descargar
+                                ⬇ Descargar 023
                             </a>
                         </div>
                     </div>
 
-                    <p th:if="${p.observaciones != null}" style="margin: 0; font-size: 13px; color: var(--text-dark); background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px;">
-                        <strong>Novedad:</strong> <span th:text="${p.observaciones}">Debe ajustar el cronograma de actividades.</span>
-                    </p>
+                    <!-- 🖊️ Panel de firma del instructor (una sola vez por etapa) -->
+                    <div th:id="'panel-' + ${p.idEtapa} + '-firma'" style="display: none; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; background: #F9FAFB;">
+                        <form th:action="@{/instructor/seguimiento/planeacion/firma}" method="post" enctype="multipart/form-data"
+                              style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <input type="hidden" name="idEtapa" th:value="${p.idEtapa}">
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Imagen de tu firma (JPG/PNG)</label>
+                            <input type="file" name="firma" accept="image/*" required style="font-size: 12px;">
+                            <button type="submit"
+                                    style="background: var(--verde-sena); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                Guardar firma
+                            </button>
+                        </form>
+                    </div>
 
-                    <!-- Formulario de evaluación / re-evaluación: solo si ya radicó el formato -->
-                    <form th:if="${p.idFormatoPlaneacion} != null" th:action="@{/instructor/seguimiento/planeacion/evaluar}" method="post"
-                          style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; border-top: 1px dashed var(--card-border); padding-top: 14px;">
-                        <input type="hidden" name="idFormatoPlaneacion" th:value="${p.idFormatoPlaneacion}">
-                        <div style="min-width: 170px;">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Resultado</label>
-                            <select name="resultado" required onchange="toggleNovedad(this)"
-                                    style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; background: #fff; color: var(--text-dark); margin-top: 4px;">
-                                <option value="" disabled selected>Selecciona...</option>
-                                <option th:each="r : ${resultados}" th:value="${r}" th:text="${r.name() == 'APROBADO'} ? 'Aprobado' : (${r.name() == 'REPROBADO'} ? 'Reprobado' : 'Corregir')">Aprobado</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1; min-width: 240px;">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Novedad (obligatoria si no aprueba)</label>
-                            <input type="text" name="observaciones" maxlength="500" placeholder="Escribe qué debe corregir o por qué se reprueba..."
-                                   style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; margin-top: 4px; box-sizing: border-box;">
-                        </div>
-                        <button type="submit"
-                                style="background: var(--verde-sena); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
-                            Guardar evaluación
+                    <!-- 🔘 Botones de momento -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button th:each="m : ${p.momentos}" type="button" th:onclick="'mostrarPanel(' + ${p.idEtapa} + ',' + ${m.numero} + ')'"
+                                th:text="(${!m.habilitado} ? '🔒 ' : (${m.instructorCompleto} ? '✅ ' : '✍️ ')) + 'Momento ' + ${m.numero}"
+                                style="background: #F8FAF9; border: 1px solid var(--card-border); color: var(--text-dark); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            Momento 1
                         </button>
-                    </form>
+                    </div>
+
+                    <!-- 📋 Paneles de cada momento (uno visible a la vez) -->
+                    <div th:each="m : ${p.momentos}" th:id="'panel-' + ${p.idEtapa} + '-' + ${m.numero}"
+                         style="display: none; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; background: #F9FAFB;">
+
+                        <!-- 🔒 Bloqueado -->
+                        <p th:if="${!m.habilitado}" style="margin: 0; font-size: 12px; color: #6B7280; background: rgba(107,114,128,0.1); border-radius: 8px; padding: 10px 12px;">
+                            🔒 Se habilita cuando el aprendiz entregue las bitácoras <span th:text="${m.bitacoraDesde}">1</span>-<span th:text="${m.bitacoraHasta}">4</span>
+                            <span th:if="${m.numero > 1}"> y el Momento <span th:text="${m.numero - 1}">1</span> quede completo por ambos lados</span>.
+                        </p>
+
+                        <div th:if="${m.habilitado}" style="display: flex; flex-direction: column; gap: 14px;">
+                            <!-- 👨‍🎓 Lo que ya diligenció el aprendiz (solo lectura para el instructor) -->
+                            <div style="border-left: 3px solid var(--verde-sena); padding-left: 12px;">
+                                <p style="font-size: 11px; font-weight: 700; color: var(--verde-sena); margin: 0 0 6px 0; text-transform: uppercase;">Diligenciado por el aprendiz</p>
+                                <div th:if="${m.numero == 1}" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-dark);">
+                                    <p style="margin:0;"><strong>Competencias:</strong> <span th:text="${m.competenciasDesarrollar} ?: 'Sin diligenciar'">-</span></p>
+                                    <p style="margin:0;"><strong>Resultados de aprendizaje:</strong> <span th:text="${m.resultadosAprendizaje} ?: 'Sin diligenciar'">-</span></p>
+                                    <p style="margin:0;"><strong>Actividades:</strong> <span th:text="${m.actividadesDesarrollar} ?: 'Sin diligenciar'">-</span></p>
+                                    <p style="margin:0;"><strong>Evidencias:</strong> <span th:text="${m.evidenciaDescripcion} ?: 'Sin diligenciar'">-</span>
+                                        <a th:if="${m.evidenciaRutaArchivo != null}" th:href="${m.evidenciaRutaArchivo}" target="_blank" style="margin-left: 6px;">⬇ Ver archivo</a>
+                                    </p>
+                                </div>
+
+                                <!-- 📋 Factores Técnicos/Actitudinales que autoevaluó el aprendiz (Momento 2 y 3) -->
+                                <div th:if="${m.numero >= 2}" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                                    <div>
+                                        <p style="font-size: 11px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px 0;">Factores Técnicos</p>
+                                        <div th:each="f : ${m.factoresTecnicos}" style="font-size: 12px; color: var(--text-dark); margin-bottom: 2px;">
+                                            <span th:text="${f.nombreVariable} + ': '">Variable:</span>
+                                            <strong th:text="${f.valoracion == 'SATISFACTORIO'} ? 'Satisfactorio' : (${f.valoracion == 'POR_MEJORAR'} ? 'Por mejorar' : 'Sin diligenciar')">Sin diligenciar</strong>
+                                            <span th:if="${f.observacion != null}" th:text="' — ' + ${f.observacion}"></span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p style="font-size: 11px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px 0;">Factores Actitudinales y Comportamentales</p>
+                                        <div th:each="f : ${m.factoresActitudinales}" style="font-size: 12px; color: var(--text-dark); margin-bottom: 2px;">
+                                            <span th:text="${f.nombreVariable} + ': '">Variable:</span>
+                                            <strong th:text="${f.valoracion == 'SATISFACTORIO'} ? 'Satisfactorio' : (${f.valoracion == 'POR_MEJORAR'} ? 'Por mejorar' : 'Sin diligenciar')">Sin diligenciar</strong>
+                                            <span th:if="${f.observacion != null}" th:text="' — ' + ${f.observacion}"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p th:if="${m.numero != 3}" style="margin: 0; font-size: 12px; color: var(--text-dark);" th:text="${m.observacionAprendiz} ?: 'Sin diligenciar'">Sin diligenciar</p>
+                                <div th:if="${m.numero == 3}" style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dark);">
+                                    <p style="margin:0;"><strong>Proceso de formación:</strong> <span th:text="${m.retroAprendizProceso} ?: 'Sin diligenciar'">-</span></p>
+                                    <p style="margin:0;"><strong>Desempeño de competencias:</strong> <span th:text="${m.retroAprendizDesempeno} ?: 'Sin diligenciar'">-</span></p>
+                                </div>
+
+                                <div th:if="${m.numero == 2 and m.observacionEnteCoformador != null}" style="margin-top: 6px; font-size: 12px; color: var(--text-dark);">
+                                    <strong>Ente co-formador:</strong> <span th:text="${m.observacionEnteCoformador}"></span>
+                                </div>
+                                <div th:if="${m.numero == 3 and (m.retroEnteProceso != null or m.retroEnteDesempeno != null)}" style="margin-top: 6px; font-size: 12px; color: var(--text-dark);">
+                                    <p style="margin:0;"><strong>Ente co-formador — Proceso de formación:</strong> <span th:text="${m.retroEnteProceso} ?: '-'"></span></p>
+                                    <p style="margin:0;"><strong>Ente co-formador — Desempeño de competencias:</strong> <span th:text="${m.retroEnteDesempeno} ?: '-'"></span></p>
+                                </div>
+                            </div>
+
+                            <!-- ✍️ Formulario del instructor -->
+                            <form th:action="@{/instructor/seguimiento/planeacion/momento}" method="post"
+                                  style="display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed var(--card-border); padding-top: 12px;">
+                                <input type="hidden" name="idEtapa" th:value="${p.idEtapa}">
+                                <input type="hidden" name="numeroMomento" th:value="${m.numero}">
+
+                                <th:block th:if="${m.numero != 3}">
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Tu observación</label>
+                                    <textarea name="observacion" maxlength="2000" required rows="4" th:text="${m.observacion}"
+                                              placeholder="Escribe la observación de este momento..."
+                                              style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical;"></textarea>
+                                </th:block>
+
+                                <th:block th:if="${m.numero == 3}">
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación — Proceso de formación del aprendiz</label>
+                                    <textarea name="retroInstructorProceso" maxlength="2000" required rows="3" th:text="${m.retroInstructorProceso}"
+                                              style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical;"></textarea>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación — Desempeño de competencias técnicas y actitudinales</label>
+                                    <textarea name="retroInstructorDesempeno" maxlength="2000" required rows="3" th:text="${m.retroInstructorDesempeno}"
+                                              style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical;"></textarea>
+                                </th:block>
+
+                                <div th:if="${m.numero == 3}" style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Juicio de evaluación final</label>
+                                    <select name="juicioEvaluacion" required
+                                            style="padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; background: #fff;">
+                                        <option value="" disabled th:selected="${m.juicioEvaluacion == null}">Selecciona...</option>
+                                        <option value="APROBADO" th:selected="${m.juicioEvaluacion == 'APROBADO'}">Aprobado</option>
+                                        <option value="NO_APROBADO" th:selected="${m.juicioEvaluacion == 'NO_APROBADO'}">No aprobado</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit"
+                                        style="align-self: flex-end; background: var(--verde-sena); color: #fff; border: none; padding: 8px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                    <span th:text="${m.instructorCompleto} ? 'Guardar cambios' : 'Guardar observación'">Guardar observación</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <p th:if="${#lists.isEmpty(resumenPlaneacion)}" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); font-weight: 500;">
                     Aún no tienes aprendices asignados para seguimiento.
+                </p>
+                <p id="sinResultados" style="display: none; text-align: center; padding: 30px; color: var(--text-muted); font-weight: 500;">
+                    Ningún aprendiz coincide con el filtro elegido.
                 </p>
             </div>
 
@@ -91,10 +221,35 @@
 
     <script th:src="@{/js/workflow.js}"></script>
     <script>
-        function toggleNovedad(select) {
-            const form = select.closest('form');
-            const input = form.querySelector('input[name="observaciones"]');
-            input.required = select.value !== 'APROBADO';
+        // 🔘 Un solo panel visible a la vez por tarjeta de aprendiz (momento 1/2/3 o firma)
+        function mostrarPanel(idEtapa, clave) {
+            const idObjetivo = 'panel-' + idEtapa + '-' + clave;
+            document.querySelectorAll('[id^="panel-' + idEtapa + '-"]').forEach(function (panel) {
+                panel.style.display = (panel.id === idObjetivo && panel.style.display === 'none') ? 'block' : 'none';
+            });
+        }
+
+        // 🚦 Filtro por chip: cuántos momentos completó el instructor, por aprendiz
+        let momentosElegidos = '';
+
+        function filtrarPorMomentos(valor) {
+            momentosElegidos = (momentosElegidos === valor) ? '' : valor;
+            document.querySelectorAll('.chip-momento').forEach(function (chip) {
+                const activo = chip.dataset.momentos === momentosElegidos;
+                chip.style.background = activo ? 'rgba(5, 112, 21, 0.10)' : '#F8FAF9';
+                chip.style.borderColor = activo ? 'var(--verde-sena)' : 'var(--card-border)';
+            });
+
+            const filas = document.querySelectorAll('.fila-planeacion');
+            let visibles = 0;
+            filas.forEach(function (fila) {
+                const coincide = !momentosElegidos || fila.dataset.momentos === momentosElegidos;
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+
+            const sr = document.getElementById('sinResultados');
+            if (sr) sr.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
         }
     </script>
 </body>

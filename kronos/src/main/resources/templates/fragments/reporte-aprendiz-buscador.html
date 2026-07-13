@@ -11,8 +11,20 @@
     <th:block th:fragment="buscador(accionForm)">
 
         <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0;">
-            <h3 class="panel-header-title" style="margin: 0 0 16px 0;">🔎 Buscar aprendiz</h3>
-            <form th:action="${accionForm}" method="get"
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;">
+                <h3 class="panel-header-title" style="margin: 0;">🔎 Buscar aprendiz</h3>
+                <div th:if="${busquedaRealizada and !#lists.isEmpty(resultados)}" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" onclick="abrirModalExportarReporte('excel')"
+                            style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        📊 Exportar Excel
+                    </button>
+                    <button type="button" onclick="abrirModalExportarReporte('pdf')"
+                            style="display: flex; align-items: center; gap: 8px; background: #DC2626; color: #fff; border: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        📄 Exportar PDF
+                    </button>
+                </div>
+            </div>
+            <form id="formBuscarAprendiz" th:action="${accionForm}" method="get"
                   style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; align-items: flex-end;">
                 <div>
                     <label style="font-size: 12px; font-weight: 700; color: var(--text-muted);">Nombre</label>
@@ -102,6 +114,110 @@
                 </a>
             </div>
         </div>
+
+        <!-- 🔐 Modal de re-autenticación previa a la exportación -->
+        <div id="modalExportarReporte" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+            <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+                <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">🔐 Confirma tu identidad</h3>
+                <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                    Por seguridad, ingresa tu contraseña para descargar el archivo en
+                    <strong id="formatoElegidoTextoReporte">Excel</strong>.
+                </p>
+
+                <input type="password" id="contrasenaExportarReporte" placeholder="Contraseña" autocomplete="current-password"
+                       onkeydown="if (event.key === 'Enter') confirmarExportacionReporte()"
+                       style="width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; outline-color: var(--verde-sena); box-sizing: border-box;">
+
+                <p id="errorExportarReporte" style="display: none; margin: 10px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="cerrarModalExportarReporte()"
+                            style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnConfirmarExportarReporte" onclick="confirmarExportacionReporte()"
+                            style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        Descargar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            const accionExportarReporte = /*[[${accionForm}]]*/ '' + '/exportar';
+            let formatoExportarReporte = 'excel';
+
+            function abrirModalExportarReporte(formato) {
+                formatoExportarReporte = formato;
+                document.getElementById('formatoElegidoTextoReporte').textContent = formato === 'pdf' ? 'PDF' : 'Excel';
+                document.getElementById('contrasenaExportarReporte').value = '';
+                document.getElementById('errorExportarReporte').style.display = 'none';
+                const modal = document.getElementById('modalExportarReporte');
+                modal.style.display = 'flex';
+                document.getElementById('contrasenaExportarReporte').focus();
+            }
+
+            function cerrarModalExportarReporte() {
+                document.getElementById('modalExportarReporte').style.display = 'none';
+            }
+
+            function confirmarExportacionReporte() {
+                const contrasena = document.getElementById('contrasenaExportarReporte').value;
+                const error = document.getElementById('errorExportarReporte');
+                const boton = document.getElementById('btnConfirmarExportarReporte');
+
+                if (!contrasena) {
+                    error.textContent = 'Debes ingresar tu contraseña para continuar.';
+                    error.style.display = 'block';
+                    return;
+                }
+
+                // Reusa los mismos filtros que están activos en el buscador
+                const datos = new FormData(document.getElementById('formBuscarAprendiz'));
+                datos.append('formato', formatoExportarReporte);
+                datos.append('contrasena', contrasena);
+
+                boton.disabled = true;
+                boton.textContent = 'Generando...';
+                error.style.display = 'none';
+
+                fetch(accionExportarReporte, {
+                    method: 'POST',
+                    body: new URLSearchParams(datos)
+                })
+                .then(async function (respuesta) {
+                    if (!respuesta.ok) {
+                        let mensaje = 'No fue posible generar el archivo.';
+                        try {
+                            const cuerpo = await respuesta.json();
+                            if (cuerpo && cuerpo.mensaje) mensaje = cuerpo.mensaje;
+                        } catch (e) { /* respuesta sin cuerpo JSON */ }
+                        throw new Error(mensaje);
+                    }
+                    return respuesta.blob();
+                })
+                .then(function (blob) {
+                    const extension = formatoExportarReporte === 'pdf' ? 'pdf' : 'xlsx';
+                    const hoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                    const enlace = document.createElement('a');
+                    enlace.href = URL.createObjectURL(blob);
+                    enlace.download = 'reporte_aprendiz_' + hoy + '.' + extension;
+                    document.body.appendChild(enlace);
+                    enlace.click();
+                    enlace.remove();
+                    URL.revokeObjectURL(enlace.href);
+                    cerrarModalExportarReporte();
+                })
+                .catch(function (e) {
+                    error.textContent = e.message;
+                    error.style.display = 'block';
+                })
+                .finally(function () {
+                    boton.disabled = false;
+                    boton.textContent = 'Descargar';
+                });
+            }
+        </script>
 
     </th:block>
 

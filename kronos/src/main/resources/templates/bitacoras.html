@@ -29,45 +29,243 @@
                 Aún no tienes una Etapa Productiva activa. Esta sección se habilitará cuando tu solicitud sea aprobada y tu etapa quede activa.
             </p>
 
-            <!-- Sección 1: Formato de Planeación -->
+            <!-- Sección 1: Formato de Planeación 023 (generado por KRONOS a partir de 3 momentos) -->
             <div class="dashboard-panel" th:if="${etapaActiva != null}" style="grid-column: 1 / -1; margin-top: 10px;">
                 <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
-                    <span>📋 Formato de Planeación</span>
+                    <span>📋 Formato de Planeación 023</span>
                 </h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">
+                    Cada momento se habilita cuando entregas el grupo de 4 bitácoras correspondiente. Diligencia tu parte y tu Instructor de Seguimiento agrega la suya; al completar los 3, KRONOS genera tu Formato 023 automáticamente.
+                </p>
 
-                <div th:if="${formatoPlaneacion != null}" class="inner-status-card" style="margin-top: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                        <div>
-                            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">Ya radicaste tu Formato de Planeación</p>
-                            <p style="font-size: 15px; color: var(--text-dark); font-weight: 700;" th:text="'Asunto: ' + ${formatoPlaneacion.asunto}">Asunto: Plan de trabajo inicial</p>
-                            <p style="font-size: 13px; color: var(--verde-sena); font-weight: 600; margin-top: 4px;"
-                               th:text="'Subido: ' + ${#temporals.format(formatoPlaneacion.fechaHoraSubida, 'dd/MM/yyyy HH:mm')}">Subido: 01/01/2026 10:00</p>
-                        </div>
-                        <span th:text="${evaluacionPlaneacion == null} ? 'EN REVISIÓN' : (${evaluacionPlaneacion.resultado.name() == 'APROBADO'} ? 'APROBADO' : (${evaluacionPlaneacion.resultado.name() == 'CORREGIR'} ? 'PARA CORREGIR' : 'REPROBADO'))"
-                              th:style="${evaluacionPlaneacion == null} ? 'background: #FEF3C7; color: #B45309;' : (${evaluacionPlaneacion.resultado.name() == 'APROBADO'} ? 'background: rgba(5,112,21,0.1); color: var(--verde-sena);' : (${evaluacionPlaneacion.resultado.name() == 'CORREGIR'} ? 'background: rgba(37,99,235,0.1); color: #2563EB;' : 'background: rgba(220,38,38,0.1); color: #DC2626;'))"
-                              style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;">
-                            EN REVISIÓN
-                        </span>
-                    </div>
-                    <p th:if="${evaluacionPlaneacion != null and evaluacionPlaneacion.observaciones != null}"
-                       style="margin: 12px 0 0 0; font-size: 13px; color: var(--text-dark); background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px;">
-                        <strong>Novedad de tu Instructor Técnico:</strong> <span th:text="${evaluacionPlaneacion.observaciones}">Debe ajustar el cronograma.</span>
-                    </p>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+                    <span th:text="${#lists.size(momentos023.?[aprendizCompleto and instructorCompleto])} + ' / 3 momentos'"
+                          style="background: rgba(5,112,21,0.1); color: var(--verde-sena); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;">0 / 3 momentos</span>
+                    <button type="button" onclick="mostrarPanelAprendiz('firma')"
+                            style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                        ✍️ Mis firmas y correo institucional
+                    </button>
+                    <a th:if="${formato023 != null}" th:href="${formato023.rutaArchivo}" target="_blank"
+                       style="background: #2563EB; color: #fff; font-size: 12px; padding: 8px 16px; border-radius: 8px; font-weight: 700; text-decoration: none;">
+                        ⬇ Descargar mi Formato 023
+                    </a>
                 </div>
 
-                <form th:if="${formatoPlaneacion == null or (evaluacionPlaneacion != null and (evaluacionPlaneacion.resultado.name() == 'CORREGIR' or evaluacionPlaneacion.resultado.name() == 'REPROBADO'))}"
-                      th:action="@{/aprendiz/formato-planeacion}" method="post" enctype="multipart/form-data"
-                      style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
-                    <div class="form-group" style="margin-bottom: 0; min-width: 240px; flex: 1;">
-                        <label for="asuntoPlaneacion">Asunto</label>
-                        <div class="input-container">
-                            <input type="text" id="asuntoPlaneacion" name="asunto" maxlength="100" required
-                                   style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
+                <!-- 🖊️ Panel de firmas + correo institucional (una sola vez por etapa) -->
+                <div id="panel-aprendiz-firma" style="display: none; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; background: #F9FAFB; margin-top: 14px; flex-direction: column; gap: 14px;">
+                    <form th:action="@{/aprendiz/planeacion/correo-institucional}" method="post"
+                          style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;">
+                        <input type="hidden" name="idEtapa" th:value="${etapaActiva.idEtapa}">
+                        <div style="flex: 1; min-width: 220px;">
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Correo electrónico institucional</label>
+                            <input type="email" name="correoInstitucional" maxlength="150" required th:value="${etapaActiva.correoInstitucionalAprendiz}"
+                                   style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-top: 4px;">
                         </div>
+                        <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">Guardar correo</button>
+                    </form>
+                    <form th:action="@{/aprendiz/planeacion/firmas}" method="post" enctype="multipart/form-data"
+                          style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; border-top: 1px dashed var(--card-border); padding-top: 12px;">
+                        <input type="hidden" name="idEtapa" th:value="${etapaActiva.idEtapa}">
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Tu firma (imagen)</label><br>
+                            <input type="file" name="firmaAprendiz" accept="image/*" style="font-size: 12px; margin-top: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Firma del ente co-formador (imagen)</label><br>
+                            <input type="file" name="firmaEmpresa" accept="image/*" style="font-size: 12px; margin-top: 4px;">
+                        </div>
+                        <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">Guardar firmas</button>
+                    </form>
+                </div>
+
+                <!-- 🔘 Botones de momento -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
+                    <button th:each="m : ${momentos023}" type="button" th:onclick="'mostrarPanelAprendiz(' + ${m.numero} + ')'"
+                            th:text="(${!m.habilitado} ? '🔒 ' : (${m.aprendizCompleto} ? '✅ ' : '✍️ ')) + 'Momento ' + ${m.numero}"
+                            style="background: #F8FAF9; border: 1px solid var(--card-border); color: var(--text-dark); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        Momento 1
+                    </button>
+                </div>
+
+                <!-- 📋 Paneles de cada momento (uno visible a la vez) -->
+                <div th:each="m : ${momentos023}" th:id="'panel-aprendiz-' + ${m.numero}"
+                     style="display: none; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; background: #F9FAFB; margin-top: 14px;">
+
+                    <p th:if="${!m.habilitado}" style="margin: 0; font-size: 12px; color: #6B7280; background: rgba(107,114,128,0.1); border-radius: 8px; padding: 10px 12px;">
+                        🔒 Se habilita cuando entregues las bitácoras <span th:text="${m.bitacoraDesde}">1</span>-<span th:text="${m.bitacoraHasta}">4</span>
+                        <span th:if="${m.numero > 1}"> y el Momento <span th:text="${m.numero - 1}">1</span> quede completo por ambos lados</span>.
+                    </p>
+
+                    <div th:if="${m.habilitado}" style="display: flex; flex-direction: column; gap: 14px;">
+                        <div th:if="${m.instructorCompleto}" style="border-left: 3px solid #2563EB; padding-left: 12px;">
+                            <p style="font-size: 11px; font-weight: 700; color: #2563EB; margin: 0 0 6px 0; text-transform: uppercase;">Observación de tu Instructor de Seguimiento</p>
+                            <p th:if="${m.numero != 3}" style="margin: 0; font-size: 13px; color: var(--text-dark); white-space: pre-wrap;" th:text="${m.observacion}">Texto.</p>
+                            <div th:if="${m.numero == 3}" style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-dark);">
+                                <p style="margin:0;"><strong>Proceso de formación:</strong> <span th:text="${m.retroInstructorProceso}"></span></p>
+                                <p style="margin:0;"><strong>Desempeño de competencias:</strong> <span th:text="${m.retroInstructorDesempeno}"></span></p>
+                            </div>
+                            <p th:if="${m.numero == 3 and m.juicioEvaluacion != null}" style="margin: 8px 0 0 0; font-size: 12px; font-weight: 700;"
+                               th:text="'Juicio de evaluación: ' + (${m.juicioEvaluacion == 'APROBADO'} ? 'Aprobado' : 'No aprobado')">Juicio</p>
+                        </div>
+
+                        <form th:action="@{/aprendiz/planeacion/momento}" method="post" enctype="multipart/form-data"
+                              style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="hidden" name="idEtapa" th:value="${etapaActiva.idEtapa}">
+                            <input type="hidden" name="numeroMomento" th:value="${m.numero}">
+
+                            <th:block th:if="${m.numero == 1}">
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Competencias a desarrollar</label>
+                                    <textarea name="competenciasDesarrollar" maxlength="2000" rows="2" th:text="${m.competenciasDesarrollar}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Resultados de aprendizaje</label>
+                                    <textarea name="resultadosAprendizaje" maxlength="2000" rows="2" th:text="${m.resultadosAprendizaje}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Actividades a desarrollar</label>
+                                    <textarea name="actividadesDesarrollar" maxlength="2000" rows="2" th:text="${m.actividadesDesarrollar}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Evidencias de aprendizaje</label>
+                                    <textarea name="evidenciaDescripcion" maxlength="1000" rows="2" th:text="${m.evidenciaDescripcion}"
+                                              placeholder="Describe la evidencia..."
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                    <input type="file" name="evidenciaArchivo" accept=".pdf,.doc,.docx" style="font-size: 12px; margin-top: 6px;">
+                                    <a th:if="${m.evidenciaRutaArchivo != null}" th:href="${m.evidenciaRutaArchivo}" target="_blank" style="margin-left: 8px; font-size: 12px;">⬇ Ver archivo actual</a>
+                                </div>
+                            </th:block>
+
+                            <th:block th:if="${m.numero == 2}">
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Fecha del momento de seguimiento</label>
+                                    <input type="date" name="fechaMomento" th:value="${m.fechaMomento}"
+                                           style="padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; margin-top: 4px;">
+                                </div>
+                            </th:block>
+
+                            <!-- 📋 Factores Técnicos/Actitudinales (autoevaluación del aprendiz, Momento 2 y 3) -->
+                            <th:block th:if="${m.numero >= 2}">
+                                <div>
+                                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dark); margin: 4px 0;">Factores Técnicos</p>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <div th:each="f : ${m.factoresTecnicos}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                                            <span style="flex: 1; min-width: 160px; font-size: 12px; font-weight: 600;" th:text="${f.nombreVariable}">Variable</span>
+                                            <input type="hidden" name="idFactor" th:value="${f.idFactor}">
+                                            <input type="hidden" th:id="'val-' + ${f.idFactor}" name="valoracionFactor" th:value="${f.valoracion}">
+                                            <button type="button" th:onclick="'marcarFactor(' + ${f.idFactor} + ',\'SATISFACTORIO\')'"
+                                                    th:id="'btn-sat-' + ${f.idFactor}"
+                                                    th:style="'padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--card-border); ' + (${f.valoracion == 'SATISFACTORIO'} ? 'background: var(--verde-sena); color: #fff;' : 'background: #fff; color: var(--text-dark);')">
+                                                Satisfactorio
+                                            </button>
+                                            <button type="button" th:onclick="'marcarFactor(' + ${f.idFactor} + ',\'POR_MEJORAR\')'"
+                                                    th:id="'btn-mej-' + ${f.idFactor}"
+                                                    th:style="'padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--card-border); ' + (${f.valoracion == 'POR_MEJORAR'} ? 'background: #D97706; color: #fff;' : 'background: #fff; color: var(--text-dark);')">
+                                                Por mejorar
+                                            </button>
+                                            <input type="text" name="observacionFactor" maxlength="500" th:value="${f.observacion}" placeholder="Observación / compromiso de mejora"
+                                                   style="flex: 2; min-width: 200px; padding: 6px 10px; border: 1px solid var(--card-border); border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dark); margin: 4px 0;">Factores Actitudinales y Comportamentales</p>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <div th:each="f : ${m.factoresActitudinales}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                                            <span style="flex: 1; min-width: 160px; font-size: 12px; font-weight: 600;" th:text="${f.nombreVariable}">Variable</span>
+                                            <input type="hidden" name="idFactor" th:value="${f.idFactor}">
+                                            <input type="hidden" th:id="'val-' + ${f.idFactor}" name="valoracionFactor" th:value="${f.valoracion}">
+                                            <button type="button" th:onclick="'marcarFactor(' + ${f.idFactor} + ',\'SATISFACTORIO\')'"
+                                                    th:id="'btn-sat-' + ${f.idFactor}"
+                                                    th:style="'padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--card-border); ' + (${f.valoracion == 'SATISFACTORIO'} ? 'background: var(--verde-sena); color: #fff;' : 'background: #fff; color: var(--text-dark);')">
+                                                Satisfactorio
+                                            </button>
+                                            <button type="button" th:onclick="'marcarFactor(' + ${f.idFactor} + ',\'POR_MEJORAR\')'"
+                                                    th:id="'btn-mej-' + ${f.idFactor}"
+                                                    th:style="'padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--card-border); ' + (${f.valoracion == 'POR_MEJORAR'} ? 'background: #D97706; color: #fff;' : 'background: #fff; color: var(--text-dark);')">
+                                                Por mejorar
+                                            </button>
+                                            <input type="text" name="observacionFactor" maxlength="500" th:value="${f.observacion}" placeholder="Observación / compromiso de mejora"
+                                                   style="flex: 2; min-width: 200px; padding: 6px 10px; border: 1px solid var(--card-border); border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </th:block>
+
+                            <div th:if="${m.numero != 3}">
+                                <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;" th:text="${m.numero == 1} ? 'Observaciones adicionales' : 'Tu observación'">Observaciones</label>
+                                <textarea name="observacionAprendiz" maxlength="2000" rows="3" th:text="${m.observacionAprendiz}"
+                                          style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                            </div>
+
+                            <th:block th:if="${m.numero == 2}">
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Observaciones del responsable ente co-formador (opcional)</label>
+                                    <textarea name="observacionEnteCoformador" maxlength="2000" rows="2" th:text="${m.observacionEnteCoformador}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                            </th:block>
+
+                            <th:block th:if="${m.numero == 3}">
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación del aprendiz — Proceso de formación</label>
+                                    <textarea name="retroAprendizProceso" maxlength="2000" rows="2" th:text="${m.retroAprendizProceso}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación del aprendiz — Desempeño de competencias técnicas y actitudinales</label>
+                                    <textarea name="retroAprendizDesempeno" maxlength="2000" rows="2" th:text="${m.retroAprendizDesempeno}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación ente co-formador — Proceso de formación (opcional)</label>
+                                    <textarea name="retroEnteProceso" maxlength="2000" rows="2" th:text="${m.retroEnteProceso}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Retroalimentación ente co-formador — Desempeño de competencias (opcional)</label>
+                                    <textarea name="retroEnteDesempeno" maxlength="2000" rows="2" th:text="${m.retroEnteDesempeno}"
+                                              style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-top: 4px;"></textarea>
+                                </div>
+                            </th:block>
+
+                            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;"
+                                           th:text="${m.numero == 1} ? 'Enlace de grabación (si aplica)' : ('Enlace de grabación del momento ' + ${m.numero})">Enlace de grabación (si aplica)</label>
+                                    <input type="text" name="enlaceGrabacion" maxlength="500" th:value="${m.enlaceGrabacion}"
+                                           style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Ciudad</label>
+                                    <input type="text" name="ciudad" maxlength="100" th:value="${m.ciudad}"
+                                           style="padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Fecha diligenciamiento</label>
+                                    <input type="date" name="fechaDiligenciamiento" th:value="${m.fechaDiligenciamiento}"
+                                           style="padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px;"
+                                           th:text="${m.numero == 2} ? 'Modalidad del seguimiento' : (${m.numero == 3} ? 'Evaluación realizada en forma' : 'Modalidad')">Modalidad</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--text-dark);">
+                                        <label><input type="radio" name="modalidadFirma" value="PRESENCIAL" th:checked="${m.modalidadFirma == 'PRESENCIAL'}"> Presencial</label>
+                                        <label><input type="radio" name="modalidadFirma" value="VIRTUAL" th:checked="${m.modalidadFirma != 'PRESENCIAL'}"> Virtual</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                    style="align-self: flex-end; background: var(--verde-sena); color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                <span th:text="${m.aprendizCompleto} ? 'Guardar cambios' : 'Guardar'">Guardar</span>
+                            </button>
+                        </form>
                     </div>
-                    <input type="file" name="archivo" accept=".pdf,.doc,.docx" required style="font-size: 13px;">
-                    <button type="submit" class="btn-login" style="margin-top: 0; padding: 8px 18px; font-size: 13px;">Subir Formato</button>
-                </form>
+                </div>
             </div>
 
             <!-- Sección 2: Bitácoras -->
@@ -110,11 +308,11 @@
                             <select id="idCronograma" name="idCronograma" required style="width: 100%; border: none; outline: none; font-size: 15px; background: transparent; padding: 6px 0;">
                                 <!-- ⏳ Los cupos cuya fecha de apertura aún no llega se muestran bloqueados:
                                      la bitácora no se puede radicar antes de tiempo (después de la fecha límite sí). -->
+                                <!-- 🚧 Candado de fecha deshabilitado temporalmente (pruebas): las opciones ya no se bloquean antes de la apertura -->
                                 <option th:each="cupo : ${cronogramaPendiente}"
                                         th:value="${cupo.idCronograma}"
-                                        th:disabled="${cupo.fechaApertura.isAfter(hoy)}"
                                         th:text="${cupo.fechaApertura.isAfter(hoy)}
-                                                 ? '🔒 Bitácora N°' + ${cupo.numeroBitacora} + ' (se habilita: ' + ${cupo.fechaApertura} + ')'
+                                                 ? '🔓 Bitácora N°' + ${cupo.numeroBitacora} + ' (apertura real: ' + ${cupo.fechaApertura} + ')'
                                                  : 'Bitácora N°' + ${cupo.numeroBitacora} + ' (vence: ' + ${cupo.fechaLimite} + ')'">
                                     Bitácora N°1 (vence: 2026-01-15)
                                 </option>
@@ -141,5 +339,26 @@
     </main>
 
     <script th:src="@{/js/workflow.js}"></script>
+    <script>
+        // 🔘 Un solo panel visible a la vez (momento 1/2/3 o firmas/correo institucional)
+        function mostrarPanelAprendiz(clave) {
+            const idObjetivo = 'panel-aprendiz-' + clave;
+            document.querySelectorAll('[id^="panel-aprendiz-"]').forEach(function (panel) {
+                panel.style.display = (panel.id === idObjetivo && panel.style.display === 'none') ? 'block' : 'none';
+            });
+        }
+
+        // 📋 Marca la valoración (Satisfactorio/Por mejorar) de una fila de la tabla de factores:
+        // actualiza el input oculto que viaja al servidor y resalta el botón elegido de esa fila.
+        function marcarFactor(idFactor, valor) {
+            document.getElementById('val-' + idFactor).value = valor;
+            const btnSat = document.getElementById('btn-sat-' + idFactor);
+            const btnMej = document.getElementById('btn-mej-' + idFactor);
+            btnSat.style.background = (valor === 'SATISFACTORIO') ? 'var(--verde-sena)' : '#fff';
+            btnSat.style.color = (valor === 'SATISFACTORIO') ? '#fff' : 'var(--text-dark)';
+            btnMej.style.background = (valor === 'POR_MEJORAR') ? '#D97706' : '#fff';
+            btnMej.style.color = (valor === 'POR_MEJORAR') ? '#fff' : 'var(--text-dark)';
+        }
+    </script>
 </body>
 </html>

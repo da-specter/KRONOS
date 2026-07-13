@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
 @Service
 public class VisitaSeguimientoService {
 
-    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private static final String[] TITULOS_EXPORT = {
             "Fecha", "Aprendiz", "Ficha", "Tipo", "Modalidad", "Estado", "Novedad"
@@ -120,7 +121,7 @@ public class VisitaSeguimientoService {
      * entre esta fecha y el fin de la etapa (ver {@link #autoAgendarVisitasRestantes}).
      */
     @Transactional
-    public VisitaSeguimiento agendarVisita(Long idUsuarioInstructor, Long idEtapa, LocalDate fecha,
+    public VisitaSeguimiento agendarVisita(Long idUsuarioInstructor, Long idEtapa, LocalDateTime fecha,
                                             String modalidadEtiqueta, String novedad) {
         var instructor = instructorSeguimientoRepository.findByUsuarioIdUsuario(idUsuarioInstructor)
                 .orElseThrow(() -> new IllegalStateException("Tu perfil de Instructor de Seguimiento no está configurado."));
@@ -179,9 +180,9 @@ public class VisitaSeguimientoService {
      * (menos de 4 días) no se auto-agendan: el instructor deberá programarlas manualmente.
      */
     private void autoAgendarVisitasRestantes(EtapaProductiva etapa, Usuario usuarioInstructor, Usuario aprendiz,
-                                              LocalDate fechaPrimeraVisita, ModalidadVisita modalidad) {
+                                              LocalDateTime fechaPrimeraVisita, ModalidadVisita modalidad) {
         LocalDate fechaFin = etapa.getFechaFin();
-        long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(fechaPrimeraVisita, fechaFin);
+        long diasRestantes = java.time.temporal.ChronoUnit.DAYS.between(fechaPrimeraVisita.toLocalDate(), fechaFin);
 
         if (diasRestantes < 4) {
             notificacionService.crear(usuarioInstructor,
@@ -190,13 +191,14 @@ public class VisitaSeguimientoService {
             return;
         }
 
+        // Las 2 visitas auto-agendadas conservan la misma hora que eligió el instructor para la primera.
         long tercio = diasRestantes / 3;
-        LocalDate fechaSegunda = fechaPrimeraVisita.plusDays(tercio);
-        LocalDate fechaTercera = fechaPrimeraVisita.plusDays(tercio * 2);
-        if (!fechaTercera.isBefore(fechaFin)) {
-            fechaTercera = fechaFin.minusDays(1);
+        LocalDateTime fechaSegunda = fechaPrimeraVisita.plusDays(tercio);
+        LocalDateTime fechaTercera = fechaPrimeraVisita.plusDays(tercio * 2);
+        if (!fechaTercera.toLocalDate().isBefore(fechaFin)) {
+            fechaTercera = fechaFin.minusDays(1).atTime(fechaPrimeraVisita.toLocalTime());
         }
-        if (!fechaSegunda.isBefore(fechaTercera)) {
+        if (!fechaSegunda.toLocalDate().isBefore(fechaTercera.toLocalDate())) {
             fechaSegunda = fechaPrimeraVisita.plusDays(1);
         }
 
@@ -290,7 +292,7 @@ public class VisitaSeguimientoService {
     private void marcarVencidasComoRealizadas(List<VisitaSeguimiento> visitas) {
         LocalDate hoy = LocalDate.now();
         for (VisitaSeguimiento visita : visitas) {
-            if (visita.getEstadoVisita() == EstadoVisita.PLANEADA && visita.getFechaVisita().isBefore(hoy)) {
+            if (visita.getEstadoVisita() == EstadoVisita.PLANEADA && visita.getFechaVisita().toLocalDate().isBefore(hoy)) {
                 visita.setEstadoVisita(EstadoVisita.REALIZADA);
                 visitaSeguimientoRepository.save(visita);
             }
@@ -361,7 +363,7 @@ public class VisitaSeguimientoService {
     // Una visita solo se puede cancelar/aplazar mientras siga PLANEADA y su fecha no haya pasado
     private boolean esGestionable(VisitaSeguimiento visita) {
         return visita.getEstadoVisita() == EstadoVisita.PLANEADA
-                && !visita.getFechaVisita().isBefore(LocalDate.now());
+                && !visita.getFechaVisita().toLocalDate().isBefore(LocalDate.now());
     }
 
     private VisitasAgendaResumenDto agrupar(List<VisitaSeguimiento> visitas) {
@@ -374,9 +376,9 @@ public class VisitaSeguimientoService {
             VisitaAgendaDto dto = convertir(visita);
             // Canceladas, aplazadas o ya realizadas se consideran historial, sin importar su fecha
             boolean esHistorica = visita.getEstadoVisita() != EstadoVisita.PLANEADA;
-            if (esHistorica || visita.getFechaVisita().isBefore(hoy)) {
+            if (esHistorica || visita.getFechaVisita().toLocalDate().isBefore(hoy)) {
                 pasadas.add(dto);
-            } else if (visita.getFechaVisita().isEqual(hoy)) {
+            } else if (visita.getFechaVisita().toLocalDate().isEqual(hoy)) {
                 pendientes.add(dto);
             } else {
                 futuras.add(dto);

@@ -50,7 +50,7 @@ public class ReporteService {
         return switch (origen) {
             case "APRENDICES" -> TipoReporte.CONTRATOS_EXCEL;
             case "FICHAS" -> TipoReporte.FICHAS_EXCEL;
-            case "APRENDIZ_FICHA", "INSTRUCTOR_APRENDICES", "INSTRUCTOR_VISITAS" -> TipoReporte.APRENDIZ_EXCEL;
+            case "APRENDIZ_FICHA", "INSTRUCTOR_APRENDICES", "INSTRUCTOR_VISITAS", "REPORTE_APRENDIZ" -> TipoReporte.APRENDIZ_EXCEL;
             default -> TipoReporte.EJECUTIVO;
         };
     }

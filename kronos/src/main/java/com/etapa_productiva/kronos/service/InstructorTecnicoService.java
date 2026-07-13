@@ -133,6 +133,8 @@ public class InstructorTecnicoService {
                         .estadoAcademico(etiquetaEstadoAcademico(matricula.getEstadoAcademico()))
                         .situacion(clasificarSituacion(matricula, etapa))
                         .empresa(etapa != null ? etapa.getEmpresa().getNombreEmpresa() : SIN_DATO)
+                        .municipioEmpresa(etapa != null ? etapa.getEmpresa().getMunicipio().getNombreMunicipio() : SIN_DATO)
+                        .departamentoEmpresa(etapa != null ? etapa.getEmpresa().getMunicipio().getDepartamento().getNombreDepartamento() : SIN_DATO)
                         .modalidadContrato(etapa != null ? etapa.getTipoContrato().getNombreTipoContrato() : SIN_DATO)
                         .modalidad(etapa != null && etapa.getModalidad() != null ? etiquetaModalidad(etapa.getModalidad().name()) : SIN_DATO)
                         .etapaInicio(etapa != null ? fecha(etapa.getFechaInicio()) : SIN_DATO)
@@ -218,6 +220,7 @@ public class InstructorTecnicoService {
     private static final String[] TITULOS_EXPORTACION = {
             "Nombres", "Apellidos", "Tipo Doc.", "Documento", "Teléfono", "Correo",
             "Ficha", "Programa", "Estado Académico", "Situación", "Empresa",
+            "Municipio Empresa", "Departamento Empresa",
             "Modalidad Contrato", "Modalidad", "Inicio Etapa", "Fin Etapa", "Estado Etapa"
     };
 
@@ -228,6 +231,7 @@ public class InstructorTecnicoService {
                     a.getNombres(), a.getApellidos(), a.getTipoDocumento(), a.getDocumento(),
                     a.getTelefono(), a.getCorreoElectronico(), a.getFicha(), a.getProgramaFormacion(),
                     a.getEstadoAcademico(), a.getSituacion(), a.getEmpresa(),
+                    a.getMunicipioEmpresa(), a.getDepartamentoEmpresa(),
                     a.getModalidadContrato(), a.getModalidad(), a.getEtapaInicio(), a.getEtapaFin(), a.getEstadoEtapa()
             });
         }

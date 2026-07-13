@@ -158,6 +158,8 @@
                                 <th style="padding: 12px 14px;">Ficha</th>
                                 <th style="padding: 12px 14px;">Situación</th>
                                 <th style="padding: 12px 14px;">Empresa</th>
+                                <th style="padding: 12px 14px;">Municipio Empresa</th>
+                                <th style="padding: 12px 14px;">Departamento Empresa</th>
                                 <th style="padding: 12px 14px;">Mod. Contrato</th>
                                 <th style="padding: 12px 14px;">Modalidad</th>
                                 <th style="padding: 12px 14px;">Inicio Etapa</th>
@@ -173,7 +175,10 @@
                                 th:data-ficha="${a.ficha}"
                                 th:data-tipodoc="${a.tipoDocumento}"
                                 th:data-contrato="${a.modalidadContrato}"
-                                th:data-modalidad="${a.modalidad}">
+                                th:data-modalidad="${a.modalidad}"
+                                th:data-empresa="${#strings.toLowerCase(a.empresa)}"
+                                th:data-municipio="${#strings.toLowerCase(a.municipioEmpresa)}"
+                                th:data-departamento="${#strings.toLowerCase(a.departamentoEmpresa)}">
                                 <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.nombres}">Nombres</td>
                                 <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);" th:text="${a.apellidos}">Apellidos</td>
                                 <td style="padding: 12px 14px;" th:text="${a.tipoDocumento}">CC</td>
@@ -188,6 +193,8 @@
                                                    : 'background: rgba(107,114,128,0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;'))">Situación</span>
                                 </td>
                                 <td style="padding: 12px 14px;" th:text="${a.empresa}">Empresa</td>
+                                <td style="padding: 12px 14px;" th:text="${a.municipioEmpresa}">Municipio</td>
+                                <td style="padding: 12px 14px;" th:text="${a.departamentoEmpresa}">Departamento</td>
                                 <td style="padding: 12px 14px;" th:text="${a.modalidadContrato}">Contrato de Aprendizaje</td>
                                 <td style="padding: 12px 14px;" th:text="${a.modalidad}">Presencial</td>
                                 <td style="padding: 12px 14px;" th:text="${a.etapaInicio}">01/01/2026</td>
@@ -201,7 +208,7 @@
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(aprendices)}">
-                                <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                <td colspan="15" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
                                     Aún no hay aprendices matriculados en tus fichas.
                                 </td>
                             </tr>
@@ -400,7 +407,8 @@
             filas.forEach(function (fila) {
                 const d = fila.dataset;
                 const coincideTexto = !texto
-                    || (d.nombre + ' ' + d.apellido + ' ' + d.documento + ' ' + d.ficha).toLowerCase().includes(texto);
+                    || (d.nombre + ' ' + d.apellido + ' ' + d.documento + ' ' + d.ficha + ' '
+                        + d.empresa + ' ' + d.municipio + ' ' + d.departamento).toLowerCase().includes(texto);
                 const coincideTipo = !tipoDoc || d.tipodoc === tipoDoc;
                 const coincideContrato = !contrato || d.contrato === contrato;
                 const coincideModalidad = !modalidad || d.modalidad === modalidad;

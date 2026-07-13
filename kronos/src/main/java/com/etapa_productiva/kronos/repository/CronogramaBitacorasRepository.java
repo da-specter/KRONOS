@@ -19,4 +19,9 @@ public interface CronogramaBitacorasRepository extends JpaRepository<CronogramaB
 
     List<CronogramaBitacoras> findByEstadoAndFechaLimiteBeforeAndAlertaAprendizEnviadaFalse(
             EstadoBitacora estado, LocalDate fecha);
+
+    // ⏰ Cupos que vencen HOY (todavía no están atrasados) y siguen PENDIENTE: recordatorio al
+    // aprendiz de que hoy es el último día para subir esta bitácora.
+    List<CronogramaBitacoras> findByEstadoAndFechaLimiteAndAlertaVenceHoyEnviadaFalse(
+            EstadoBitacora estado, LocalDate fecha);
 }

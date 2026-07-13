@@ -6,18 +6,16 @@ import com.etapa_productiva.kronos.entity.Bitacora;
 import com.etapa_productiva.kronos.entity.CronogramaBitacoras;
 import com.etapa_productiva.kronos.entity.EtapaProductiva;
 import com.etapa_productiva.kronos.entity.EvaluacionBitacora;
-import com.etapa_productiva.kronos.entity.FormatoPlaneacion;
 import com.etapa_productiva.kronos.entity.ResultadoEvaluacion;
 import com.etapa_productiva.kronos.entity.SolicitudEtapaPractica;
 import com.etapa_productiva.kronos.repository.AprendizFichaRepository;
 import com.etapa_productiva.kronos.repository.BitacoraRepository;
 import com.etapa_productiva.kronos.repository.EtapaProductivaRepository;
 import com.etapa_productiva.kronos.repository.EvaluacionBitacoraRepository;
-import com.etapa_productiva.kronos.repository.EvaluacionPlaneacionRepository;
-import com.etapa_productiva.kronos.repository.FormatoPlaneacionRepository;
 import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.SolicitudRepository;
 import com.etapa_productiva.kronos.service.CronogramaService;
+import com.etapa_productiva.kronos.service.EvaluacionFormatosService;
 import com.etapa_productiva.kronos.service.SeguimientoEtapaService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +46,6 @@ public class BitacorasController {
     private EtapaProductivaRepository etapaProductivaRepository;
 
     @Autowired
-    private FormatoPlaneacionRepository formatoPlaneacionRepository;
-
-    @Autowired
     private BitacoraRepository bitacoraRepository;
 
     @Autowired
@@ -69,7 +64,7 @@ public class BitacorasController {
     private EvaluacionBitacoraRepository evaluacionBitacoraRepository;
 
     @Autowired
-    private EvaluacionPlaneacionRepository evaluacionPlaneacionRepository;
+    private EvaluacionFormatosService evaluacionFormatosService;
 
     @Autowired
     private CronogramaService cronogramaService;
@@ -106,12 +101,8 @@ public class BitacorasController {
                 IndexController.menuAprendizReactivo(usuarioLogueado, solicitudActual, etapaActiva));
 
         if (etapaActiva != null) {
-            FormatoPlaneacion formatoPlaneacion =
-                    formatoPlaneacionRepository.findByEtapaProductivaIdEtapa(etapaActiva.getIdEtapa()).orElse(null);
-            model.addAttribute("formatoPlaneacion", formatoPlaneacion);
-            model.addAttribute("evaluacionPlaneacion", formatoPlaneacion == null ? null :
-                    evaluacionPlaneacionRepository.findTopByFormatoPlaneacionIdFormatoPlaneacionOrderByFechaEvaluacionDesc(
-                            formatoPlaneacion.getIdFormatoPlaneacion()).orElse(null));
+            model.addAttribute("momentos023", evaluacionFormatosService.obtenerMomentos(etapaActiva));
+            model.addAttribute("formato023", evaluacionFormatosService.obtenerFormato023(etapaActiva.getIdEtapa()));
 
             List<Bitacora> bitacorasSubidas = bitacoraRepository.findByEtapaProductivaIdEtapaOrderByFechaEntregaDesc(etapaActiva.getIdEtapa());
             model.addAttribute("bitacorasSubidas", bitacorasSubidas);
@@ -153,8 +144,8 @@ public class BitacorasController {
             // ⏳ Para que la vista bloquee los cupos que aún no llegan a su fecha de apertura
             model.addAttribute("hoy", java.time.LocalDate.now());
         } else {
-            model.addAttribute("formatoPlaneacion", null);
-            model.addAttribute("evaluacionPlaneacion", null);
+            model.addAttribute("momentos023", Collections.emptyList());
+            model.addAttribute("formato023", null);
             model.addAttribute("bitacorasSubidas", Collections.emptyList());
             model.addAttribute("ultimaEvaluacionPorBitacora", Collections.emptyMap());
             model.addAttribute("cronogramaPendiente", Collections.emptyList());
@@ -162,35 +153,6 @@ public class BitacorasController {
         }
 
         return "bitacoras";
-    }
-
-    @PostMapping(value = "/aprendiz/formato-planeacion", consumes = "multipart/form-data")
-    public String subirFormatoPlaneacion(
-            @RequestParam String asunto,
-            @RequestParam("archivo") MultipartFile archivo,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-
-        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
-        if (usuarioLogueado == null) {
-            return "redirect:/auth/login";
-        }
-        List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("APRENDIZ")) {
-            redirectAttributes.addFlashAttribute("error", "Solo un aprendiz puede subir el Formato de Planeación.");
-            return "redirect:/index";
-        }
-
-        try {
-            EtapaProductiva etapaActiva = etapaProductivaRepository.findByAprendizIdUsuario(usuarioLogueado.getIdUsuario())
-                    .orElseThrow(() -> new IllegalStateException("No tienes una Etapa Productiva activa."));
-
-            seguimientoEtapaService.subirFormatoPlaneacion(etapaActiva, asunto, archivo);
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-        }
-
-        return "redirect:/aprendiz/bitacoras";
     }
 
     @PostMapping(value = "/aprendiz/bitacora", consumes = "multipart/form-data")

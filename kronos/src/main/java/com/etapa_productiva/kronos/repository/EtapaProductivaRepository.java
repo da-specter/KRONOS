@@ -39,10 +39,10 @@ public interface EtapaProductivaRepository extends JpaRepository<EtapaProductiva
     // 📊 Dashboard del Administrador: aprendices actualmente en etapa práctica (EN_PROGRESO)
     long countByEstadoEtapa(EstadoEtapa estadoEtapa);
 
-    // 🎓 Job diario de certificación automática: etapas POR_CERTIFICAR que llevan ahí desde
-    // antes del corte de 3 meses (la certificación final ya no la hace el Gestor de Etapa,
-    // ocurre en Sofía Plus; KRONOS solo refleja el estado tras el plazo).
-    List<EtapaProductiva> findByEstadoEtapaAndFechaPorCertificarBefore(EstadoEtapa estadoEtapa, LocalDateTime corte);
+    // 🎓 Reservado para un futuro job que necesite operar sobre etapas TERMINADAS según hace
+    // cuánto quedaron cerradas (la certificación final ya no la hace el Gestor de Etapa,
+    // ocurre en Sofía Plus; KRONOS solo refleja aquí el momento del cierre interno).
+    List<EtapaProductiva> findByEstadoEtapaAndFechaTerminacionBefore(EstadoEtapa estadoEtapa, LocalDateTime corte);
 
     // ⏰ Job diario de alertas: etapas activas cuya FECHA_INICIO ya superó los días configurados
     // (15 por defecto) sin que se les haya enviado todavía la alerta de "agenda la primera visita"
