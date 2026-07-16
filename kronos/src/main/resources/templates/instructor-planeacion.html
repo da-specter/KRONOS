@@ -27,11 +27,26 @@
             <div th:if="${error}" class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 0; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); color: #DC2626; font-size: 13px; font-weight: 600; padding: 14px 18px;" th:text="${error}">Ocurrió un error.</div>
 
             <div class="dashboard-panel" style="grid-column: 1 / -1; margin-top: 10px;">
-                <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px;">
-                    <span>👥 Aprendices</span>
-                    <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
-                          th:text="${#lists.size(resumenPlaneacion)} + ' aprendices'">0 aprendices</span>
-                </h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                    <h3 class="panel-header-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span>👥 Aprendices</span>
+                        <span style="background: rgba(5, 112, 21, 0.1); color: var(--verde-sena); font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                              th:text="${#lists.size(resumenPlaneacion)} + ' aprendices'">0 aprendices</span>
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <input type="text" id="buscadorPlaneacion" onkeyup="filtrarPlaneacion()"
+                               placeholder="🔎 Buscar por nombre, apellido, documento o ficha..."
+                               style="min-width: 260px; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 13px; outline-color: var(--verde-sena); box-sizing: border-box;">
+                        <button type="button" onclick="abrirModalExportar('excel')"
+                                style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📊 Exportar Excel
+                        </button>
+                        <button type="button" onclick="abrirModalExportar('pdf')"
+                                style="display: flex; align-items: center; gap: 8px; background: #DC2626; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
 
                 <!-- 🔎 Filtro por chip: cuántos de los 3 momentos ya completó el instructor, por aprendiz -->
                 <div id="chipsMomentos" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px;">
@@ -61,7 +76,8 @@
                     </div>
                 </div>
 
-                <div th:each="p : ${resumenPlaneacion}" class="inner-status-card fila-planeacion" th:attr="data-momentos=${p.momentosCompletados}"
+                <div th:each="p : ${resumenPlaneacion}" class="inner-status-card fila-planeacion"
+                     th:attr="data-momentos=${p.momentosCompletados}, data-buscar=${#strings.toLowerCase(p.nombres + ' ' + p.apellidos + ' ' + p.documento + ' ' + p.ficha)}"
                      style="margin-top: 16px; display: flex; flex-direction: column; gap: 14px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                         <div>
@@ -83,6 +99,22 @@
                                style="background: #2563EB; color: #fff; font-size: 12px; padding: 8px 16px; border-radius: 8px; font-weight: 700; text-decoration: none; white-space: nowrap;">
                                 ⬇ Descargar 023
                             </a>
+                            <!-- 📄 Plus: descargar el PDF de un solo momento apenas quede completo,
+                                 sin esperar a que los 3 estén listos para el Formato 023 completo. -->
+                            <details th:if="${!#lists.isEmpty(p.momentos.?[aprendizCompleto and instructorCompleto])}"
+                                     style="position: relative;">
+                                <summary style="list-style: none; cursor: pointer; background: none; border: 1px solid var(--card-border); color: var(--text-dark); padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap;">
+                                    ⬇ Por momentos
+                                </summary>
+                                <div style="position: absolute; right: 0; top: 36px; z-index: 20; background: #fff; border: 1px solid var(--card-border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 160px;">
+                                    <a th:each="m : ${p.momentos}" th:if="${m.aprendizCompleto and m.instructorCompleto}"
+                                       th:href="@{'/instructor/seguimiento/planeacion/' + ${p.idEtapa} + '/momento/' + ${m.numero} + '/pdf'}"
+                                       style="color: var(--text-dark); font-size: 12px; font-weight: 600; text-decoration: none; padding: 8px 10px; border-radius: 6px; white-space: nowrap;"
+                                       onmouseover="this.style.background='#F8FAF9'" onmouseout="this.style.background='transparent'">
+                                        Momento <span th:text="${m.numero}">1</span>
+                                    </a>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
@@ -91,7 +123,9 @@
                         <form th:action="@{/instructor/seguimiento/planeacion/firma}" method="post" enctype="multipart/form-data"
                               style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <input type="hidden" name="idEtapa" th:value="${p.idEtapa}">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Imagen de tu firma (JPG/PNG)</label>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Imagen de tu firma (JPG/PNG)
+                                <span th:if="${p.firmaInstructorSubida}" style="color: var(--verde-sena); font-weight: 700;">✓ ya subida</span>
+                            </label>
                             <input type="file" name="firma" accept="image/*" required style="font-size: 12px;">
                             <button type="submit"
                                     style="background: var(--verde-sena); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
@@ -189,6 +223,13 @@
                                               style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical;"></textarea>
                                 </th:block>
 
+                                <div>
+                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;"
+                                           th:text="${m.numero == 1} ? 'Enlace de grabación (si aplica)' : ('Enlace de grabación del momento ' + ${m.numero})">Enlace de grabación (si aplica)</label>
+                                    <input type="text" name="enlaceGrabacion" maxlength="500" th:value="${m.enlaceGrabacion}"
+                                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-top: 4px;">
+                                </div>
+
                                 <div th:if="${m.numero == 3}" style="display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Juicio de evaluación final</label>
                                     <select name="juicioEvaluacion" required
@@ -219,6 +260,26 @@
         </section>
     </main>
 
+    <!-- 🔐 Modal de re-autenticación previa a la exportación -->
+    <div id="modalExportar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 400px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">🔐 Confirma tu identidad</h3>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+                Por seguridad, ingresa tu contraseña para descargar el archivo en <strong id="formatoTexto">Excel</strong>.
+            </p>
+            <input type="password" id="contrasenaExportar" placeholder="Contraseña" autocomplete="current-password"
+                   onkeydown="if (event.key === 'Enter') confirmarExportacion()"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; outline-color: var(--verde-sena); box-sizing: border-box;">
+            <p id="errorExportar" style="display: none; margin: 10px 0 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalExportar()"
+                        style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btnConfirmar" onclick="confirmarExportacion()"
+                        style="background: var(--verde-sena); border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">Descargar</button>
+            </div>
+        </div>
+    </div>
+
     <script th:src="@{/js/workflow.js}"></script>
     <script>
         // 🔘 Un solo panel visible a la vez por tarjeta de aprendiz (momento 1/2/3 o firma)
@@ -229,7 +290,7 @@
             });
         }
 
-        // 🚦 Filtro por chip: cuántos momentos completó el instructor, por aprendiz
+        // 🚦 Filtros combinados: chip (momentos completados) + texto (nombre, apellido, documento, ficha)
         let momentosElegidos = '';
 
         function filtrarPorMomentos(valor) {
@@ -239,17 +300,73 @@
                 chip.style.background = activo ? 'rgba(5, 112, 21, 0.10)' : '#F8FAF9';
                 chip.style.borderColor = activo ? 'var(--verde-sena)' : 'var(--card-border)';
             });
+            filtrarPlaneacion();
+        }
 
+        function filtrarPlaneacion() {
+            const criterio = (document.getElementById('buscadorPlaneacion').value || '').trim().toLowerCase();
             const filas = document.querySelectorAll('.fila-planeacion');
             let visibles = 0;
             filas.forEach(function (fila) {
-                const coincide = !momentosElegidos || fila.dataset.momentos === momentosElegidos;
+                const coincideMomentos = !momentosElegidos || fila.dataset.momentos === momentosElegidos;
+                const coincideTexto = !criterio || (fila.dataset.buscar || '').includes(criterio);
+                const coincide = coincideMomentos && coincideTexto;
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
             });
 
             const sr = document.getElementById('sinResultados');
             if (sr) sr.style.display = (filas.length > 0 && visibles === 0) ? 'block' : 'none';
+        }
+
+        // 📥 Exportación (Excel/PDF) con re-autenticación
+        let formatoExportar = 'excel';
+        function abrirModalExportar(formato) {
+            formatoExportar = formato;
+            document.getElementById('formatoTexto').textContent = formato === 'pdf' ? 'PDF' : 'Excel';
+            document.getElementById('contrasenaExportar').value = '';
+            document.getElementById('errorExportar').style.display = 'none';
+            document.getElementById('modalExportar').style.display = 'flex';
+            document.getElementById('contrasenaExportar').focus();
+        }
+        function cerrarModalExportar() { document.getElementById('modalExportar').style.display = 'none'; }
+
+        function confirmarExportacion() {
+            const contrasena = document.getElementById('contrasenaExportar').value;
+            const error = document.getElementById('errorExportar');
+            const boton = document.getElementById('btnConfirmar');
+            if (!contrasena) { error.textContent = 'Debes ingresar tu contraseña para continuar.'; error.style.display = 'block'; return; }
+
+            const datos = new URLSearchParams();
+            datos.append('formato', formatoExportar);
+            datos.append('contrasena', contrasena);
+            boton.disabled = true; boton.textContent = 'Generando...'; error.style.display = 'none';
+
+            fetch('/instructor/seguimiento/planeacion/exportar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: datos.toString()
+            })
+            .then(async function (respuesta) {
+                if (!respuesta.ok) {
+                    let mensaje = 'No fue posible generar el archivo.';
+                    try { const c = await respuesta.json(); if (c && c.mensaje) mensaje = c.mensaje; } catch (e) {}
+                    throw new Error(mensaje);
+                }
+                return respuesta.blob();
+            })
+            .then(function (blob) {
+                const extension = formatoExportar === 'pdf' ? 'pdf' : 'xlsx';
+                const hoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const enlace = document.createElement('a');
+                enlace.href = URL.createObjectURL(blob);
+                enlace.download = 'formato_023_' + hoy + '.' + extension;
+                document.body.appendChild(enlace); enlace.click(); enlace.remove();
+                URL.revokeObjectURL(enlace.href);
+                cerrarModalExportar();
+            })
+            .catch(function (e) { error.textContent = e.message; error.style.display = 'block'; })
+            .finally(function () { boton.disabled = false; boton.textContent = 'Descargar'; });
         }
     </script>
 </body>

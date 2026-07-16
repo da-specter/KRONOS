@@ -8,7 +8,7 @@
 -- una vez cargados estos datos. Los DELETE de abajo son un no-op hoy (toda la basura actual
 -- está referenciada) pero quedan listos para limpiar solos en cuanto se reasignen esas filas.
 --
--- ⚠️ Ejecutar UNA VEZ como KRONOS_DEV en cada entorno/PC.
+-- ⚠️ Ejecutar UNA VEZ como KRONOS_END en cada entorno/PC.
 -- Re-ejecutable: los DELETE solo tocan filas sin EMPRESA asociada, y los INSERT solo agregan
 -- departamentos/municipios que todavía no existan (por nombre exacto).
 

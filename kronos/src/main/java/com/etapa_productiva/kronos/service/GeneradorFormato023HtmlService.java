@@ -34,6 +34,9 @@ import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -97,7 +100,21 @@ public class GeneradorFormato023HtmlService {
 
     @Transactional(readOnly = true)
     public byte[] generarPdf(EtapaProductiva etapa) throws IOException {
-        Context contexto = construirContexto(etapa);
+        return renderizarPdf(construirContexto(etapa, null));
+    }
+
+    /**
+     * 📄 Genera el PDF de un único momento (1, 2 o 3): mismo encabezado general (datos del
+     * aprendiz, empresa e instructor) pero solo la tabla de ese momento, como "plus" para que
+     * el Instructor de Seguimiento pueda descargarlo apenas quede completo por ambos lados,
+     * sin esperar a que los 3 estén listos para el Formato 023 completo.
+     */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfMomento(EtapaProductiva etapa, int numeroMomento) throws IOException {
+        return renderizarPdf(construirContexto(etapa, numeroMomento));
+    }
+
+    private byte[] renderizarPdf(Context contexto) throws IOException {
         String html = templateEngine.process("fragments/PlantillaPlaneacion023", contexto);
 
         org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(html);
@@ -115,9 +132,11 @@ public class GeneradorFormato023HtmlService {
 
     // ═══════════════════ Construcción de los datos transaccionales de KRONOS ═══════════════════
 
-    private Context construirContexto(EtapaProductiva etapa) {
+    // soloMomento null = los 3 momentos (Formato 023 completo); 1/2/3 = solo la tabla de ese momento
+    private Context construirContexto(EtapaProductiva etapa, Integer soloMomento) {
         Context contexto = new Context();
         contexto.setVariable("logoBase64", logoBase64);
+        contexto.setVariable("soloMomento", soloMomento);
 
         Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
         Ficha ficha = etapa.getAprendizFicha().getFicha();
@@ -176,6 +195,13 @@ public class GeneradorFormato023HtmlService {
         contexto.setVariable("empresaTelefonoJefe", valor(etapa.getTelefonoJefeInmediato()));
         contexto.setVariable("empresaOtroContacto", ""); // sin fuente de dato hoy
         contexto.setVariable("empresaTelefonoInstitucional", ""); // sin fuente de dato hoy
+
+        // Firmas (imagen) subidas en KRONOS: se capturan una sola vez por etapa y la plantilla
+        // las reutiliza en los bloques de firma de los 3 momentos. Si alguna falta, queda null
+        // y la plantilla deja solo la línea en blanco (para firmar a mano).
+        contexto.setVariable("firmaAprendiz", firmaDataUri(etapa.getFirmaAprendizRuta()));
+        contexto.setVariable("firmaInstructor", firmaDataUri(etapa.getFirmaInstructorRuta()));
+        contexto.setVariable("firmaEnteCoformador", firmaDataUri(etapa.getFirmaEnteCoformadorRuta()));
 
         contexto.setVariable("momento1", construirMomento1(etapa, m1));
         contexto.setVariable("visita", construirVisita(etapa, m2));
@@ -322,6 +348,29 @@ public class GeneradorFormato023HtmlService {
     }
 
     // ═══════════════════════════════════════ Helpers ═══════════════════════════════════════
+
+    // Convierte la ruta web de una firma (ej. "/uploads/firmas/etapa_1/uuid.png") en un data URI
+    // Base64 incrustable en el PDF — mismo mecanismo que el logo del SENA en cargarLogo().
+    // La ruta se resuelve igual que EvaluacionFormatosService.resolverRutaFisica.
+    private String firmaDataUri(String rutaWeb) {
+        if (rutaWeb == null || rutaWeb.isBlank()) {
+            return null;
+        }
+        try {
+            String relativa = rutaWeb.startsWith("/") ? rutaWeb.substring(1) : rutaWeb;
+            Path archivo = Paths.get(relativa).toAbsolutePath();
+            if (!Files.exists(archivo)) {
+                return null;
+            }
+            String mime = Files.probeContentType(archivo);
+            if (mime == null || !mime.startsWith("image/")) {
+                mime = "image/png";
+            }
+            return "data:" + mime + ";base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(archivo));
+        } catch (IOException e) {
+            return null; // firma ilegible: el bloque queda con la línea en blanco, como antes
+        }
+    }
 
     private String buscarFechaAfiliacionArl(Long idEtapa) {
         return documentoRequisitoRepository.findByEtapaProductivaIdEtapa(idEtapa).stream()

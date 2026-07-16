@@ -36,7 +36,6 @@ public class AprendizPlaneacionController {
             @RequestParam(required = false) String evidenciaDescripcion,
             @RequestParam(value = "evidenciaArchivo", required = false) MultipartFile evidenciaArchivo,
             @RequestParam(required = false) String observacionAprendiz,
-            @RequestParam(required = false) String enlaceGrabacion,
             @RequestParam(required = false) String ciudad,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDiligenciamiento,
             @RequestParam(required = false) ModalidadFirma modalidadFirma,
@@ -64,7 +63,7 @@ public class AprendizPlaneacionController {
             evaluacionFormatosService.guardarDatosAprendizMomento(usuarioLogueado.getIdUsuario(), idEtapa, numeroMomento,
                     competenciasDesarrollar, resultadosAprendizaje, actividadesDesarrollar,
                     evidenciaDescripcion, evidenciaArchivo, observacionAprendiz,
-                    enlaceGrabacion, ciudad, fechaDiligenciamiento, modalidadFirma,
+                    ciudad, fechaDiligenciamiento, modalidadFirma,
                     fechaMomento, observacionEnteCoformador,
                     retroAprendizProceso, retroAprendizDesempeno, retroEnteProceso, retroEnteDesempeno,
                     idFactor, valoracionFactor, observacionFactor);

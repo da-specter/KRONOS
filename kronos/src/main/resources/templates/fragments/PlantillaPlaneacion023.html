@@ -179,6 +179,11 @@
             width: 100%;
             margin-bottom: 5px;
         }
+        .signature-img {
+            display: block;
+            height: 42px;
+            margin: 0 auto 2px auto;
+        }
     </style>
 </head>
 <body>
@@ -374,7 +379,7 @@
 
 </div>
 
-<div class="container page-break">
+<div class="container page-break" th:if="${soloMomento == null or soloMomento == 1}">
 
     <div class="logo-container">
         <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
@@ -461,16 +466,19 @@
     <table class="signature-section">
         <tr>
             <td style="width: 30%;">
+                <img th:if="${firmaAprendiz != null}" class="signature-img" th:src="${firmaAprendiz}" alt="Firma del aprendiz"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del aprendiz</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaInstructor != null}" class="signature-img" th:src="${firmaInstructor}" alt="Firma del instructor de seguimiento"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del instructor de seguimiento</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaEnteCoformador != null}" class="signature-img" th:src="${firmaEnteCoformador}" alt="Firma del ente co-formador"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del ente co-formador</div>
             </td>
@@ -488,7 +496,7 @@
 
 </div>
 
-<div class="container page-break">
+<div class="container page-break" th:if="${soloMomento == null or soloMomento == 2}">
 
     <div class="logo-container">
         <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
@@ -636,16 +644,19 @@
     <table class="signature-section">
         <tr>
             <td style="width: 30%;">
+                <img th:if="${firmaAprendiz != null}" class="signature-img" th:src="${firmaAprendiz}" alt="Firma del aprendiz"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del aprendiz</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaInstructor != null}" class="signature-img" th:src="${firmaInstructor}" alt="Firma del instructor de seguimiento"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma Instructor de seguimiento</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaEnteCoformador != null}" class="signature-img" th:src="${firmaEnteCoformador}" alt="Firma del ente co-formador"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del ente co-formador</div>
             </td>
@@ -663,7 +674,7 @@
 
 </div>
 
-<div class="container page-break">
+<div class="container page-break" th:if="${soloMomento == null or soloMomento == 3}">
 
     <div class="logo-container">
         <img class="logo-sena" th:src="'data:image/png;base64,' + ${logoBase64}" alt="Logo SENA">
@@ -862,16 +873,19 @@
     <table class="signature-section">
         <tr>
             <td style="width: 30%;">
+                <img th:if="${firmaAprendiz != null}" class="signature-img" th:src="${firmaAprendiz}" alt="Firma del aprendiz"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del aprendiz</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaInstructor != null}" class="signature-img" th:src="${firmaInstructor}" alt="Firma del instructor de seguimiento"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma Instructor de seguimiento</div>
             </td>
             <td style="width: 5%;"></td>
             <td style="width: 30%;">
+                <img th:if="${firmaEnteCoformador != null}" class="signature-img" th:src="${firmaEnteCoformador}" alt="Firma del ente co-formador"/>
                 <div class="signature-line"></div>
                 <div class="label-sm text-center">Firma del ente co-formador</div>
             </td>

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -174,6 +175,27 @@ public class InstructorTecnicoController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/instructor/tecnico";
+    }
+
+    /**
+     * 📋 Descarga la plantilla Excel en blanco para diligenciar la importación de
+     * aprendices a una ficha. GET /instructor/tecnico/plantilla
+     */
+    @GetMapping("/instructor/tecnico/plantilla")
+    public ResponseEntity<byte[]> descargarPlantillaImportacion(HttpSession session) throws IOException {
+        LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/auth/login").build();
+        }
+        if (usuario.getRoles() == null || !usuario.getRoles().contains("INSTRUCTOR_TECNICO")) {
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/index").build();
+        }
+
+        byte[] excel = instructorTecnicoService.generarPlantillaImportacion();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header("Content-Disposition", "attachment; filename=plantilla_importacion_aprendices.xlsx")
+                .body(excel);
     }
 
     /**

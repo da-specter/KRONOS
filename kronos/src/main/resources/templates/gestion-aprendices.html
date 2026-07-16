@@ -31,7 +31,7 @@
                               th:text="${#lists.size(aprendices)} + ' aprendices'">0 aprendices</span>
                     </h3>
 
-                    <div th:unless="${soloLectura}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div th:if="${puedeExportar}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <button type="button" onclick="abrirModalExportar('excel')"
                                 style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             📊 Exportar Excel
@@ -95,6 +95,11 @@
                         <option value="">📅 Todos los meses</option>
                         <option th:each="mes : ${mesesRegistro}" th:value="${mes.clave}" th:text="${mes.etiqueta}">Julio 2026</option>
                     </select>
+                    <!-- 🎓 Filtro por ficha: las opciones se arman en JS con las fichas presentes en la tabla -->
+                    <select id="filtroFicha" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; background: #fff; color: var(--text-dark);">
+                        <option value="">🎓 Todas las fichas</option>
+                    </select>
                 </div>
 
                 <!-- 📌 El encabezado queda fijo (sticky) y solo se desplazan los registros -->
@@ -132,7 +137,7 @@
                         </thead>
                         <tbody id="tablaAprendices">
                             <th:block th:each="aprendiz : ${aprendices}">
-                            <tr class="fila-aprendiz" th:attr="data-mes-registro=${aprendiz.mesRegistro},data-estado-etapa=${aprendiz.estadoEtapa.name()}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                            <tr class="fila-aprendiz" th:attr="data-mes-registro=${aprendiz.mesRegistro},data-estado-etapa=${aprendiz.estadoEtapa.name()},data-ficha=${aprendiz.ficha}" style="border-bottom: 1px solid var(--card-border); font-size: 13px;">
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.instructorSeguimiento}">Instructor</td>
                                 <td style="padding: 12px 14px;" th:text="${aprendiz.tipoDocumento}">CC</td>
                                 <td style="padding: 12px 14px; font-weight: 600;" th:text="${aprendiz.documento}">1234567890</td>
@@ -384,21 +389,51 @@
             filtrarAprendices();
         }
 
-        // 🔎 Filtra las filas de la tabla según el texto del buscador, el mes de registro y el
-        // chip de estado (semáforo) elegidos
+        // 🎓 Arma el filtro de fichas con las fichas realmente presentes en la tabla
+        (function poblarFiltroFicha() {
+            const select = document.getElementById('filtroFicha');
+            if (!select) return;
+            const fichas = new Set();
+            document.querySelectorAll('#tablaAprendices .fila-aprendiz').forEach(function (fila) {
+                if (fila.dataset.ficha) fichas.add(fila.dataset.ficha);
+            });
+            Array.from(fichas).sort().forEach(function (ficha) {
+                const opcion = document.createElement('option');
+                opcion.value = ficha;
+                opcion.textContent = 'Ficha ' + ficha;
+                select.appendChild(opcion);
+            });
+        })();
+
+        // 🔎 Filtra las filas de la tabla según el texto del buscador, el mes de registro, la
+        // ficha y el chip de estado (semáforo) elegidos
         function filtrarAprendices() {
             const criterio = document.getElementById('buscadorAprendices').value.trim().toLowerCase();
             const mesElegido = document.getElementById('filtroMesRegistro').value;
+            const fichaElegida = document.getElementById('filtroFicha').value;
             const filas = document.querySelectorAll('#tablaAprendices .fila-aprendiz');
             let visibles = 0;
+            const conteoPorEstado = {};
 
             filas.forEach(function (fila) {
                 const coincideTexto = fila.textContent.toLowerCase().includes(criterio);
                 const coincideMes = !mesElegido || fila.dataset.mesRegistro === mesElegido;
+                const coincideFicha = !fichaElegida || fila.dataset.ficha === fichaElegida;
                 const coincideEstado = !estadoElegido || fila.dataset.estadoEtapa === estadoElegido;
-                const coincide = coincideTexto && coincideMes && coincideEstado;
+                const coincideBase = coincideTexto && coincideMes && coincideFicha;
+                const coincide = coincideBase && coincideEstado;
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
+                // El contador de cada chip refleja los filtros de texto/mes/ficha activos
+                // (sin excluir por el chip elegido, para poder cambiar de chip con contexto)
+                if (coincideBase) {
+                    conteoPorEstado[fila.dataset.estadoEtapa] = (conteoPorEstado[fila.dataset.estadoEtapa] || 0) + 1;
+                }
+            });
+
+            document.querySelectorAll('.chip-estado').forEach(function (chip) {
+                const contador = chip.querySelector('.chip-contador');
+                if (contador) contador.textContent = conteoPorEstado[chip.dataset.estado] || 0;
             });
 
             const sinResultados = document.getElementById('sinResultados');

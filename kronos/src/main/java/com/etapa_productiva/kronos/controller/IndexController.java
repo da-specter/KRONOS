@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -552,6 +553,34 @@ public class IndexController {
             }
         }
         return "redirect:" + destino;
+    }
+
+    /**
+     * 🔔 Clic sobre una notificación puntual: la marca como leída y lleva al módulo al que
+     * corresponde (URL_DESTINO, fijada por KRONOS al crearla, nunca por el usuario). Si esa
+     * notificación no trae destino puntual, o no es de quien está en sesión, cae a /index.
+     * GET /notificaciones/{idNotificacion}/ir
+     */
+    @GetMapping("/notificaciones/{idNotificacion}/ir")
+    public String irANotificacion(@PathVariable Long idNotificacion, HttpSession session) {
+        LoginResponse usuarioLogueado = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuarioLogueado == null) {
+            return "redirect:/auth/login";
+        }
+
+        com.etapa_productiva.kronos.entity.Notificacion notificacion =
+                notificacionRepository.findById(idNotificacion).orElse(null);
+        if (notificacion == null || !notificacion.getUsuarioDestino().getIdUsuario().equals(usuarioLogueado.getIdUsuario())) {
+            return "redirect:/index";
+        }
+
+        if (!Boolean.TRUE.equals(notificacion.getLeido())) {
+            notificacion.setLeido(true);
+            notificacionRepository.save(notificacion);
+        }
+
+        String destino = notificacion.getUrlDestino();
+        return "redirect:" + (destino != null && !destino.isBlank() ? destino : "/index");
     }
 
     // 👋 Saludo del Administrador por franja horaria, alternando entre dos frases por franja:

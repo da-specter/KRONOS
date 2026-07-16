@@ -3,7 +3,7 @@
 -- Etapa Práctica (Planeación/Seguimiento y Bitácora), apuntando a los archivos que ya
 -- viven en uploads/plantillas/ (esos sí viajan con git, esta tabla no).
 --
--- ⚠️ Ejecutar UNA VEZ como KRONOS_DEV en cada entorno/PC: sin este script, /formatos
+-- ⚠️ Ejecutar UNA VEZ como KRONOS_END en cada entorno/PC: sin este script, /formatos
 -- muestra vacías las secciones de Vinculación Laboral, Monitoría y Proyecto Productivo
 -- (nunca tuvieron fila), y Pasantía/Etapa Práctica pueden seguir apuntando a archivos
 -- viejos que ya no existen en disco.

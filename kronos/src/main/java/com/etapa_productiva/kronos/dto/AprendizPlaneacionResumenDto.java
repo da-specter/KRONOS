@@ -29,4 +29,6 @@ public class AprendizPlaneacionResumenDto {
     private boolean formatoGenerado;
     private String rutaArchivo023;
     private String fechaGeneracion023;
+
+    private boolean firmaInstructorSubida; // para el "✓ ya subida" del panel Mi firma
 }

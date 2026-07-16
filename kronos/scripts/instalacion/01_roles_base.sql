@@ -8,7 +8,7 @@
 -- quedado sembrados a mano en la base de datos de desarrollo, sin script. Este archivo los cubre
 -- todos para que una base de datos nueva no dependa de esos inserts manuales perdidos.
 --
--- ⚠️ Ejecutar UNA VEZ como KRONOS_DEV en cada entorno/PC, después de que la app haya creado
+-- ⚠️ Ejecutar UNA VEZ como KRONOS_END en cada entorno/PC, después de que la app haya creado
 -- el esquema (ver README.md). Re-ejecutable (MERGE): no duplica filas ya existentes.
 
 MERGE INTO ROL r USING (SELECT 'APRENDIZ' AS nombre_rol FROM dual) src

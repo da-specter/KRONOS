@@ -139,7 +139,8 @@ public class VisitaAlertaService {
 
             notificacionService.crear(instructor,
                     "⏰ Tienes una visita de seguimiento programada en " + dias + " días ("
-                            + fechaVisita + ") con " + aprendiz.getNombre() + " " + aprendiz.getApellido() + ".");
+                            + fechaVisita + ") con " + aprendiz.getNombre() + " " + aprendiz.getApellido() + ".",
+                    "/instructor/visitas");
             visita.setAlertaInstructorEnviada(true);
             visitaSeguimientoRepository.save(visita);
             alertas++;
@@ -163,7 +164,7 @@ public class VisitaAlertaService {
             String mensaje = "⏰ Recuerda: tienes una visita de seguimiento programada en " + dias + " días ("
                     + fechaVisita + ").";
 
-            notificacionService.crear(aprendiz, mensaje);
+            notificacionService.crear(aprendiz, mensaje, "/aprendiz/visitas");
             visita.setAlertaAprendizEnviada(true);
             visitaSeguimientoRepository.save(visita);
             alertas++;
@@ -207,7 +208,7 @@ public class VisitaAlertaService {
             notificacionService.crear(asignacion.getInstructor().getUsuario(),
                     "⏰ Ya pasaron " + diasPrimeraVisita + " días desde que inició la Etapa Productiva de "
                             + aprendiz.getNombre() + " " + aprendiz.getApellido()
-                            + ": agenda su primera visita de seguimiento.");
+                            + ": agenda su primera visita de seguimiento.", "/instructor/visitas/agendar");
 
             etapa.setAlertaPrimeraVisitaEnviada(true);
             etapaProductivaRepository.save(etapa);

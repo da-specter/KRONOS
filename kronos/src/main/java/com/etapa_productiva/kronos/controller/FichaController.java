@@ -13,6 +13,7 @@ import com.etapa_productiva.kronos.repository.NotificacionRepository;
 import com.etapa_productiva.kronos.repository.UsuarioRepository;
 import com.etapa_productiva.kronos.service.AuthService;
 import com.etapa_productiva.kronos.service.GestionFichasService;
+import com.etapa_productiva.kronos.service.InstructorTecnicoService;
 import com.etapa_productiva.kronos.service.ReporteService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -37,8 +39,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 📋 Módulo "Gestión de Fichas" del Gestor de Etapa: permite consultar todas las fichas
- * registradas junto con los aprendices matriculados en cada una.
+ * 📋 Módulo "Gestión de Fichas": consulta de todas las fichas registradas junto con los
+ * aprendices matriculados en cada una y su situación (en etapa, sin etapa, por certificar,
+ * certificados). El Gestor de Etapa tiene además la plantilla e importación de Excel; Registro
+ * y Administrador acceden en modo solo lectura + exportación (ver {@code soloLectura}).
  */
 @Controller
 public class FichaController {
@@ -75,9 +79,13 @@ public class FichaController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
+        boolean autorizado = roles != null && (roles.contains("GESTOR_ETAPA")
+                || roles.contains("REGISTRO") || roles.contains("ADMINISTRADOR"));
+        if (!autorizado) {
             return "redirect:/index";
         }
+        // Solo el Gestor de Etapa importa/edita; Registro y Administrador consultan y exportan.
+        boolean soloLectura = !roles.contains("GESTOR_ETAPA");
 
         model.addAttribute("usuario", usuarioLogueado);
         model.addAttribute("notificaciones",
@@ -92,6 +100,8 @@ public class FichaController {
         Map<Long, Set<Long>> aprendizFichaIdsEnEtapa = new HashMap<>();
         Map<Long, Integer> totalEnEtapaPorFicha = new HashMap<>();
         Map<Long, Integer> totalSinEtapaPorFicha = new HashMap<>();
+        Map<Long, Integer> totalPorCertificarPorFicha = new HashMap<>();
+        Map<Long, Integer> totalCertificadosPorFicha = new HashMap<>();
 
         for (Ficha ficha : fichas) {
             List<AprendizFicha> aprendices = aprendizFichaRepository.findByFichaIdFicha(ficha.getIdFicha());
@@ -99,13 +109,29 @@ public class FichaController {
 
             List<EtapaProductiva> etapas = etapaProductivaRepository.findByAprendizFichaFichaIdFicha(ficha.getIdFicha());
             Set<Long> idsEnEtapa = new HashSet<>();
+            Map<Long, EtapaProductiva> etapaPorAprendizFicha = new HashMap<>();
             for (EtapaProductiva etapa : etapas) {
-                idsEnEtapa.add(etapa.getAprendizFicha().getIdAprendizFicha());
+                Long idAprendizFicha = etapa.getAprendizFicha().getIdAprendizFicha();
+                idsEnEtapa.add(idAprendizFicha);
+                etapaPorAprendizFicha.put(idAprendizFicha, etapa);
             }
-
             aprendizFichaIdsEnEtapa.put(ficha.getIdFicha(), idsEnEtapa);
-            totalEnEtapaPorFicha.put(ficha.getIdFicha(), idsEnEtapa.size());
-            totalSinEtapaPorFicha.put(ficha.getIdFicha(), aprendices.size() - idsEnEtapa.size());
+
+            // Situación por aprendiz (certificado > por certificar > en etapa > sin etapa),
+            // mismo criterio que usa el dashboard del Instructor Técnico, ahora agregado por ficha.
+            int enEtapa = 0, sinEtapa = 0, porCertificar = 0, certificados = 0;
+            for (AprendizFicha matricula : aprendices) {
+                String situacion = InstructorTecnicoService.clasificarSituacion(
+                        matricula, etapaPorAprendizFicha.get(matricula.getIdAprendizFicha()));
+                if (situacion.equals(InstructorTecnicoService.SIT_CERTIFICADO)) certificados++;
+                else if (situacion.equals(InstructorTecnicoService.SIT_POR_CERTIFICAR)) porCertificar++;
+                else if (situacion.equals(InstructorTecnicoService.SIT_EN_ETAPA)) enEtapa++;
+                else sinEtapa++;
+            }
+            totalEnEtapaPorFicha.put(ficha.getIdFicha(), enEtapa);
+            totalSinEtapaPorFicha.put(ficha.getIdFicha(), sinEtapa);
+            totalPorCertificarPorFicha.put(ficha.getIdFicha(), porCertificar);
+            totalCertificadosPorFicha.put(ficha.getIdFicha(), certificados);
         }
 
         model.addAttribute("fichas", fichas);
@@ -113,6 +139,9 @@ public class FichaController {
         model.addAttribute("aprendizFichaIdsEnEtapa", aprendizFichaIdsEnEtapa);
         model.addAttribute("totalEnEtapaPorFicha", totalEnEtapaPorFicha);
         model.addAttribute("totalSinEtapaPorFicha", totalSinEtapaPorFicha);
+        model.addAttribute("totalPorCertificarPorFicha", totalPorCertificarPorFicha);
+        model.addAttribute("totalCertificadosPorFicha", totalCertificadosPorFicha);
+        model.addAttribute("soloLectura", soloLectura);
 
         return "gestion-fichas";
     }
@@ -129,7 +158,7 @@ public class FichaController {
             @RequestParam String contrasena,
             HttpSession session) throws Exception {
 
-        ResponseEntity<?> rechazo = validarGestorYContrasena(session, contrasena);
+        ResponseEntity<?> rechazo = validarAccesoYContrasena(session, contrasena);
         if (rechazo != null) return rechazo;
         LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
 
@@ -160,7 +189,7 @@ public class FichaController {
             @RequestParam String contrasena,
             HttpSession session) throws Exception {
 
-        ResponseEntity<?> rechazo = validarGestorYContrasena(session, contrasena);
+        ResponseEntity<?> rechazo = validarAccesoYContrasena(session, contrasena);
         if (rechazo != null) return rechazo;
         LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
 
@@ -177,6 +206,27 @@ public class FichaController {
             return descarga(excel, MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"), base + ".xlsx");
         }
         return ResponseEntity.badRequest().body(Map.of("mensaje", "Formato de exportación no soportado."));
+    }
+
+    /**
+     * 📋 Descarga la plantilla Excel en blanco para diligenciar la importación de
+     * aprendices+ficha. GET /coordinador/fichas/plantilla
+     */
+    @GetMapping("/coordinador/fichas/plantilla")
+    public ResponseEntity<byte[]> descargarPlantillaImportacion(HttpSession session) throws IOException {
+        LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/auth/login").build();
+        }
+        if (usuario.getRoles() == null || !usuario.getRoles().contains("GESTOR_ETAPA")) {
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/index").build();
+        }
+
+        byte[] excel = gestionFichasService.generarPlantillaImportacion();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header("Content-Disposition", "attachment; filename=plantilla_importacion_aprendices_ficha.xlsx")
+                .body(excel);
     }
 
     /**
@@ -218,14 +268,18 @@ public class FichaController {
 
     // ─────────────────────────── Helpers ───────────────────────────
 
-    // Verifica sesión, rol GESTOR_ETAPA y que la contraseña coincida. Devuelve null si todo es válido.
-    private ResponseEntity<?> validarGestorYContrasena(HttpSession session, String contrasena) {
+    // Verifica sesión, rol autorizado (Gestor de Etapa, Registro o Administrador) y que la
+    // contraseña coincida con la del usuario en sesión. Devuelve null si todo es válido.
+    private ResponseEntity<?> validarAccesoYContrasena(HttpSession session, String contrasena) {
         LoginResponse usuario = (LoginResponse) session.getAttribute("usuarioSesion");
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("mensaje", "Tu sesión expiró. Vuelve a iniciar sesión."));
         }
-        if (usuario.getRoles() == null || !usuario.getRoles().contains("GESTOR_ETAPA")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("mensaje", "Solo el Gestor de Etapa puede exportar esta información."));
+        List<String> roles = usuario.getRoles();
+        boolean autorizado = roles != null && (roles.contains("GESTOR_ETAPA")
+                || roles.contains("REGISTRO") || roles.contains("ADMINISTRADOR"));
+        if (!autorizado) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("mensaje", "No tienes permiso para exportar esta información."));
         }
         Usuario entidad = usuarioRepository.findById(usuario.getIdUsuario()).orElse(null);
         if (!authService.verificarContrasena(entidad, contrasena)) {

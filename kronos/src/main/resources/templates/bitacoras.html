@@ -67,11 +67,15 @@
                           style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; border-top: 1px dashed var(--card-border); padding-top: 12px;">
                         <input type="hidden" name="idEtapa" th:value="${etapaActiva.idEtapa}">
                         <div>
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Tu firma (imagen)</label><br>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Tu firma (imagen)
+                                <span th:if="${etapaActiva.firmaAprendizRuta != null}" style="color: var(--verde-sena); font-weight: 700;">✓ ya subida</span>
+                            </label><br>
                             <input type="file" name="firmaAprendiz" accept="image/*" style="font-size: 12px; margin-top: 4px;">
                         </div>
                         <div>
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Firma del ente co-formador (imagen)</label><br>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Firma del ente co-formador (imagen)
+                                <span th:if="${etapaActiva.firmaEnteCoformadorRuta != null}" style="color: var(--verde-sena); font-weight: 700;">✓ ya subida</span>
+                            </label><br>
                             <input type="file" name="firmaEmpresa" accept="image/*" style="font-size: 12px; margin-top: 4px;">
                         </div>
                         <button type="submit" style="background: var(--verde-sena); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">Guardar firmas</button>
@@ -233,12 +237,6 @@
                             </th:block>
 
                             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-                                <div style="flex: 1; min-width: 200px;">
-                                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;"
-                                           th:text="${m.numero == 1} ? 'Enlace de grabación (si aplica)' : ('Enlace de grabación del momento ' + ${m.numero})">Enlace de grabación (si aplica)</label>
-                                    <input type="text" name="enlaceGrabacion" maxlength="500" th:value="${m.enlaceGrabacion}"
-                                           style="width: 100%; padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; box-sizing: border-box; margin-top: 4px;">
-                                </div>
                                 <div>
                                     <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Ciudad</label>
                                     <input type="text" name="ciudad" maxlength="100" th:value="${m.ciudad}"

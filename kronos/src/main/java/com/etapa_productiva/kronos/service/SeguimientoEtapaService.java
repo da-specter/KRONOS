@@ -118,7 +118,8 @@ public class SeguimientoEtapaService {
         }
         Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
         notificacionService.crear(asignacion.getInstructor().getUsuario(),
-                plantillaMensaje.replace("%s", aprendiz.getNombre() + " " + aprendiz.getApellido()));
+                plantillaMensaje.replace("%s", aprendiz.getNombre() + " " + aprendiz.getApellido()),
+                "/instructor/seguimiento/bitacoras");
     }
 
     private String guardarArchivo(MultipartFile archivo, String subcarpeta, Long idEtapa) {

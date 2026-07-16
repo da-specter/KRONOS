@@ -129,7 +129,8 @@ public class BitacoraAlertaService {
             Usuario aprendiz = cupo.getEtapaProductiva().getAprendizFicha().getUsuario();
             notificacionService.crear(asignacion.getInstructor().getUsuario(),
                     "⏰ " + aprendiz.getNombre() + " " + aprendiz.getApellido() + " está atrasado con la Bitácora "
-                            + cupo.getNumeroBitacora() + " (venció el " + cupo.getFechaLimite().format(FORMATO_FECHA) + ").");
+                            + cupo.getNumeroBitacora() + " (venció el " + cupo.getFechaLimite().format(FORMATO_FECHA) + ").",
+                    "/instructor/seguimiento/bitacoras");
 
             cupo.setAlertaInstructorEnviada(true);
             cronogramaBitacorasRepository.save(cupo);
@@ -149,7 +150,7 @@ public class BitacoraAlertaService {
             String mensaje = "⏰ Estás atrasado con la entrega de tu Bitácora " + cupo.getNumeroBitacora()
                     + ": venció el " + fechaLimite + ". Súbela cuanto antes.";
 
-            notificacionService.crear(aprendiz, mensaje);
+            notificacionService.crear(aprendiz, mensaje, "/aprendiz/bitacoras");
             cupo.setAlertaAprendizEnviada(true);
             cronogramaBitacorasRepository.save(cupo);
             alertas++;
@@ -179,7 +180,8 @@ public class BitacoraAlertaService {
 
             Usuario aprendiz = cupo.getEtapaProductiva().getAprendizFicha().getUsuario();
             notificacionService.crear(aprendiz,
-                    "📅 Hoy vence tu Bitácora " + cupo.getNumeroBitacora() + ". Súbela antes de que termine el día.");
+                    "📅 Hoy vence tu Bitácora " + cupo.getNumeroBitacora() + ". Súbela antes de que termine el día.",
+                    "/aprendiz/bitacoras");
             cupo.setAlertaVenceHoyEnviada(true);
             cronogramaBitacorasRepository.save(cupo);
 

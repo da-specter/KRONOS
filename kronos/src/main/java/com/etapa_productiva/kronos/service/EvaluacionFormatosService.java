@@ -354,7 +354,7 @@ public class EvaluacionFormatosService {
 
         Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
         int numero = bitacora.getCronogramaBitacora().getNumeroBitacora();
-        notificacionService.crear(aprendiz, mensajeEvaluacion("Bitácora N°" + numero, resultado, observacionLimpia, true));
+        notificacionService.crear(aprendiz, mensajeEvaluacion("Bitácora N°" + numero, resultado, observacionLimpia, true), "/aprendiz/bitacoras");
 
         verificarYTransicionarPorCertificar(etapa);
     }
@@ -386,12 +386,61 @@ public class EvaluacionFormatosService {
                     .formatoGenerado(formato != null)
                     .rutaArchivo023(formato != null ? formato.getRutaArchivo() : null)
                     .fechaGeneracion023(formato != null ? formato.getFechaHoraSubida().format(FORMATO_FECHA_HORA) : null)
+                    .firmaInstructorSubida(etapa.getFirmaInstructorRuta() != null)
                     .build());
         }
 
         filas.sort(Comparator.comparing(AprendizPlaneacionResumenDto::getApellidos, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(AprendizPlaneacionResumenDto::getNombres, String.CASE_INSENSITIVE_ORDER));
         return filas;
+    }
+
+    // ─────────────────────── Exportación del listado Formato 023 ───────────────────────
+
+    private static final String[] TITULOS_PLANEACION = {
+            "Nombres", "Apellidos", "Documento", "Ficha",
+            "Momento 1", "Momento 2", "Momento 3",
+            "Momentos Completados", "Estado 023", "Fecha Generación 023"
+    };
+
+    public byte[] exportarPlaneacionExcel(List<AprendizPlaneacionResumenDto> resumen) throws IOException {
+        return ExportacionUtil.excel("Formato 023", TITULOS_PLANEACION, filasPlaneacion(resumen));
+    }
+
+    public byte[] exportarPlaneacionPdf(List<AprendizPlaneacionResumenDto> resumen) {
+        return ExportacionUtil.pdf("KRONOS - Formato de Planeación 023", TITULOS_PLANEACION, filasPlaneacion(resumen));
+    }
+
+    private List<String[]> filasPlaneacion(List<AprendizPlaneacionResumenDto> resumen) {
+        List<String[]> filas = new ArrayList<>();
+        for (AprendizPlaneacionResumenDto p : resumen) {
+            List<MomentoEstadoDto> momentos = p.getMomentos();
+            filas.add(new String[]{
+                    valor(p.getNombres()),
+                    valor(p.getApellidos()),
+                    valor(p.getDocumento()),
+                    valor(p.getFicha()),
+                    estadoMomento(momentos, 1),
+                    estadoMomento(momentos, 2),
+                    estadoMomento(momentos, 3),
+                    p.getMomentosCompletados() + " / 3",
+                    p.isFormatoGenerado() ? "Generado" : "Pendiente",
+                    p.getFechaGeneracion023() != null ? p.getFechaGeneracion023() : SIN_DATO
+            });
+        }
+        return filas;
+    }
+
+    // Texto legible del estado de un momento (1, 2 o 3) para la exportación
+    private String estadoMomento(List<MomentoEstadoDto> momentos, int numero) {
+        if (momentos == null) return SIN_DATO;
+        MomentoEstadoDto m = momentos.stream().filter(x -> x.getNumero() == numero).findFirst().orElse(null);
+        if (m == null) return SIN_DATO;
+        if (!m.isHabilitado()) return "Bloqueado";
+        if (m.isAprendizCompleto() && m.isInstructorCompleto()) return "Completo";
+        if (m.isAprendizCompleto()) return "Falta instructor";
+        if (m.isInstructorCompleto()) return "Falta aprendiz";
+        return "En proceso";
     }
 
     /** Estado de los 3 momentos de una etapa (público: lo usa también el dashboard del Aprendiz). */
@@ -415,7 +464,7 @@ public class EvaluacionFormatosService {
     @Transactional
     public void guardarObservacionMomento(Long idUsuarioInstructor, Long idEtapa, int numeroMomento,
             String observacion, JuicioEvaluacion juicioEvaluacion,
-            String retroInstructorProceso, String retroInstructorDesempeno) {
+            String retroInstructorProceso, String retroInstructorDesempeno, String enlaceGrabacion) {
         if (numeroMomento < 1 || numeroMomento > TOTAL_MOMENTOS) {
             throw new IllegalArgumentException("El momento indicado no es válido.");
         }
@@ -450,6 +499,7 @@ public class EvaluacionFormatosService {
         } else {
             registro.setObservacion(observacion.trim());
         }
+        registro.setEnlaceGrabacion(vacioANull(enlaceGrabacion));
         registro = evaluacionMomentoRepository.save(registro);
 
         if (numeroMomento >= 2) {
@@ -458,7 +508,7 @@ public class EvaluacionFormatosService {
 
         Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
         notificacionService.crear(aprendiz, "📋 Tu Instructor de Seguimiento registró la observación del Momento "
-                + numeroMomento + " de tu Formato 023.");
+                + numeroMomento + " de tu Formato 023.", "/aprendiz/bitacoras");
 
         regenerarSiCompleto(etapa);
     }
@@ -473,7 +523,7 @@ public class EvaluacionFormatosService {
     public void guardarDatosAprendizMomento(Long idUsuarioAprendiz, Long idEtapa, int numeroMomento,
             String competenciasDesarrollar, String resultadosAprendizaje, String actividadesDesarrollar,
             String evidenciaDescripcion, MultipartFile evidenciaArchivo, String observacionAprendiz,
-            String enlaceGrabacion, String ciudad, LocalDate fechaDiligenciamiento, ModalidadFirma modalidadFirma,
+            String ciudad, LocalDate fechaDiligenciamiento, ModalidadFirma modalidadFirma,
             LocalDate fechaMomento, String observacionEnteCoformador,
             String retroAprendizProceso, String retroAprendizDesempeno,
             String retroEnteProceso, String retroEnteDesempeno,
@@ -511,7 +561,6 @@ public class EvaluacionFormatosService {
             registro.setRetroEnteProceso(vacioANull(retroEnteProceso));
             registro.setRetroEnteDesempeno(vacioANull(retroEnteDesempeno));
         }
-        registro.setEnlaceGrabacion(vacioANull(enlaceGrabacion));
         registro.setCiudad(vacioANull(ciudad));
         registro.setFechaDiligenciamiento(fechaDiligenciamiento);
         registro.setModalidadFirma(modalidadFirma != null ? modalidadFirma : ModalidadFirma.VIRTUAL);
@@ -524,7 +573,8 @@ public class EvaluacionFormatosService {
 
         asignacionInstructorEtapaRepository.findByEtapaProductivaIdEtapaAndEstadoAsignacionTrue(idEtapa)
                 .ifPresent(asignacion -> notificacionService.crear(asignacion.getInstructor().getUsuario(),
-                        "📋 El aprendiz diligenció su parte del Momento " + numeroMomento + " del Formato 023. Ya puedes revisarlo."));
+                        "📋 El aprendiz diligenció su parte del Momento " + numeroMomento + " del Formato 023. Ya puedes revisarlo.",
+                        "/instructor/seguimiento/planeacion"));
 
         regenerarSiCompleto(etapa);
     }
@@ -577,6 +627,8 @@ public class EvaluacionFormatosService {
             etapa.setFirmaEnteCoformadorRuta(guardarImagen(firmaEmpresa, "firmas", idEtapa));
         }
         etapaProductivaRepository.save(etapa);
+        // Si el 023 ya se había generado, se regenera para que la firma nueva quede plasmada
+        regenerarSiCompleto(etapa);
     }
 
     /** Firma (imagen) que sube el Instructor de Seguimiento. */
@@ -586,6 +638,8 @@ public class EvaluacionFormatosService {
         if (firma != null && !firma.isEmpty()) {
             etapa.setFirmaInstructorRuta(guardarImagen(firma, "firmas", idEtapa));
             etapaProductivaRepository.save(etapa);
+            // Si el 023 ya se había generado, se regenera para que la firma nueva quede plasmada
+            regenerarSiCompleto(etapa);
         }
     }
 
@@ -777,6 +831,33 @@ public class EvaluacionFormatosService {
             formatoPlaneacionRepository.save(formato);
         } catch (IOException e) {
             throw new RuntimeException("No se pudo generar el Formato 023: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 📄 Plus para el Instructor de Seguimiento: descarga el PDF de un solo momento (1, 2 o 3)
+     * apenas quede completo por ambos lados (aprendiz e instructor), sin esperar a que los 3
+     * estén listos para el Formato 023 completo. Mismo encabezado general, solo la tabla de
+     * ese momento.
+     */
+    @Transactional(readOnly = true)
+    public byte[] descargarMomentoPdf(Long idUsuarioInstructor, Long idEtapa, int numeroMomento) {
+        if (numeroMomento < 1 || numeroMomento > TOTAL_MOMENTOS) {
+            throw new IllegalArgumentException("El momento indicado no es válido.");
+        }
+        EtapaProductiva etapa = etapaDelInstructor(idUsuarioInstructor, idEtapa);
+
+        List<MomentoEstadoDto> momentos = construirEstadoMomentos(etapa);
+        MomentoEstadoDto momento = momentos.get(numeroMomento - 1);
+        if (!momento.isAprendizCompleto() || !momento.isInstructorCompleto()) {
+            throw new IllegalStateException("El Momento " + numeroMomento
+                    + " todavía no está completo por ambos lados (aprendiz e instructor).");
+        }
+
+        try {
+            return generadorFormato023HtmlService.generarPdfMomento(etapa, numeroMomento);
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo generar el PDF del Momento " + numeroMomento + ": " + e.getMessage(), e);
         }
     }
 
@@ -1208,12 +1289,12 @@ public class EvaluacionFormatosService {
         notificacionService.crear(aprendiz,
                 "🎉 ¡Completaste el 100% de tu Etapa Productiva! Tu Instructor de Seguimiento aprobó tus bitácoras "
                         + "y el Formato 023, así que tu Etapa Productiva ya quedó TERMINADA en KRONOS. Ingresa a tu "
-                        + "dashboard para ver el detalle.");
+                        + "dashboard para ver el detalle.", "/index");
 
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
             notificacionService.crear(gestor, "🎓 " + aprendiz.getNombre() + " " + aprendiz.getApellido()
                     + " (ficha " + aprendizFicha.getFicha().getNumeroFicha()
-                    + ") completó sus bitácoras y el Formato 023 — su Etapa Productiva quedó TERMINADA.");
+                    + ") completó sus bitácoras y el Formato 023 — su Etapa Productiva quedó TERMINADA.", "/gestor/aprendices");
         }
     }
 

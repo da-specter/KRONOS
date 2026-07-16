@@ -60,7 +60,7 @@
                     </div>
 
                     <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
-                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
+                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post" enctype="multipart/form-data"
                           style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
 
                         <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
@@ -144,6 +144,16 @@
                             </div>
                         </div>
 
+                        <div style="background: #F0F9F1; border: 1px dashed var(--verde-sena); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+                            <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px 0;">📎 Evidencia de Sofía Plus</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0;">
+                                Aquí va la evidencia de Sofía Plus: sube una captura o imagen que respalde este registro.
+                                Queda como evidencia en las Novedades del Gestor de Etapa.
+                            </p>
+                            <input type="file" name="evidenciaSofiaPlus" accept="image/*" required
+                                   style="width: 100%; font-size: 13px; background: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px;">
+                        </div>
+
                         <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
                             <div class="form-group" style="margin-bottom: 0; max-width: 320px;">
@@ -184,7 +194,7 @@
                     </div>
 
                     <form th:id="'form-registro-' + ${solicitud.idSolicitud}"
-                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post"
+                          th:action="@{'/registro/registro-etapa/' + ${solicitud.idSolicitud}}" method="post" enctype="multipart/form-data"
                           style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border);">
 
                         <input type="hidden" name="idAprendizFicha" th:value="${solicitud.aprendizFicha.idAprendizFicha}">
@@ -272,6 +282,16 @@
                                 <label>Teléfono</label>
                                 <div class="input-container"><input type="text" name="telefonoJefeInmediato" required pattern="\d+" inputmode="numeric" title="El teléfono solo puede contener números." style="width: 100%; border: none; outline: none; font-size: 14px; background: transparent; padding: 6px 0;"></div>
                             </div>
+                        </div>
+
+                        <div style="background: #F0F9F1; border: 1px dashed var(--verde-sena); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+                            <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px 0;">📎 Evidencia de Sofía Plus</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0;">
+                                Aquí va la evidencia de Sofía Plus: sube una captura o imagen que respalde este registro.
+                                Queda como evidencia en las Novedades del Gestor de Etapa.
+                            </p>
+                            <input type="file" name="evidenciaSofiaPlus" accept="image/*" required
+                                   style="width: 100%; font-size: 13px; background: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px;">
                         </div>
 
                         <p style="font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px;">🔐 Confirmación de identidad</p>

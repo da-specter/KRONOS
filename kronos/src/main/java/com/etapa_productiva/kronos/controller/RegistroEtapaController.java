@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
@@ -88,7 +89,7 @@ public class RegistroEtapaController {
         return "registro-etapa";
     }
 
-    @PostMapping("/registro/registro-etapa/{idSolicitud}")
+    @PostMapping(value = "/registro/registro-etapa/{idSolicitud}", consumes = "multipart/form-data")
     public String registrarEtapa(
             @PathVariable Long idSolicitud,
             @RequestParam Long idAprendizFicha,
@@ -106,6 +107,7 @@ public class RegistroEtapaController {
             @RequestParam String correoJefeInmediato,
             @RequestParam String telefonoJefeInmediato,
             @RequestParam String contrasena,
+            @RequestParam("evidenciaSofiaPlus") MultipartFile evidenciaSofiaPlus,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -143,7 +145,7 @@ public class RegistroEtapaController {
                     nit, nombreEmpresa, direccionEmpresa, telefonoEmpresa, correoEmpresa,
                     nombreMunicipio, nombreDepartamento, nombreTipoContrato,
                     fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato,
-                    usuarioLogueado.getIdUsuario());
+                    usuarioLogueado.getIdUsuario(), evidenciaSofiaPlus);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

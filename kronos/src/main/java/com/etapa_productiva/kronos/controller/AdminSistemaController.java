@@ -35,6 +35,7 @@ public class AdminSistemaController {
     @Autowired private VisitaAlertaService visitaAlertaService;
     @Autowired private BitacoraAlertaService bitacoraAlertaService;
     @Autowired private com.etapa_productiva.kronos.service.CodigoRecuperacionLimpiezaService codigoRecuperacionLimpiezaService;
+    @Autowired private com.etapa_productiva.kronos.service.NotificacionLimpiezaService notificacionLimpiezaService;
 
     // ══════════════════════════ MONITOREO DE JOBS ══════════════════════════
 
@@ -45,7 +46,7 @@ public class AdminSistemaController {
 
         model.addAttribute("usuario", admin);
         model.addAttribute("ejecuciones", jobEjecucionRepository.findTop100ByOrderByFechaInicioDesc());
-        model.addAttribute("nombreJob", "Jobs automáticos (visitas 1:00 a.m. · bitácoras 1:15 a.m. · códigos de recuperación 1:30 a.m.)");
+        model.addAttribute("nombreJob", "Jobs automáticos (visitas 1:00 a.m. · bitácoras 1:15 a.m. · códigos de recuperación 1:30 a.m. · notificaciones 1:45 a.m. cada 2 días)");
         return "admin-jobs";
     }
 
@@ -58,8 +59,9 @@ public class AdminSistemaController {
             visitaAlertaService.revisarAlertasVisitas();
             bitacoraAlertaService.revisarBitacorasAtrasadas();
             codigoRecuperacionLimpiezaService.limpiarCodigosVencidos();
+            notificacionLimpiezaService.limpiarNotificacionesAntiguas();
             auditoriaService.registrar(admin.getIdUsuario(), AccionAuditoria.ALERTA,
-                    "Jobs automáticos (visitas, bitácoras y limpieza de códigos de recuperación) ejecutados manualmente desde Monitoreo de Jobs");
+                    "Jobs automáticos (visitas, bitácoras, limpieza de códigos de recuperación y limpieza de notificaciones) ejecutados manualmente desde Monitoreo de Jobs");
             redirect.addFlashAttribute("exito", "Jobs ejecutados. Revisa las filas más recientes del historial.");
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "El job falló: " + e.getMessage());

@@ -163,7 +163,7 @@ public class VisitaSeguimientoService {
         if (novedad != null && !novedad.isBlank()) {
             mensaje += " Novedad: " + novedad.trim();
         }
-        notificacionService.crear(aprendiz, mensaje);
+        notificacionService.crear(aprendiz, mensaje, "/aprendiz/visitas");
 
         if (esLaPrimeraVisita) {
             autoAgendarVisitasRestantes(etapa, usuarioInstructor, aprendiz, fecha, modalidad);
@@ -187,7 +187,8 @@ public class VisitaSeguimientoService {
         if (diasRestantes < 4) {
             notificacionService.crear(usuarioInstructor,
                     "⚠️ Queda poco tiempo hasta el fin de la Etapa Productiva de " + aprendiz.getNombre() + " "
-                            + aprendiz.getApellido() + ": agenda tú mismo las 2 visitas de seguimiento restantes.");
+                            + aprendiz.getApellido() + ": agenda tú mismo las 2 visitas de seguimiento restantes.",
+                    "/instructor/visitas/agendar");
             return;
         }
 
@@ -223,10 +224,10 @@ public class VisitaSeguimientoService {
                 .build());
 
         notificacionService.crear(aprendiz, "📅 KRONOS agendó automáticamente tus 2 visitas de seguimiento restantes: "
-                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".");
+                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".", "/aprendiz/visitas");
         notificacionService.crear(usuarioInstructor, "📅 KRONOS agendó automáticamente las 2 visitas restantes de "
                 + aprendiz.getNombre() + " " + aprendiz.getApellido() + ": "
-                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".");
+                + fechaSegunda.format(FORMATO_FECHA) + " y " + fechaTercera.format(FORMATO_FECHA) + ".", "/instructor/visitas");
     }
 
     /**
@@ -263,7 +264,8 @@ public class VisitaSeguimientoService {
         String verbo = nuevoEstado == EstadoVisita.CANCELADA ? "cancelada" : "aplazada";
         String icono = nuevoEstado == EstadoVisita.CANCELADA ? "❌" : "🔁";
         notificacionService.crear(aprendiz, icono + " Tu visita de seguimiento " + etiquetaLegible(visita.getTipoVisita())
-                + " del " + visita.getFechaVisita().format(FORMATO_FECHA) + " fue " + verbo + ". Novedad: " + novedad.trim());
+                + " del " + visita.getFechaVisita().format(FORMATO_FECHA) + " fue " + verbo + ". Novedad: " + novedad.trim(),
+                "/aprendiz/visitas");
 
         return guardada;
     }

@@ -32,13 +32,21 @@
                     </h3>
 
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <!-- 📤 Importar Excel de aprendices+ficha -->
-                        <form th:action="@{/coordinador/fichas/importar}" method="post" enctype="multipart/form-data" style="margin: 0;">
-                            <label style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
-                                📤 Importar
-                                <input type="file" name="archivo" accept=".xlsx,.xls" style="display: none;" onchange="this.form.submit()">
-                            </label>
-                        </form>
+                        <th:block th:unless="${soloLectura}">
+                            <!-- 📋 Plantilla en blanco para diligenciar la importación -->
+                            <a th:href="@{/coordinador/fichas/plantilla}"
+                               title="Descarga la plantilla Excel en blanco con las columnas que espera la importación"
+                               style="display: flex; align-items: center; gap: 8px; background: #475569; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;">
+                                📋 Plantilla
+                            </a>
+                            <!-- 📤 Importar Excel de aprendices+ficha -->
+                            <form th:action="@{/coordinador/fichas/importar}" method="post" enctype="multipart/form-data" style="margin: 0;">
+                                <label style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                                    📤 Importar
+                                    <input type="file" name="archivo" accept=".xlsx,.xls" style="display: none;" onchange="this.form.submit()">
+                                </label>
+                            </form>
+                        </th:block>
                         <button type="button" onclick="abrirModalExportarFichas('excel')"
                                 style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             📊 Exportar Excel
@@ -66,6 +74,8 @@
                                 <th style="padding: 14px 16px;">Aprendices</th>
                                 <th style="padding: 14px 16px;">En Etapa Productiva</th>
                                 <th style="padding: 14px 16px;">Sin Etapa Productiva</th>
+                                <th style="padding: 14px 16px;">Por Certificar</th>
+                                <th style="padding: 14px 16px;">Certificados</th>
                                 <th style="padding: 14px 16px;"></th>
                             </tr>
                         </thead>
@@ -90,6 +100,14 @@
                                               th:text="${totalSinEtapaPorFicha[ficha.idFicha]}">0</span>
                                     </td>
                                     <td style="padding: 16px;">
+                                        <span style="background: rgba(37, 99, 235, 0.1); color: #2563EB; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                                              th:text="${totalPorCertificarPorFicha[ficha.idFicha]}">0</span>
+                                    </td>
+                                    <td style="padding: 16px;">
+                                        <span style="background: rgba(107, 114, 128, 0.12); color: #6B7280; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 700;"
+                                              th:text="${totalCertificadosPorFicha[ficha.idFicha]}">0</span>
+                                    </td>
+                                    <td style="padding: 16px;">
                                         <button type="button" class="btn-ver-aprendices" th:data-detalle="'detalle-' + ${ficha.idFicha}"
                                                 style="background: none; border: 1px solid var(--card-border); color: var(--verde-sena); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
                                             Ver aprendices
@@ -97,7 +115,7 @@
                                     </td>
                                 </tr>
                                 <tr th:id="'detalle-' + ${ficha.idFicha}" style="display: none; border-bottom: 1px solid var(--card-border); background: rgba(5, 112, 21, 0.04);">
-                                    <td colspan="8" style="padding: 16px 16px 20px 16px;">
+                                    <td colspan="10" style="padding: 16px 16px 20px 16px;">
                                         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;">
                                             <button type="button" class="btn-export-aprendices" data-formato="excel"
                                                     th:data-idficha="${ficha.idFicha}" th:data-numero="${ficha.numeroFicha}"
@@ -146,7 +164,7 @@
                             </th:block>
 
                             <tr th:if="${#lists.isEmpty(fichas)}">
-                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
+                                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;">
                                     No hay fichas registradas todavía.
                                 </td>
                             </tr>

@@ -38,9 +38,11 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,7 +58,7 @@ public class GestionFichasService {
 
     private static final String[] TITULOS_FICHAS = {
             "Ficha", "Programa de Formación", "Vigencia", "Estado",
-            "Aprendices", "En Etapa Productiva", "Sin Etapa Productiva"
+            "Aprendices", "En Etapa Productiva", "Sin Etapa Productiva", "Por Certificar", "Certificados"
     };
 
     private static final String[] TITULOS_APRENDICES = {
@@ -98,7 +100,24 @@ public class GestionFichasService {
         List<String[]> filas = new ArrayList<>();
         for (Ficha ficha : fichaRepository.findAll()) {
             List<AprendizFicha> aprendices = aprendizFichaRepository.findByFichaIdFicha(ficha.getIdFicha());
-            int enEtapa = contarEnEtapa(ficha.getIdFicha());
+
+            // Mismo criterio de clasificación que el dashboard del Instructor Técnico
+            // (certificado > por certificar > tiene etapa > sin etapa), aplicado por ficha.
+            Map<Long, EtapaProductiva> etapaPorAprendizFicha = new HashMap<>();
+            for (EtapaProductiva etapa : etapaProductivaRepository.findByAprendizFichaFichaIdFicha(ficha.getIdFicha())) {
+                etapaPorAprendizFicha.put(etapa.getAprendizFicha().getIdAprendizFicha(), etapa);
+            }
+
+            int enEtapa = 0, sinEtapa = 0, porCertificar = 0, certificados = 0;
+            for (AprendizFicha matricula : aprendices) {
+                String situacion = InstructorTecnicoService.clasificarSituacion(
+                        matricula, etapaPorAprendizFicha.get(matricula.getIdAprendizFicha()));
+                if (situacion.equals(InstructorTecnicoService.SIT_CERTIFICADO)) certificados++;
+                else if (situacion.equals(InstructorTecnicoService.SIT_POR_CERTIFICAR)) porCertificar++;
+                else if (situacion.equals(InstructorTecnicoService.SIT_EN_ETAPA)) enEtapa++;
+                else sinEtapa++;
+            }
+
             filas.add(new String[]{
                     ficha.getNumeroFicha(),
                     ficha.getProgramaFormacion().getNombrePrograma(),
@@ -106,7 +125,9 @@ public class GestionFichasService {
                     Boolean.TRUE.equals(ficha.getEstado()) ? "Activa" : "Inactiva",
                     String.valueOf(aprendices.size()),
                     String.valueOf(enEtapa),
-                    String.valueOf(aprendices.size() - enEtapa)
+                    String.valueOf(sinEtapa),
+                    String.valueOf(porCertificar),
+                    String.valueOf(certificados)
             });
         }
         return filas;
@@ -166,6 +187,37 @@ public class GestionFichasService {
                                        int aprendicesCreados, int matriculasCreadas, List<String> errores) {
     }
 
+    /**
+     * 📋 Plantilla Excel en blanco para la importación de aprendices+ficha: hoja de datos
+     * con los encabezados que espera {@link #importar} y hoja "Guía" con las reglas de
+     * diligenciamiento y de credenciales (correo = usuario, documento = contraseña inicial).
+     */
+    public byte[] generarPlantillaImportacion() throws IOException {
+        String[] titulos = {"Ficha", "Programa", "Vigencia", "Estado",
+                "Nombre", "Apellido", "Tipo Documento", "Número Documento", "Correo Electrónico", "Teléfono"};
+
+        List<String[]> guia = List.of(
+                new String[]{"Ficha", "Sí", "Número de la ficha (máx. 7 caracteres). Ej: 3063365"},
+                new String[]{"Programa", "Recomendada", "Nombre del programa de formación. Ej: Análisis y Desarrollo de Software. Si se omite, la ficha queda como \"SIN PROGRAMA\"."},
+                new String[]{"Vigencia", "No", "Fecha de inicio y fin de la ficha separadas por \"→\" o la letra \"a\". Ej: 01/02/2026 → 01/02/2028. Si se omite: hoy más 1 año."},
+                new String[]{"Estado", "No", "Estado de la ficha: Activa o Inactiva. Si se omite: Activa."},
+                new String[]{"Nombre", "Sí", "Nombres del aprendiz. Ej: Laura Valentina"},
+                new String[]{"Apellido", "Sí", "Apellidos del aprendiz. Ej: García Pérez"},
+                new String[]{"Tipo Documento", "No", "CC, TI, CE o PASAPORTE. Si se omite: CC."},
+                new String[]{"Número Documento", "Sí", "Solo dígitos, sin puntos ni espacios (máx. 10). Ej: 1023456789"},
+                new String[]{"Correo Electrónico", "Recomendada", "Correo personal del aprendiz: será su USUARIO de ingreso a KRONOS. Ej: laura.garcia@correo.com"},
+                new String[]{"Teléfono", "No", "Celular de contacto, solo dígitos (máx. 11). Ej: 3001234567"});
+
+        List<String> notas = List.of(
+                "NOTAS DE USO:",
+                "• Diligencia los datos a partir de la fila 2 de la hoja de datos; no modifiques ni elimines la fila de encabezados.",
+                "• La contraseña inicial de cada aprendiz nuevo es su número de documento y el sistema le exigirá cambiarla en su primer ingreso.",
+                "• Si no indicas correo, KRONOS genera uno interno (documento@aprendiz.kronos.local); el correo no puede repetirse entre usuarios.",
+                "• Si la ficha o el programa no existen, se crean automáticamente; si el aprendiz ya existe (mismo documento), solo se matricula en la ficha.");
+
+        return ExportacionUtil.plantillaExcel("Aprendices", titulos, guia, notas);
+    }
+
     @Transactional
     public ResultadoImportacion importar(MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) {
@@ -198,6 +250,7 @@ public class GestionFichasService {
             int colTipoDoc = colTipoDocumento(cab, fmt);
             int colNumDoc = colNumeroDocumento(cab, fmt);
             int colTelefono = col(cab, fmt, "tel", "teléfono", "telefono", "celular");
+            int colCorreo = col(cab, fmt, "correo", "email", "e-mail");
 
             if (colNumDoc < 0 || colNombre < 0 || colFicha < 0) {
                 throw new IllegalArgumentException("Faltan columnas obligatorias: se requieren al menos 'Ficha', 'Nombre' y 'Número Documento'.");
@@ -231,6 +284,7 @@ public class GestionFichasService {
                             leer(row, colNombre, fmt),
                             leer(row, colApellido, fmt),
                             leer(row, colTelefono, fmt),
+                            leer(row, colCorreo, fmt),
                             usuarioNuevo);
 
                     // 4) Matrícula (AprendizFicha) si no existe
@@ -285,11 +339,20 @@ public class GestionFichasService {
     }
 
     private Usuario obtenerOCrearAprendiz(String documento, String tipoDoc, String nombre,
-                                          String apellido, String telefono, boolean[] creado) {
+                                          String apellido, String telefono, String correo, boolean[] creado) {
         return usuarioRepository.findByDocumento(documento.trim()).orElseGet(() -> {
             creado[0] = true;
             Rol rolAprendiz = rolRepository.findByNombreRol("APRENDIZ")
                     .orElseThrow(() -> new IllegalStateException("No existe el rol APRENDIZ en el sistema."));
+
+            // El correo del Excel será el usuario de ingreso; si no llega, se sintetiza uno
+            // interno para cumplir las restricciones NOT NULL/UNIQUE de la columna CORREO
+            String correoFinal = (correo == null || correo.isBlank())
+                    ? documento.trim() + "@aprendiz.kronos.local"
+                    : correo.trim();
+            if (usuarioRepository.findByCorreoElectronico(correoFinal).isPresent()) {
+                throw new IllegalArgumentException("El correo " + correoFinal + " ya está registrado para otro usuario.");
+            }
 
             Usuario nuevo = Usuario.builder()
                     .tipoDocumento(parseTipoDocumento(tipoDoc))
@@ -297,9 +360,9 @@ public class GestionFichasService {
                     .nombre(recortar(vacioA(nombre, "Aprendiz"), 30))
                     .apellido(recortar(vacioA(apellido, "Importado"), 30))
                     .telefono(recortar(telefono, 11))
-                    // El Excel no trae correo/contraseña: se sintetizan para cumplir las restricciones NOT NULL/UNIQUE
-                    .correoElectronico(documento.trim() + "@aprendiz.kronos.local")
+                    .correoElectronico(recortar(correoFinal, 150))
                     .password(passwordEncoder.encode(documento.trim()))
+                    .debeCambiarContrasena(true) // contraseña inicial = documento: forzar cambio en el primer login
                     .estado(true)
                     .usuarioRoles(new ArrayList<>())
                     .build();
@@ -415,10 +478,6 @@ public class GestionFichasService {
     }
 
     // ─────────────────────────────── Utilidades varias ───────────────────────────────
-
-    private int contarEnEtapa(Long idFicha) {
-        return idsAprendizFichaEnEtapa(idFicha).size();
-    }
 
     private Set<Long> idsAprendizFichaEnEtapa(Long idFicha) {
         Set<Long> ids = new HashSet<>();

@@ -9,7 +9,7 @@
 -- plantillas de esas modalidades quedan mal asociadas (mezcladas con las de Etapa Práctica
 -- general, que también usan ID_SECCION_FORMATO NULL).
 --
--- ⚠️ Ejecutar UNA VEZ como KRONOS_DEV en cada entorno/PC, ANTES de
+-- ⚠️ Ejecutar UNA VEZ como KRONOS_END en cada entorno/PC, ANTES de
 -- ../plantilla_formato_catalogo_modalidades.sql. Re-ejecutable: si una sección ya existe, no
 -- la duplica.
 

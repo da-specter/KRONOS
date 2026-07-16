@@ -57,6 +57,12 @@ public class KronosWorkflowService {
 
     private static final List<String> EXTENSIONES_PERMITIDAS = List.of(".doc", ".docx", ".xls", ".xlsx");
 
+    // Los documentos requisitos (CC, ARL, EPS, RUT, Cámara de Comercio) suelen ser escaneados,
+    // así que además de Word/Excel se aceptan PDF e imágenes — a diferencia de las plantillas
+    // firmadas, que siguen siendo solo Word/Excel (EXTENSIONES_PERMITIDAS).
+    private static final List<String> EXTENSIONES_PERMITIDAS_REQUISITOS = List.of(
+            ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".xls", ".xlsx");
+
     @Autowired
     private SolicitudRepository solicitudRepository;
 
@@ -116,6 +122,22 @@ public class KronosWorkflowService {
 
     private static final List<String> EXTENSIONES_PERMITIDAS_CHAT = List.of(
             ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx");
+
+    private static final List<String> EXTENSIONES_IMAGEN = List.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
+
+    // Exige que el archivo exista y sea una imagen (evidencia de Sofía Plus): a diferencia del
+    // adjunto de chat, aquí no se aceptan PDF/Word/Excel.
+    private void validarEsImagen(MultipartFile archivo, String nombreCampo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new IllegalArgumentException("Debes adjuntar la " + nombreCampo + " (imagen JPG, PNG, GIF o WEBP).");
+        }
+        String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "";
+        int punto = nombreOriginal.lastIndexOf('.');
+        String extension = punto >= 0 ? nombreOriginal.substring(punto).toLowerCase() : "";
+        if (!EXTENSIONES_IMAGEN.contains(extension)) {
+            throw new IllegalArgumentException("La " + nombreCampo + " debe ser una imagen (JPG, PNG, GIF o WEBP).");
+        }
+    }
 
     /**
      * 👨‍🎓 PASO 1: El Aprendiz inicia el proceso creando su solicitud en el sistema.
@@ -197,12 +219,13 @@ public class KronosWorkflowService {
         if (esContratoAprendizaje) {
             for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
                 notificacionService.crear(registro, "🎓 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
-                        + " radicó una solicitud de Contrato de Aprendizaje: ya puedes evaluarla en tu Bandeja de Solicitudes.");
+                        + " radicó una solicitud de Contrato de Aprendizaje: ya puedes evaluarla en tu Bandeja de Solicitudes.",
+                        "/registro/bandeja-solicitudes");
             }
         } else {
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 notificacionService.crear(gestor, "📝 " + aprendizRemitente.getNombre() + " " + aprendizRemitente.getApellido()
-                        + " radicó una nueva solicitud de etapa productiva (" + modalidad + ").");
+                        + " radicó una nueva solicitud de etapa productiva (" + modalidad + ").", "/gestor/calificar-documentos");
             }
         }
 
@@ -254,7 +277,7 @@ public class KronosWorkflowService {
         } else {
             mensaje = "❌ Tu solicitud fue rechazada por el Gestor de Etapa. Novedad: " + observacion;
         }
-        notificacionService.crear(actualizada.getAprendizFicha().getUsuario(), mensaje);
+        notificacionService.crear(actualizada.getAprendizFicha().getUsuario(), mensaje, "/formatos");
 
         return actualizada;
     }
@@ -298,6 +321,13 @@ public class KronosWorkflowService {
         if (archivosUsados.size() > MAXIMO_ARCHIVOS_REQUISITOS) {
             throw new IllegalArgumentException("Puedes subir máximo " + MAXIMO_ARCHIVOS_REQUISITOS + " archivos.");
         }
+        // La CC es el único documento requisito obligatorio (los campos predeterminados de la UI
+        // — ARL, EPS, RUT, Cámara y Comercio — son opcionales); se valida también en el servidor.
+        boolean traeCedula = asuntosUsados.stream()
+                .anyMatch(a -> a != null && a.trim().equalsIgnoreCase("Cédula de Ciudadanía (CC)"));
+        if (!traeCedula) {
+            throw new IllegalArgumentException("Debes adjuntar tu Cédula de Ciudadanía (CC).");
+        }
 
         try {
             Path directorio = Paths.get(uploadDir, "solicitud_" + idSolicitud);
@@ -313,8 +343,8 @@ public class KronosWorkflowService {
                 String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo";
                 int puntoIdx = nombreOriginal.lastIndexOf('.');
                 String extension = puntoIdx >= 0 ? nombreOriginal.substring(puntoIdx).toLowerCase() : "";
-                if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
-                    throw new IllegalArgumentException("Solo se aceptan archivos de Word (.doc, .docx) o Excel (.xls, .xlsx).");
+                if (!EXTENSIONES_PERMITIDAS_REQUISITOS.contains(extension)) {
+                    throw new IllegalArgumentException("Solo se aceptan archivos PDF, imágenes (JPG/PNG), Word o Excel.");
                 }
 
                 String nombreArchivo = java.util.UUID.randomUUID() + extension;
@@ -341,13 +371,13 @@ public class KronosWorkflowService {
             SolicitudEtapaPractica guardada = solicitudRepository.save(solicitud);
 
             notificacionService.crear(guardada.getAprendizFicha().getUsuario(),
-                    "📄 Recibimos tus formatos. Ya puedes descargar, diligenciar y firmar tus plantillas para subirlas.");
+                    "📄 Recibimos tus formatos. Ya puedes descargar, diligenciar y firmar tus plantillas para subirlas.", "/formatos");
 
             Usuario aprendizFormatos = guardada.getAprendizFicha().getUsuario();
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 notificacionService.crear(gestor, "📨 " + aprendizFormatos.getNombre() + " " + aprendizFormatos.getApellido()
                         + " (ficha " + guardada.getAprendizFicha().getFicha().getNumeroFicha()
-                        + ") envió sus documentos requisitos diligenciados para tu revisión.");
+                        + ") envió sus documentos requisitos diligenciados para tu revisión.", "/gestor/calificar-documentos");
             }
 
             return guardada;
@@ -410,7 +440,7 @@ public class KronosWorkflowService {
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 notificacionService.crear(gestor, "📨 " + aprendizPlantilla.getNombre() + " " + aprendizPlantilla.getApellido()
                         + " (ficha " + solicitud.getAprendizFicha().getFicha().getNumeroFicha()
-                        + ") subió la plantilla firmada \"" + plantilla.getNombreDocumento() + "\".");
+                        + ") subió la plantilla firmada \"" + plantilla.getNombreDocumento() + "\".", "/gestor/calificar-documentos");
             }
 
             return guardado;
@@ -448,7 +478,7 @@ public class KronosWorkflowService {
             SolicitudEtapaPractica devuelta = solicitudRepository.save(solicitud);
 
             notificacionService.crear(solicitud.getAprendizFicha().getUsuario(),
-                    "❌ El Gestor de Etapa rechazó tus documentos. Corrige y vuelve a enviarlos. Novedad: " + observacion);
+                    "❌ El Gestor de Etapa rechazó tus documentos. Corrige y vuelve a enviarlos. Novedad: " + observacion, "/formatos");
 
             return devuelta;
         }
@@ -461,11 +491,11 @@ public class KronosWorkflowService {
         Usuario aprendiz = actualizada.getAprendizFicha().getUsuario();
         for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
             notificacionService.crear(registro, "📄 El Gestor de Etapa calificó los documentos de "
-                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ": ya están listos para tu validación.");
+                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ": ya están listos para tu validación.", "/registro/documentos");
         }
 
         notificacionService.crear(aprendiz,
-                "✅ El Gestor de Etapa aprobó tu modalidad y tus formatos. Tus documentos pasaron a validación del área de Registro.");
+                "✅ El Gestor de Etapa aprobó tu modalidad y tus formatos. Tus documentos pasaron a validación del área de Registro.", "/formatos");
 
         return actualizada;
     }
@@ -503,12 +533,12 @@ public class KronosWorkflowService {
             documentoSolicitudRepository.saveAll(documentos);
 
             notificacionService.crear(aprendiz,
-                    "✅ Registro validó tus documentos. Tu Etapa Productiva será registrada en breve.");
+                    "✅ Registro validó tus documentos. Tu Etapa Productiva será registrada en breve.", "/formatos");
 
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 notificacionService.crear(gestor, "✅ Registro validó los documentos de "
                         + aprendiz.getNombre() + " " + aprendiz.getApellido()
-                        + ": la solicitud quedó lista para registrar la Etapa Productiva.");
+                        + ": la solicitud quedó lista para registrar la Etapa Productiva.", "/gestor/aprendices");
             }
 
             return actualizada;
@@ -527,7 +557,7 @@ public class KronosWorkflowService {
 
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
             notificacionService.crear(gestor, "↩️ Registro devolvió la solicitud de "
-                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ". Novedad: " + observacion);
+                    + aprendiz.getNombre() + " " + aprendiz.getApellido() + ". Novedad: " + observacion, "/gestor/calificar-documentos");
         }
 
         return devuelta;
@@ -561,7 +591,7 @@ public class KronosWorkflowService {
             if (novedad != null && !novedad.isBlank()) {
                 mensaje += " Novedad: " + novedad;
             }
-            notificacionService.crear(aprendiz, mensaje);
+            notificacionService.crear(aprendiz, mensaje, "/formatos");
 
             return actualizada;
         }
@@ -576,7 +606,7 @@ public class KronosWorkflowService {
         SolicitudEtapaPractica devuelta = solicitudRepository.save(solicitud);
 
         notificacionService.crear(aprendiz,
-                "❌ Registro rechazó tu solicitud de Contrato de Aprendizaje. Novedad: " + novedad);
+                "❌ Registro rechazó tu solicitud de Contrato de Aprendizaje. Novedad: " + novedad, "/formatos");
 
         return devuelta;
     }
@@ -649,12 +679,13 @@ public class KronosWorkflowService {
 
         Usuario aprendizDestino = aprendizFicha.getUsuario();
         notificacionService.crear(aprendizDestino,
-                "🎉 ¡Tu Etapa Productiva ya fue registrada y está activa! Ya puedes subir tus bitácoras y tu formato de planeación.");
+                "🎉 ¡Tu Etapa Productiva ya fue registrada y está activa! Ya puedes subir tus bitácoras y tu formato de planeación.",
+                "/aprendiz/bitacoras");
 
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
             notificacionService.crear(gestor, "🏢 Registro registró la Etapa Productiva de "
                     + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido()
-                    + " en " + empresa.getNombreEmpresa() + " (del " + fechaInicio + " al " + fechaFin + ").");
+                    + " en " + empresa.getNombreEmpresa() + " (del " + fechaInicio + " al " + fechaFin + ").", "/gestor/aprendices");
         }
 
         return etapaGuardada;
@@ -682,7 +713,14 @@ public class KronosWorkflowService {
             String nombreJefeInmediato,
             String correoJefeInmediato,
             String telefonoJefeInmediato,
-            Long idUsuarioRegistro) {
+            Long idUsuarioRegistro,
+            MultipartFile evidenciaSofiaPlus) {
+
+        // 📎 Evidencia obligatoria del registro en Sofía Plus: se valida antes de tocar
+        // cualquier catálogo (Empresa/TipoContrato) para no crearlos si el archivo no sirve.
+        validarEsImagen(evidenciaSofiaPlus, "evidencia de Sofía Plus");
+        Usuario gestorDestino = usuarioRepository.findPrimerGestorEtapaActivo()
+                .orElseThrow(() -> new IllegalStateException("No hay ningún Gestor de Etapa activo disponible para recibir la evidencia."));
 
         Departamento departamento = departamentoRepository.findByNombreDepartamentoIgnoreCase(nombreDepartamento)
                 .orElseGet(() -> departamentoRepository.save(
@@ -708,10 +746,31 @@ public class KronosWorkflowService {
                 .orElseGet(() -> tipoContratoRepository.save(
                         TipoContrato.builder().nombreTipoContrato(nombreTipoContrato).build()));
 
-        return crearEtapaProductivaDesdeSolicitud(
+        EtapaProductiva etapa = crearEtapaProductivaDesdeSolicitud(
                 idSolicitud, idAprendizFicha,
                 empresa.getIdEmpresa(), tipoContrato.getIdTipoContrato(),
                 fechaInicio, fechaFin, nombreJefeInmediato, correoJefeInmediato, telefonoJefeInmediato, idUsuarioRegistro);
+
+        Usuario remitente = usuarioRepository.findById(idUsuarioRegistro)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuarioRegistro));
+        Usuario aprendiz = etapa.getAprendizFicha().getUsuario();
+
+        Novedad evidencia = Novedad.builder()
+                .etapaProductiva(etapa)
+                .remitente(remitente)
+                .destinatarioAc(gestorDestino)
+                .tipoNovedad(TipoNovedad.EVIDENCIA_SOFIA_PLUS)
+                .descripcion("📎 Evidencia de Sofía Plus del registro de la Etapa Productiva de "
+                        + aprendiz.getNombre() + " " + aprendiz.getApellido()
+                        + " en " + empresa.getNombreEmpresa() + ".")
+                .urlSoporte(guardarAdjuntoNovedad(evidenciaSofiaPlus))
+                .build();
+        novedadRepository.save(evidencia);
+
+        notificacionService.crear(gestorDestino, "📎 Registro adjuntó la evidencia de Sofía Plus del registro de la Etapa Productiva de "
+                + aprendiz.getNombre() + " " + aprendiz.getApellido() + ".", "/novedades");
+
+        return etapa;
     }
 
     /**
@@ -781,7 +840,7 @@ public class KronosWorkflowService {
         for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
             notificacionService.crear(gestor, "✏️ Registro actualizó la Etapa Productiva de "
                     + aprendizEditado.getNombre() + " " + aprendizEditado.getApellido()
-                    + " (empresa " + empresa.getNombreEmpresa() + ", estado " + estadoEtapa + ").");
+                    + " (empresa " + empresa.getNombreEmpresa() + ", estado " + estadoEtapa + ").", "/gestor/aprendices");
         }
 
         return editada;
@@ -818,10 +877,11 @@ public class KronosWorkflowService {
 
         notificacionService.crear(aprendizDestino,
                 "👨‍🏫 Se te asignó a " + instructorDestino.getNombre() + " " + instructorDestino.getApellido()
-                        + " como tu Instructor de Seguimiento.");
+                        + " como tu Instructor de Seguimiento.", "/aprendiz/visitas");
 
         notificacionService.crear(instructorDestino,
-                "👨‍🎓 Se te asignó el seguimiento de " + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido() + ".");
+                "👨‍🎓 Se te asignó el seguimiento de " + aprendizDestino.getNombre() + " " + aprendizDestino.getApellido() + ".",
+                "/instructor/seguimiento");
 
         return guardada;
     }
@@ -867,7 +927,7 @@ public class KronosWorkflowService {
 
         notificacionService.crear(destinatario,
                 "📢 Nueva novedad de " + remitente.getNombre() + " " + remitente.getApellido()
-                        + " (" + tipoNovedad + "): " + descripcion);
+                        + " (" + tipoNovedad + "): " + descripcion, "/novedades");
 
         return guardada;
     }
@@ -909,7 +969,8 @@ public class KronosWorkflowService {
 
         notificacionService.crear(aprendiz,
                 "💬 Tu Instructor de Seguimiento " + remitente.getNombre() + " " + remitente.getApellido()
-                        + " te escribió en Novedades: " + (mensaje == null || mensaje.isBlank() ? "(adjunto)" : mensaje));
+                        + " te escribió en Novedades: " + (mensaje == null || mensaje.isBlank() ? "(adjunto)" : mensaje),
+                "/aprendiz/bitacoras");
 
         return guardada;
     }
@@ -964,12 +1025,12 @@ public class KronosWorkflowService {
                     + " respondió en Novedades: " + comentarioRespuesta;
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 if (!gestor.getIdUsuario().equals(idUsuarioAccion)) {
-                    notificacionService.crear(gestor, texto);
+                    notificacionService.crear(gestor, texto, "/novedades");
                 }
             }
             for (Usuario registro : usuarioRepository.findAllRegistroActivos()) {
                 if (!registro.getIdUsuario().equals(idUsuarioAccion)) {
-                    notificacionService.crear(registro, texto);
+                    notificacionService.crear(registro, texto, "/novedades");
                 }
             }
         } else if (novedad.getTipoNovedad() == TipoNovedad.COORD_ACADEMICO) {
@@ -977,17 +1038,24 @@ public class KronosWorkflowService {
                     + " respondió en Novedades: " + comentarioRespuesta;
             for (Usuario gestor : usuarioRepository.findAllGestoresEtapaActivos()) {
                 if (!gestor.getIdUsuario().equals(idUsuarioAccion)) {
-                    notificacionService.crear(gestor, texto);
+                    notificacionService.crear(gestor, texto, "/novedades");
                 }
             }
             for (Usuario coordinador : usuarioRepository.findAllCoordinacionAcademicaActivos()) {
                 if (!coordinador.getIdUsuario().equals(idUsuarioAccion)) {
-                    notificacionService.crear(coordinador, texto);
+                    notificacionService.crear(coordinador, texto, "/novedades");
                 }
             }
         } else {
-            notificacionService.crear(novedad.getRemitente(),
-                    "💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta);
+            // El remitente original de una novedad "de campo" (SUSPENSION/APLAZAMIENTO/OTRO/...)
+            // es el Aprendiz (la radicó él) o el Instructor de Seguimiento (le escribió al aprendiz):
+            // cada uno ve sus novedades en un módulo distinto.
+            Usuario remitenteOriginal = novedad.getRemitente();
+            boolean remitenteEsAprendiz = remitenteOriginal.getUsuarioRoles().stream()
+                    .anyMatch(ur -> ur.getRol().getNombreRol().equals("APRENDIZ"));
+            notificacionService.crear(remitenteOriginal,
+                    "💬 Respuesta a tu novedad (" + novedad.getTipoNovedad() + "): " + comentarioRespuesta,
+                    remitenteEsAprendiz ? "/aprendiz/bitacoras" : "/novedades");
         }
 
         return guardado;
@@ -1036,7 +1104,7 @@ public class KronosWorkflowService {
         String textoNotificacion = "💬 Nuevo mensaje de " + remitente.getNombre() + " " + remitente.getApellido() + " en Novedades.";
         for (Usuario u : esGestor ? usuarioRepository.findAllRegistroActivos() : usuarioRepository.findAllGestoresEtapaActivos()) {
             if (!u.getIdUsuario().equals(idUsuarioRemitente)) {
-                notificacionService.crear(u, textoNotificacion);
+                notificacionService.crear(u, textoNotificacion, "/novedades");
             }
         }
 
@@ -1085,7 +1153,7 @@ public class KronosWorkflowService {
         String textoNotificacion = "💬 Nuevo mensaje de " + remitente.getNombre() + " " + remitente.getApellido() + " en Novedades.";
         for (Usuario u : esGestor ? usuarioRepository.findAllCoordinacionAcademicaActivos() : usuarioRepository.findAllGestoresEtapaActivos()) {
             if (!u.getIdUsuario().equals(idUsuarioRemitente)) {
-                notificacionService.crear(u, textoNotificacion);
+                notificacionService.crear(u, textoNotificacion, "/novedades");
             }
         }
 

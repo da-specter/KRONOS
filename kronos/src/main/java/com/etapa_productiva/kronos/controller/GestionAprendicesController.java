@@ -83,7 +83,8 @@ public class GestionAprendicesController {
         }
 
         boolean esGestor = roles.contains("GESTOR_ETAPA");
-        boolean puedeEditarEtapa = roles.contains("REGISTRO");
+        boolean esRegistro = roles.contains("REGISTRO");
+        boolean puedeEditarEtapa = esRegistro;
 
         model.addAttribute("usuario", usuarioLogueado);
         model.addAttribute("notificaciones",
@@ -109,6 +110,8 @@ public class GestionAprendicesController {
         model.addAttribute("soloLectura", !esGestor);
         model.addAttribute("puedeEditarEtapa", puedeEditarEtapa);
         model.addAttribute("puedeSubirArl", puedeEditarEtapa);
+        // 📥 Exportar: Gestor de Etapa y Registro (el Administrador sigue en solo lectura, sin exportar)
+        model.addAttribute("puedeExportar", esGestor || esRegistro);
 
         if (puedeEditarEtapa) {
             model.addAttribute("departamentos", departamentoRepository.findAll().stream()
@@ -234,9 +237,10 @@ public class GestionAprendicesController {
         }
 
         List<String> roles = usuarioLogueado.getRoles();
-        if (roles == null || !roles.contains("GESTOR_ETAPA")) {
+        boolean autorizado = roles != null && (roles.contains("GESTOR_ETAPA") || roles.contains("REGISTRO"));
+        if (!autorizado) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("mensaje", "Solo el Gestor de Etapa puede exportar esta información."));
+                    .body(Map.of("mensaje", "Solo el Gestor de Etapa o el rol Registro pueden exportar esta información."));
         }
 
         // 🔐 Re-autenticación: la contraseña ingresada debe ser la del usuario en sesión

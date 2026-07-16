@@ -97,6 +97,12 @@
                                 style="display: flex; align-items: center; gap: 8px; background: var(--verde-sena); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             ➕ Añadir aprendiz
                         </button>
+                        <!-- 📋 Plantilla en blanco para diligenciar la importación -->
+                        <a th:href="@{/instructor/tecnico/plantilla}"
+                           title="Descarga la plantilla Excel en blanco con las columnas que espera la importación"
+                           style="display: flex; align-items: center; gap: 8px; background: #475569; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;">
+                            📋 Plantilla
+                        </a>
                         <button type="button" onclick="abrirModal('modalImportar')"
                                 style="display: flex; align-items: center; gap: 8px; background: #2563EB; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;">
                             📤 Importar Excel
@@ -139,6 +145,20 @@
                         <option value="Remoto">Remoto</option>
                         <option value="Híbrido">Híbrido</option>
                     </select>
+                    <select id="filtroFicha" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
+                        <option value="">🎓 Ficha (todas)</option>
+                        <option th:each="asignacion : ${fichasTecnico}" th:value="${asignacion.ficha.numeroFicha}"
+                                th:text="'Ficha ' + ${asignacion.ficha.numeroFicha}">Ficha 2555228</option>
+                    </select>
+                    <select id="filtroSituacion" onchange="filtrarAprendices()"
+                            style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; outline-color: var(--verde-sena); background: #fff; color: var(--text-dark);">
+                        <option value="">🚦 Situación (todas)</option>
+                        <option value="En etapa práctica">En etapa práctica</option>
+                        <option value="Sin etapa práctica">Sin etapa práctica</option>
+                        <option value="Por certificar">Por certificar</option>
+                        <option value="Certificado">Certificado</option>
+                    </select>
                     <button type="button" onclick="limpiarFiltros()"
                             style="padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 13px; font-weight: 600; background: #F9FAFB; color: var(--text-muted); cursor: pointer;">
                         ✖ Limpiar filtros
@@ -176,6 +196,7 @@
                                 th:data-tipodoc="${a.tipoDocumento}"
                                 th:data-contrato="${a.modalidadContrato}"
                                 th:data-modalidad="${a.modalidad}"
+                                th:data-situacion="${a.situacion}"
                                 th:data-empresa="${#strings.toLowerCase(a.empresa)}"
                                 th:data-municipio="${#strings.toLowerCase(a.municipioEmpresa)}"
                                 th:data-departamento="${#strings.toLowerCase(a.departamentoEmpresa)}">
@@ -268,10 +289,17 @@
     <div id="modalImportar" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 100; align-items: center; justify-content: center;">
         <div style="background: #fff; border-radius: 16px; padding: 28px; width: 92%; max-width: 460px; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
             <h3 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-dark);">📤 Importar aprendices a mi ficha</h3>
-            <p style="margin: 0 0 18px 0; font-size: 13px; color: var(--text-muted);">
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">
                 El Excel debe tener columnas <strong>Nombre</strong>, <strong>Apellido</strong>,
                 <strong>Tipo Documento</strong>, <strong>Número Documento</strong> y opcionalmente
-                <strong>Teléfono</strong> y <strong>Correo</strong>. Todos quedarán matriculados en la ficha que elijas.
+                <strong>Correo Electrónico</strong> (será el usuario de ingreso) y <strong>Teléfono</strong>.
+                La contraseña inicial de cada aprendiz es su número de documento y todos quedarán
+                matriculados en la ficha que elijas.
+            </p>
+            <p style="margin: 0 0 18px 0; font-size: 13px;">
+                <a th:href="@{/instructor/tecnico/plantilla}" style="color: #2563EB; font-weight: 700; text-decoration: none;">
+                    📋 Descargar plantilla en blanco
+                </a>
             </p>
             <form th:action="@{/instructor/tecnico/importar}" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
                 <select name="idFicha" required
@@ -401,6 +429,8 @@
             const tipoDoc = document.getElementById('filtroTipoDoc').value;
             const contrato = document.getElementById('filtroContrato').value;
             const modalidad = document.getElementById('filtroModalidad').value;
+            const ficha = document.getElementById('filtroFicha').value;
+            const situacion = document.getElementById('filtroSituacion').value;
 
             const filas = document.querySelectorAll('#tablaAprendices .fila');
             let visibles = 0;
@@ -412,8 +442,11 @@
                 const coincideTipo = !tipoDoc || d.tipodoc === tipoDoc;
                 const coincideContrato = !contrato || d.contrato === contrato;
                 const coincideModalidad = !modalidad || d.modalidad === modalidad;
+                const coincideFicha = !ficha || d.ficha === ficha;
+                const coincideSituacion = !situacion || d.situacion === situacion;
 
-                const visible = coincideTexto && coincideTipo && coincideContrato && coincideModalidad;
+                const visible = coincideTexto && coincideTipo && coincideContrato && coincideModalidad
+                    && coincideFicha && coincideSituacion;
                 fila.style.display = visible ? '' : 'none';
                 if (visible) visibles++;
             });
@@ -426,6 +459,8 @@
             document.getElementById('filtroTipoDoc').value = '';
             document.getElementById('filtroContrato').value = '';
             document.getElementById('filtroModalidad').value = '';
+            document.getElementById('filtroFicha').value = '';
+            document.getElementById('filtroSituacion').value = '';
             filtrarAprendices();
         }
     </script>

@@ -24,6 +24,7 @@ public class ConfiguracionGlobalService {
     public static final String DIAS_PRIMERA_VISITA = "DIAS_PRIMERA_VISITA";
     public static final String DIAS_ATRASO_BITACORA = "DIAS_ATRASO_BITACORA";
     public static final String DIAS_RETENCION_CODIGOS_RECUPERACION = "DIAS_RETENCION_CODIGOS_RECUPERACION";
+    public static final String DIAS_RETENCION_NOTIFICACIONES = "DIAS_RETENCION_NOTIFICACIONES";
     public static final String MODO_MANTENIMIENTO = "MODO_MANTENIMIENTO";
     public static final String MENSAJE_MANTENIMIENTO = "MENSAJE_MANTENIMIENTO";
 
@@ -45,6 +46,8 @@ public class ConfiguracionGlobalService {
                     "Días de gracia después de la fecha límite de una bitácora antes de alertar a Instructor y Aprendiz por atraso");
             crearSiNoExiste(DIAS_RETENCION_CODIGOS_RECUPERACION, "7",
                     "Días que se conserva un código de recuperación de contraseña después de vencer, antes de que el job de limpieza lo borre");
+            crearSiNoExiste(DIAS_RETENCION_NOTIFICACIONES, "30",
+                    "Días que se conserva una notificación (leída o no) antes de que el job de limpieza (cada 2 días) la borre");
             crearSiNoExiste(MODO_MANTENIMIENTO, "NO",
                     "SI = solo los Administradores pueden iniciar sesión en el portal");
             crearSiNoExiste(MENSAJE_MANTENIMIENTO, "El portal KRONOS está en mantenimiento. Intenta más tarde.",

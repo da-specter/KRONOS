@@ -11,14 +11,14 @@ Ejecuta en este orden exacto:
 
 1. **Crear el esquema Oracle.** Conectado como `SYSDBA`, corre
    [`instalacion/00_crear_esquema.sql`](instalacion/00_crear_esquema.sql). Sáltate este paso si
-   ya tienes el usuario `KRONOS_DEV` creado (por ejemplo, restauraste un export).
+   ya tienes el usuario `KRONOS_END` creado (por ejemplo, restauraste un export).
 2. **Arrancar la app una vez** (`mvnw.cmd spring-boot:run` desde `kronos/`, o el Run del IDE).
    Con el esquema vacío, Hibernate crea todas las tablas, columnas y `CHECK` constraints
    exactamente como están definidos en las entidades **hoy** — por eso casi ninguno de los
    scripts "históricos" de más abajo hace falta en una instalación nueva: esos scripts existen
    para corregir una tabla que Hibernate ya había creado con una forma antigua, no para crear
    nada desde cero. Detén la app después de que termine de arrancar.
-3. **Sembrar catálogos**, conectado como `KRONOS_DEV`, en este orden:
+3. **Sembrar catálogos**, conectado como `KRONOS_END`, en este orden:
    1. [`instalacion/01_roles_base.sql`](instalacion/01_roles_base.sql)
    2. [`instalacion/02_secciones_formato_base.sql`](instalacion/02_secciones_formato_base.sql)
    3. [`plantilla_formato_catalogo_modalidades.sql`](plantilla_formato_catalogo_modalidades.sql)
@@ -39,6 +39,11 @@ de datos de desarrollo — nunca quedaron en un script. Con eso, clonar el repo 
 seguir solo los scripts existentes dejaba la base de datos sin esas filas: `/admin/usuarios` no
 dejaba crear un Aprendiz o un Instructor Técnico, y `/formatos` mostraba vacías todas las
 modalidades salvo Contrato de Aprendizaje. Estos dos scripts nuevos cierran ese hueco.
+
+> **Nota sobre el nombre del esquema:** desde julio de 2026 el esquema oficial es
+> `KRONOS_END` (clave `KRONOSEND2026`), igual que el default de `application.properties`.
+> Los scripts históricos de abajo todavía dicen "como KRONOS_DEV" en sus comentarios porque
+> aplican a bases de datos viejas, que sí usaban ese esquema — no hace falta corregirlos.
 
 ## Scripts históricos — NO ejecutar en una instalación nueva
 
@@ -85,7 +90,7 @@ corrió a mano y no quedó documentado.
 
 ## Nota de seguridad
 
-`kronos/src/main/resources/application.properties` trae la contraseña real de `KRONOS_DEV` y la
+`kronos/src/main/resources/application.properties` trae la contraseña real de `KRONOS_END` y la
 contraseña de aplicación de Gmail como valor por defecto, y ese archivo viaja en el repositorio.
 Antes de compartir este repositorio más allá de tu propio equipo, conviene rotar esas
 credenciales y moverlas a variables de entorno (`DB_PASSWORD`, `MAIL_PASSWORD`, ...) en vez de

@@ -110,6 +110,9 @@ public class AuthService {
             menuNavegacion.add(new MenuDto("Bandeja de Solicitudes", "/registro/bandeja-solicitudes"));
             menuNavegacion.add(new MenuDto("Validación de Documentos", "/registro/documentos"));
             menuNavegacion.add(new MenuDto("Registro Etapa Productiva", "/registro/registro-etapa"));
+            // 📋 Solo lectura: fichas con su situación (en etapa/sin etapa/por certificar/
+            // certificados) + exportación. El import de Excel sigue siendo exclusivo del Gestor.
+            menuNavegacion.add(new MenuDto("Gestión de Fichas", "/coordinador/fichas"));
             menuNavegacion.add(new MenuDto("Gestión Aprendices", "/gestor/aprendices"));
             menuNavegacion.add(new MenuDto("Reporte Aprendiz", "/registro/reporte-aprendiz"));
             menuNavegacion.add(new MenuDto("Novedades", "/novedades"));
@@ -142,10 +145,12 @@ public class AuthService {
                     new MenuDto("Auditoría", "/admin/auditoria"),
                     new MenuDto("Configuración Global", "/admin/config")
             )));
-            // 📋 Módulo desplegable "Reportes": el listado completo de aprendices (mismo módulo
-            // que usan Gestor de Etapa/Registro, aquí en solo lectura) y la evidencia de
+            // 📋 Módulo desplegable "Reportes": fichas con su situación (en etapa/sin etapa/por
+            // certificar/certificados) y el listado completo de aprendices (mismos módulos que
+            // usan Gestor de Etapa/Registro, aquí en solo lectura) más la evidencia de
             // documentos requisito diligenciados y aprobados, buscable por aprendiz.
             menuNavegacion.add(new MenuDto("Reportes", null, List.of(
+                    new MenuDto("Fichas y Aprendices", "/coordinador/fichas"),
                     new MenuDto("Gestión de Aprendices", "/gestor/aprendices"),
                     new MenuDto("Documentos Aprobados", "/admin/reporte")
             )));

@@ -27,6 +27,12 @@ public class Notificacion {
     @Column(name = "LEIDO", columnDefinition = "NUMBER(1,0) DEFAULT 0", nullable = false)
     private Boolean leido;
 
+    // Ruta interna (ej. "/instructor/seguimiento/bitacoras") a la que se navega al hacer clic
+    // en la notificación. Nullable: las notificaciones antiguas o sin módulo puntual asociado
+    // simplemente no quedan clicables a un destino específico (caen a /index).
+    @Column(name = "URL_DESTINO", columnDefinition = "VARCHAR2(255)")
+    private String urlDestino;
+
     @Column(name = "FECHA_CREACION", columnDefinition = "TIMESTAMP", nullable = false)
     private LocalDateTime fechaCreacion;
 

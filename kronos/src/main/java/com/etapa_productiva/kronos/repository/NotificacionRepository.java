@@ -3,6 +3,7 @@ package com.etapa_productiva.kronos.repository;
 import com.etapa_productiva.kronos.entity.Notificacion; // Cambiado a singular
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -12,4 +13,8 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
 
     // Historial completo: todas las notificaciones del usuario (leídas y no leídas), más recientes primero
     List<Notificacion> findByUsuarioDestinoIdUsuarioOrderByFechaCreacionDesc(Long idUsuario);
+
+    // 🧹 Job de limpieza: borra notificaciones creadas hace más de N días (leídas o no) para
+    // que la tabla no crezca sin límite. Devuelve cuántas filas eliminó.
+    long deleteByFechaCreacionBefore(LocalDateTime corte);
 }

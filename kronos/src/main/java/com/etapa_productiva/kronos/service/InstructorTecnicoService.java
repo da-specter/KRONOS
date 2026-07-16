@@ -152,7 +152,9 @@ public class InstructorTecnicoService {
 
     // La situación consolida el estado académico de la matrícula con la existencia de la etapa:
     // certificado > por certificar > tiene etapa registrada > aún sin etapa práctica.
-    private String clasificarSituacion(AprendizFicha matricula, EtapaProductiva etapa) {
+    // Público y estático: lo reutiliza GestionFichasService/FichaController para el desglose
+    // "por ficha" de Registro/Admin (mismo criterio que este dashboard, sin duplicar la regla).
+    public static String clasificarSituacion(AprendizFicha matricula, EtapaProductiva etapa) {
         if (matricula.getEstadoAcademico() == EstadoAcademico.CERTIFICADO) return SIT_CERTIFICADO;
         if (matricula.getEstadoAcademico() == EstadoAcademico.POR_CERTIFICAR) return SIT_POR_CERTIFICAR;
         return etapa != null ? SIT_EN_ETAPA : SIT_SIN_ETAPA;
@@ -287,6 +289,33 @@ public class InstructorTecnicoService {
     /** Resultado resumido de una importación de aprendices a una ficha del instructor. */
     public record ResultadoImportacionTecnico(int filas, int aprendicesCreados, int matriculasCreadas,
                                               List<String> errores) {
+    }
+
+    /**
+     * 📋 Plantilla Excel en blanco para la importación de aprendices a una ficha: hoja de
+     * datos con los encabezados que espera {@link #importarAprendices} y hoja "Guía" con
+     * las reglas de diligenciamiento y de credenciales (correo = usuario, documento =
+     * contraseña inicial).
+     */
+    public byte[] generarPlantillaImportacion() throws IOException {
+        String[] titulos = {"Nombre", "Apellido", "Tipo Documento", "Número Documento", "Correo Electrónico", "Teléfono"};
+
+        List<String[]> guia = List.of(
+                new String[]{"Nombre", "Sí", "Nombres del aprendiz. Ej: Laura Valentina"},
+                new String[]{"Apellido", "Sí", "Apellidos del aprendiz. Ej: García Pérez"},
+                new String[]{"Tipo Documento", "No", "CC, TI, CE o PASAPORTE. Si se omite: CC."},
+                new String[]{"Número Documento", "Sí", "Solo dígitos, sin puntos ni espacios (máx. 10). Ej: 1023456789"},
+                new String[]{"Correo Electrónico", "Recomendada", "Correo personal del aprendiz: será su USUARIO de ingreso a KRONOS. Ej: laura.garcia@correo.com"},
+                new String[]{"Teléfono", "No", "Celular de contacto, solo dígitos (máx. 11). Ej: 3001234567"});
+
+        List<String> notas = List.of(
+                "NOTAS DE USO:",
+                "• Diligencia los datos a partir de la fila 2 de la hoja de datos; no modifiques ni elimines la fila de encabezados.",
+                "• Todos los aprendices del archivo quedarán matriculados en la ficha que selecciones al momento de importar.",
+                "• La contraseña inicial de cada aprendiz nuevo es su número de documento y el sistema le exigirá cambiarla en su primer ingreso.",
+                "• Si no indicas correo, KRONOS genera uno interno (documento@aprendiz.kronos.local); el correo no puede repetirse entre usuarios.");
+
+        return ExportacionUtil.plantillaExcel("Aprendices", titulos, guia, notas);
     }
 
     /**
